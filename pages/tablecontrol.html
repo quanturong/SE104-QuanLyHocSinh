@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Quản lí học sinh – Bảng điều khiển</title>
+  <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body class="page-student">
+  <div class="layout">
+
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="logo">🎓</div>
+        <span>Student Management – Quản lí học sinh</span>
+      </div>
+      <nav class="nav">
+        <a class="active" href="./tablecontrol.html">Bảng điều khiển</a>
+        <a href="./student.html">Học sinh</a>
+        <a href="./class.html">Lớp học</a>
+        <a href="./attendance.html">Điểm danh</a>
+        <a href="./report.html">Báo cáo</a>
+        <a href="./scoretable.html">Điểm số</a>
+        <a href="./timetable.html">Thời khóa biểu</a>
+        <a href="./find.html">Tra cứu</a>
+        <a href="./teacher.html">Giáo viên</a>  
+        <a href="./rules.html">Quy định</a>
+        
+      </nav>
+      <div class="spacer"></div>
+      <a class="nav logout" href="../login.html">Đăng xuất</a>
+    </aside>
+
+    <main class="main">
+      <div class="grid cols-3">
+        <section class="card stat">
+          <div>
+            <div class="label">Số học sinh</div>
+            <div class="value" id="stat-students">1,256</div>
+          </div>
+          <div class="icon">👨‍🎓</div>
+        </section>
+
+        <section class="card stat">
+          <div>
+            <div class="label">Điểm danh hôm nay</div>
+            <div class="value" id="stat-att">92%</div>
+          </div>
+          <div class="icon">🗓️</div>
+        </section>
+        <section class="card stat">
+          <div>
+            <div class="label">Tổng số lớp</div>
+            <div class="value" id="stat-att">8</div>
+          </div>
+          <div class="icon">🗓️</div>
+        </section>
+      </div>
+      <div class="grid cols-2" style="margin-top:16px;">
+        <section class="card">
+          <h3>Điểm danh 7 ngày qua</h3>
+          <canvas id="chartAttendance" height="140"></canvas>
+        </section>
+
+        <section class="card">
+          <h3>Top lớp có sĩ số cao</h3>
+          <canvas id="chartClasses" height="140"></canvas>
+        </section>
+      </div>
+      <section class="card" style="margin-top:16px;">
+        <div class="toolbar">
+          <input class="input" type="text" id="search" placeholder="Tìm học sinh theo tên hoặc mã..." />
+          <select class="select" id="filter-class">
+            <option value="">Tất cả lớp</option>
+                <option>12A1</option>
+                <option>12A2</option>
+                <option>11A1</option>
+                <option>11A2</option>
+                <option>10A1</option>
+                <option>10A2</option>
+                <option>10A3</option>
+                <option>10A4</option>
+          </select>
+          <select class="select" id="filter-status">
+            <option value="">Tất cả trạng thái</option>
+            <option value="ok">Đang học</option>
+            <option value="warn">Cảnh báo nghỉ học</option>
+            <option value="debt">Nợ học phí</option>
+          </select>
+          <button class="btn" id="btn-add">+ Thêm học sinh</button>
+        </div>
+
+        <div class="table-wrap" style="overflow:auto; max-height:420px;">
+          <table class="table" id="tbl-students">
+            <thead>
+              <tr>
+                <th>Mã HS</th>
+                <th>Họ tên</th>
+                <th>Lớp</th>
+                <th>Ngày sinh</th>
+                <th>Liên lạc</th>
+                <th>Trạng thái</th>
+                <th>Thao tác</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>HS0921</td>
+                <td>Nguyễn Diệu Anh</td>
+                <td>12A1</td>
+                <td>18/11/2007</td>
+                <td>0901 234 567</td>
+                <td><span class="badge b-success">Đang học</span></td>
+                <td><button class="btn" style="padding:6px 10px">Sửa</button></td>
+              </tr>
+              <tr>
+                <td>HS1042</td>
+                <td>Trần Minh Quân</td>
+                <td>11A1</td>
+                <td>22/05/2008</td>
+                <td>0912 111 222</td>
+                <td><span class="badge b-warn">Cảnh báo</span></td>
+                <td><button class="btn" style="padding:6px 10px">Sửa</button></td>
+              </tr>
+              <tr>
+                <td>HS1168</td>
+                <td>Phạm Hoàng Anh</td>
+                <td>10A2</td>
+                <td>14/03/2009</td>
+                <td>0988 345 666</td>
+                <td><span class="badge b-danger">Nợ học phí</span></td>
+                <td><button class="btn" style="padding:6px 10px">Sửa</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script>
+    (function(){
+      if(!window.Chart) return;
+
+      const ctx1 = document.getElementById('chartAttendance');
+      new Chart(ctx1, {
+        type:'line',
+        data:{
+          labels:['T2','T3','T4','T5','T6','T7','CN'],
+          datasets:[{
+            label:'% điểm danh',
+            data:[92,93,91,94,92,90,88],
+            tension:.35,
+            fill:true,
+            backgroundColor:'rgba(83,179,174,.15)',
+            borderColor:'#53b3ae',
+            borderWidth:2,
+            pointRadius:3
+          }]
+        },
+        options:{plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true, ticks:{callback:v=>v+"%"}}}}
+      });
+
+      const ctx2 = document.getElementById('chartClasses');
+      new Chart(ctx2, {
+        type:'bar',
+        data:{
+          labels:['10A1','10A2','11B1','11B2','12C3','12C4'],
+          datasets:[{
+            label:'Sĩ số',
+            data:[45,43,42,41,47,44],
+            backgroundColor:'rgba(83,179,174,.6)',
+            borderColor:'#3aa29b',
+            borderWidth:1
+          }]
+        },
+        options:{plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true}}}
+      });
+    })();
+  </script>
+</body>
+</html>

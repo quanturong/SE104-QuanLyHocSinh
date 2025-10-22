@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Học sinh – Quản lí học sinh</title>
+  <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body class="page-student sp-page">
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="logo">🎓</div>
+        <span>Student Management – Quản lí học sinh</span>
+      </div>
+      <nav class="nav">
+        <a href="./tablecontrol.html">Bảng điều khiển</a>
+        <a class="active" href="./student.html">Học sinh</a>
+        <a href="./class.html">Lớp học</a>
+        <a href="./attendance.html">Điểm danh</a>
+        <a href="./report.html">Báo cáo</a>
+        <a href="./scoretable.html">Điểm số</a>
+        <a href="./timetable.html">Thời khóa biểu</a>
+        <a href="./find.html">Tra cứu</a>
+        <a href="./teacher.html">Giáo viên</a>  
+        <a href="./rules.html">Quy định</a>
+        
+      </nav>
+      <div class="spacer"></div>
+      <a class="nav logout" href="../login.html">Đăng xuất</a>
+    </aside>
+
+    <main class="main">
+      <div class="page-header">
+        <h1 class="page-title">Danh sách học sinh</h1>
+        <p class="page-desc">Quản lý thông tin học sinh trong hệ thống</p>
+      </div>
+
+      <section class="card">
+        <div class="toolbar">
+          <input class="input" type="text" id="search" placeholder="Tìm học sinh theo tên hoặc mã..." />
+          <select class="select" id="filter-class">
+            <option value="">Tất cả lớp</option>
+                <option>12A1</option>
+                <option>12A2</option>
+                <option>11A1</option>
+                <option>11A2</option>
+                <option>10A1</option>
+                <option>10A2</option>
+                <option>10A3</option>
+                <option>10A4</option>
+          </select>
+          <select class="select" id="filter-years">
+            <option value="">Năm học</option>
+              <option value="2024-2025">2039 - 2040</option>
+              <option value="2023-2024">2038 - 2039</option>
+              <option value="2022-2023">2037 - 2038</option>
+              <option value="2024-2025">2036 - 2037</option>
+              <option value="2023-2024">2035 - 2036</option>
+              <option value="2022-2023">2034 - 2035</option>
+              <option value="2024-2025">2033 - 2034</option>
+              <option value="2023-2024">2032 - 2033</option>
+              <option value="2022-2023">2031 - 2032</option>
+              <option value="2024-2025">2030 - 2031</option>
+              <option value="2023-2024">2029 - 2030</option>
+              <option value="2022-2023">2028 - 2029</option>
+              <option value="2024-2025">2027 - 2028</option>
+              <option value="2023-2024">2026 - 2027</option>
+              <option value="2022-2023">2025 - 2026</option>            
+              <option value="2024-2025">2024 - 2025</option>
+              <option value="2023-2024">2023 - 2024</option>
+              <option value="2022-2023">2022 - 2023</option>
+          </select>
+          <select class="select" id="filter-status">
+            <option value="">Tất cả trạng thái</option>
+            <option value="ok">Đang học</option>
+            <option value="warn">Cảnh báo nghỉ học</option>
+            <option value="debt">Đã thôi học</option>
+          </select>
+          <button class="btn" id="btn-add">+ Thêm học sinh</button>
+          <button class="btn" id="btn-del">- Xóa học sinh</button>
+        </div>
+
+        <div class="table-wrap" style="overflow:auto; max-height:520px;">
+          <table class="table" id="tbl-students">
+            <thead>
+              <tr>
+                <th>Mã HS</th>
+                <th>Họ tên</th>
+                <th>Lớp</th>
+                <th>Ngày sinh</th>
+                <th>Liên lạc</th>
+                <th>Trạng thái</th>
+                <th>Thao tác</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>HS0921</td>
+                <td>Nguyễn Diệu Anh</td>
+                <td>12C3</td>
+                <td>18/11/2007</td>
+                <td>0901 234 567</td>
+                <td><span class="badge b-success">Đang học</span></td>
+                <td><button class="btn btn-sm">Sửa</button></td>
+              </tr>
+              <tr>
+                <td>HS1042</td>
+                <td>Trần Minh Quân</td>
+                <td>11B1</td>
+                <td>22/05/2008</td>
+                <td>0912 111 222</td>
+                <td><span class="badge b-warn">Cảnh báo</span></td>
+                <td><button class="btn btn-sm">Sửa</button></td>
+              </tr>
+              <tr>
+                <td>HS1168</td>
+                <td>Phạm Hoàng Anh</td>
+                <td>10A2</td>
+                <td>14/03/2009</td>
+                <td>0988 345 666</td>
+                <td><span class="badge b-danger">Nợ học phí</span></td>
+                <td><button class="btn btn-sm">Sửa</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="pagination">
+          <button class="btn-page" disabled>‹</button>
+          <span class="page-info">Trang <strong>1</strong> / <strong>1</strong></span>
+          <button class="btn-page" disabled>›</button>
+        </div>
+      </section>
+    </main>
+  </div>
+  <div id="sp-overlay" class="sp-overlay" style="display:none">
+    <div class="sp-modal" role="dialog" aria-modal="true" aria-labelledby="sp-title">
+      <h2 id="sp-title" class="sp-title">Hồ sơ học sinh</h2>
+
+      <form id="sp-form" class="sp-form">
+        <div class="sp-grid">
+          <label class="sp-field">Mã HS
+            <input name="code" type="text" placeholder="VD: HS1234" />
+          </label>
+          <label class="sp-field">Lớp
+            <input name="class" type="text" placeholder="VD: 10A1" />
+          </label>
+        </div>
+        <label class="sp-field">Họ và tên <span class="sp-required">*</span>
+          <input name="fullname" type="text" required placeholder="Nhập họ và tên học sinh" />
+        </label>
+
+        <div class="sp-grid">
+          <label class="sp-field">Giới tính <span class="sp-required">*</span>
+            <select name="gender" required>
+              <option value="">-- Chọn giới tính --</option>
+              <option>Nam</option>
+              <option>Nữ</option>
+              <option>Khác</option>
+            </select>
+          </label>
+          <label class="sp-field">Ngày sinh <span class="sp-required">*</span>
+            <input name="birthday" type="date" required />
+          </label>
+        </div>
+
+        <label class="sp-field">Địa chỉ <span class="sp-required">*</span>
+          <input name="address" type="text" required placeholder="Nhập địa chỉ nơi ở" />
+        </label>
+
+        <label class="sp-field">Email <span class="sp-required">*</span>
+          <input name="email" type="email" required placeholder="example@gmail.com" />
+        </label>
+        <div class="sp-grid">
+          <label class="sp-field">SĐT
+            <input name="phone" type="tel" placeholder="VD: 09xx xxx xxx" />
+          </label>
+          <label class="sp-field">Ngày nhập học
+            <input name="enroll_date" type="date" />
+          </label>
+        </div>
+
+        <div class="sp-grid">
+          <label class="sp-field">Phụ huynh
+            <input name="guardian_name" type="text" placeholder="Họ tên phụ huynh" />
+          </label>
+          <label class="sp-field">SĐT phụ huynh
+            <input name="guardian_phone" type="tel" placeholder="VD: 09xx xxx xxx" />
+          </label>
+        </div>
+
+        <label class="sp-field">Trạng thái
+          <select name="status">
+            <option value="">-- Chọn trạng thái --</option>
+            <option value="ok">Đang học</option>
+            <option value="warn">Cảnh báo nghỉ học</option>
+            <option value="debt">Nợ học phí</option>
+            <option value="hold">Bảo lưu</option>
+            <option value="grad">Đã tốt nghiệp</option>
+          </select>
+        </label>
+
+        <label class="sp-field">Ghi chú
+          <input name="note" type="text" placeholder="Thông tin thêm (nếu có)" />
+        </label>
+
+        <div class="sp-actions">
+          <button type="button" class="sp-btn sp-btn--ghost" id="sp-cancel">Hủy</button>
+          <button type="submit" class="sp-btn">Lưu hồ sơ</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const overlay = document.getElementById('sp-overlay');
+    const btnAdd = document.getElementById('btn-add');
+    const editBtns = document.querySelectorAll('#tbl-students .btn');
+
+    function openStudentModal(prefill = {}) {
+      Object.entries(prefill).forEach(([k,v])=>{
+        const el = document.querySelector(`[name="${k}"]`);
+        if (el) el.value = v;
+      });
+      overlay.style.display = 'grid';
+      document.body.style.overflow = 'hidden';
+    }
+    function closeStudentModal(){
+      overlay.style.display = 'none';
+      document.body.style.overflow = '';
+      document.getElementById('sp-form').reset();
+    }
+
+    btnAdd && (btnAdd.onclick = () => openStudentModal());
+    editBtns.forEach(b => b.onclick = () => {
+      const row = b.closest('tr').children;
+      openStudentModal({
+        code: row[0].innerText,
+        fullname: row[1].innerText,
+        class: row[2].innerText
+      });
+    });
+
+    document.getElementById('sp-cancel').onclick = closeStudentModal;
+    overlay.addEventListener('click', (e)=>{ if(e.target === overlay) closeStudentModal(); });
+
+    document.getElementById('sp-form').onsubmit = (e)=>{
+      e.preventDefault();
+      alert('Đã lưu hồ sơ học sinh!');
+      closeStudentModal();
+    };
+  </script>
+</body>
+</html>

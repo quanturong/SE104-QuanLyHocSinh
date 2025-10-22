@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Thời khóa biểu</title>
+  <link rel="stylesheet" href="../css/style.css" />
+  <style>
+    .ttb-note { font-size:13px; color:#64748b; }
+    .tt-table thead th.sticky-col, .tt-table tbody td.sticky-col {
+      position: sticky; left: 0; background: #fff; z-index: 5;
+    }
+    .tt-table thead th.sticky-col { background:#f2fbfa; z-index: 6; }
+    .tt-cell { min-width: 160px; }
+    .tt-period { width: 80px; text-align:center; font-weight:700; color:#0f172a; }
+    .tt-sub { display:block; font-weight:800; color:#073b4c; }
+    .tt-teacher { display:block; font-size:12px; color:#64748b; }
+    .tt-room { display:inline-block; margin-top:4px; font-size:12px; background:#eef6f6; padding:2px 6px; border-radius:6px; }
+    @media (max-width: 900px) { .tt-cell { min-width: 140px; } }
+
+    .btn-edit-tkb {
+      background:#2563eb;
+      color:#fff;
+      font-weight:700;
+      border:none;
+      border-radius:10px;
+      padding:10px 16px;
+      cursor:pointer;
+      transition:background .2s,transform .1s;
+    }
+    .btn-edit-tkb:hover {
+      background:#1d4ed8;
+      transform:translateY(-1px);
+    }
+  </style>
+</head>
+<body class="page-student">
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="logo">🎓</div>
+        <span>Student Management – Quản lí học sinh</span>
+      </div>
+      <nav class="nav">
+        <a href="./tablecontrol.html">Bảng điều khiển</a>
+        <a href="./student.html">Học sinh</a>
+        <a href="./class.html">Lớp học</a>
+        <a href="./attendance.html">Điểm danh</a>
+        <a href="./report.html">Báo cáo</a>
+        <a href="./scoretable.html">Điểm số</a>
+        <a class="active" href="./timetable.html">Thời khóa biểu</a>
+        <a href="./find.html">Tra cứu</a>
+        <a href="./teacher.html">Giáo viên</a>
+        <a href="./rules.html">Quy định</a>
+          
+      </nav>
+      <div class="spacer"></div>
+      <a class="nav logout" href="../login.html">Đăng xuất</a>
+    </aside>
+    <main class="main">
+      <div class="page-header">
+        <h1 class="page-title">Thời khóa biểu</h1>
+        <p class="page-desc">Chọn năm học, học kỳ và lớp để xem thời khóa biểu chi tiết.</p>
+      </div>
+        <section class="card" style="margin-bottom:16px;">
+        <div class="ttb-filter-inline">
+            <div class="class-info-item">
+            <label class="class-label">Năm học</label>
+            <select class="select select-sm" id="ttb-year">
+              <option value="2024-2025">2039 - 2040</option>
+              <option value="2023-2024">2038 - 2039</option>
+              <option value="2022-2023">2037 - 2038</option>
+              <option value="2024-2025">2036 - 2037</option>
+              <option value="2023-2024">2035 - 2036</option>
+              <option value="2022-2023">2034 - 2035</option>
+              <option value="2024-2025">2033 - 2034</option>
+              <option value="2023-2024">2032 - 2033</option>
+              <option value="2022-2023">2031 - 2032</option>
+              <option value="2024-2025">2030 - 2031</option>
+              <option value="2023-2024">2029 - 2030</option>
+              <option value="2022-2023">2028 - 2029</option>
+              <option value="2024-2025">2027 - 2028</option>
+              <option value="2023-2024">2026 - 2027</option>
+              <option value="2022-2023">2025 - 2026</option>            
+              <option value="2024-2025">2024 - 2025</option>
+              <option value="2023-2024">2023 - 2024</option>
+              <option value="2022-2023">2022 - 2023</option>
+            </select>
+            </div>
+            <div class="class-info-item">
+            <label class="class-label">Học kỳ</label>
+            <select class="select select-sm" id="ttb-semester">
+                <option value="hk1">Học kỳ 1</option>
+                <option value="hk2">Học kỳ 2</option>
+            </select>
+            </div>
+            <div class="class-info-item">
+            <label class="class-label">Lớp</label>
+            <select class="select select-sm" id="ttb-class">
+                <option>12A1</option>
+                <option>12A2</option>
+                <option>11A1</option>
+                <option>11A2</option>
+                <option>10A1</option>
+                <option>10A2</option>
+                <option>10A3</option>
+                <option>10A4</option>
+            </select>
+            </div>
+        </div>
+        <p class="ttb-note" style="margin-top:10px;">
+            Gợi ý: Kéo ngang bảng để xem đầy đủ các ngày trong tuần trên màn hình nhỏ.
+        </p>
+        </section>
+      <section class="card">
+        <div class="table-wrap" style="overflow:auto; max-height:560px;">
+          <table class="table tt-table">
+            <thead>
+              <tr>
+                <th class="sticky-col">Tiết</th>
+                <th class="tt-cell">Thứ 2</th>
+                <th class="tt-cell">Thứ 3</th>
+                <th class="tt-cell">Thứ 4</th>
+                <th class="tt-cell">Thứ 5</th>
+                <th class="tt-cell">Thứ 6</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="tt-period sticky-col">1</td>
+                <td><span class="tt-sub">Toán</span><span class="tt-teacher">Cô Hương</span></td>
+                <td><span class="tt-sub">Ngữ văn</span><span class="tt-teacher">Thầy Sơn</span></td>
+                <td><span class="tt-sub">Hóa học</span><span class="tt-teacher">Cô Nhung</span></td>
+                <td><span class="tt-sub">Lịch sử</span><span class="tt-teacher">Thầy Duy</span></td>
+                <td><span class="tt-sub">Thể dục</span><span class="tt-teacher">Cô Lan</span></td>
+              </tr>
+              <tr>
+                <td class="tt-period sticky-col">2</td>
+                <td><span class="tt-sub">Vật lý</span><span class="tt-teacher">Thầy Đức</span></td>
+                <td><span class="tt-sub">Toán</span><span class="tt-teacher">Cô Hương</span></td>
+                <td><span class="tt-sub">Ngữ văn</span><span class="tt-teacher">Thầy Sơn</span></td>
+                <td><span class="tt-sub">Địa lý</span><span class="tt-teacher">Cô Trang</span></td>
+                <td><span class="tt-sub">Đạo đức</span><span class="tt-teacher">Cô Phương</span></td>
+              </tr>
+              <tr>
+                <td class="tt-period sticky-col">3</td>
+                <td><span class="tt-sub">Sinh học</span><span class="tt-teacher">Thầy Tài</span></td>
+                <td><span class="tt-sub">Giáo dục công dân</span><span class="tt-teacher">Cô Hòa</span></td>
+                <td><span class="tt-sub">Toán</span><span class="tt-teacher">Cô Hương</span></td>
+                <td><span class="tt-sub">Ngữ văn</span><span class="tt-teacher">Thầy Sơn</span></td>
+                <td><span class="tt-sub">Thể dục</span><span class="tt-teacher">Thầy Phúc</span></td>
+              </tr>
+              <tr>
+                <td class="tt-period sticky-col">4</td>
+                <td><span class="tt-sub">Ngữ văn</span><span class="tt-teacher">Thầy Sơn</span></td>
+                <td><span class="tt-sub">Vật lý</span><span class="tt-teacher">Thầy Đức</span></td>
+                <td><span class="tt-sub">Toán</span><span class="tt-teacher">Cô Phương</span></td>
+                <td><span class="tt-sub">Hóa học</span><span class="tt-teacher">Cô Nhung</span></td>
+                <td><span class="tt-sub">Lịch sử</span><span class="tt-teacher">Thầy Duy</span></td>
+              </tr>
+              <tr>
+                <td class="tt-period sticky-col">5</td>
+                <td><span class="tt-sub">Địa lý</span><span class="tt-teacher">Cô Trang</span></td>
+                <td><span class="tt-sub">Sinh học</span><span class="tt-teacher">Thầy Tài</span></td>
+                <td><span class="tt-sub">Toán</span><span class="tt-teacher">Cô Lan</span></td>
+                <td><span class="tt-sub">Toán</span><span class="tt-teacher">Cô Hương</span></td>
+                <td><span class="tt-sub">Thể dục</span><span class="tt-teacher">Thầy Nam</span></td>
+              </tr>
+              <tr>
+                <td class="tt-period sticky-col">6</td>
+                <td><span class="tt-sub">Thể dục</span><span class="tt-teacher">Thầy Phúc</span></td>
+                <td><span class="tt-sub">Ngữ văn</span><span class="tt-teacher">Thầy Thắng</span></td>
+                <td><span class="tt-sub">Sinh hoạt</span><span class="tt-teacher">GVCN</span></td>
+                <td><span class="tt-sub">Toán</span><span class="tt-teacher">Cô Hoa</span></td>
+                <td><span class="tt-sub">Toán</span><span class="tt-teacher">–</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div style="display:flex;justify-content:flex-end;margin-top:14px;">
+          <button class="btn-edit-tkb" id="btn-edit-tkb">🖊️ Sửa thời khóa biểu</button>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    document.getElementById('btn-edit-tkb').addEventListener('click', ()=>{
+      alert('Chuyển đến trang chỉnh sửa thời khóa biểu (demo).');
+    });
+  </script>
+</body>
+</html>

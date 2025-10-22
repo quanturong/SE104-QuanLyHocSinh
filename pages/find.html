@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tra cứu hồ sơ học sinh</title>
+  <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body class="page-student">
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="logo">🎓</div>
+        <span>Student Management – Quản lí học sinh</span>
+      </div>
+      <nav class="nav">
+        <a href="./tablecontrol.html">Bảng điều khiển</a>
+        <a href="./student.html">Học sinh</a>
+        <a href="./class.html">Lớp học</a>
+        <a href="./attendance.html">Điểm danh</a>
+        <a href="./report.html">Báo cáo</a>
+        <a href="./scoretable.html">Điểm số</a>
+        <a href="./timetable.html">Thời khóa biểu</a>
+        <a class="active" href="./find.html">Tra cứu</a>
+        <a href="./teacher.html">Giáo viên</a>
+        <a href="./rules.html">Quy định</a>
+          
+      </nav>
+      <div class="spacer"></div>
+      <a class="nav logout" href="../login.html">Đăng xuất</a>
+    </aside>
+    <main class="main">
+      <div class="page-header">
+        <h1 class="page-title">Tra cứu hồ sơ học sinh</h1>
+        <p class="page-desc">Nhập Mã học sinh (MSHS) hoặc Họ tên để xem toàn bộ hồ sơ.</p>
+      </div>
+      <section class="card" style="margin-bottom:16px;">
+        <div class="toolbar">
+          <input class="input" id="q" placeholder="Nhập MSHS hoặc họ tên..." style="min-width:280px;" />
+          <button class="btn" id="btn-search">🔎 Tra cứu</button>
+          <button class="btn btn-export" id="btn-print">🖨️ In hồ sơ</button>
+          <span class="muted" id="hint"></span>
+        </div>
+      </section>
+      <div id="result" style="display:none;">
+        <section class="card" style="margin-bottom:16px;">
+          <div class="profile">
+            <div class="avatar" id="pf-avatar">NA</div>
+            <div>
+              <h2 class="p-name" id="pf-name">—</h2>
+              <p class="p-sub" id="pf-sub">MSHS: — · Lớp hiện tại: —</p>
+              <div style="margin-top:6px;">
+                <span class="pill" id="pf-dob">Ngày sinh: —</span>
+                <span class="pill" id="pf-gender">Giới tính: —</span>
+                <span class="pill" id="pf-phone">Điện thoại: —</span>
+                <span class="pill" id="pf-address">Địa chỉ: —</span>
+              </div>
+            </div>
+          </div>
+        </section>
+        <section class="grid cols-4" style="margin-bottom:16px;">
+          <div class="card stat-mini">
+            <div class="stat-mini-label">Điểm TB cao nhất</div>
+            <div class="stat-mini-value" id="st-best">—</div>
+          </div>
+          <div class="card stat-mini">
+            <div class="stat-mini-label">Điểm TB thấp nhất</div>
+            <div class="stat-mini-value" id="st-worst">—</div>
+          </div>
+          <div class="card stat-mini">
+            <div class="stat-mini-label">Vắng (tổng các kỳ)</div>
+            <div class="stat-mini-value" id="st-abs">—</div>
+          </div>
+          <div class="card stat-mini">
+            <div class="stat-mini-label">Hạnh kiểm (gần nhất)</div>
+            <div class="stat-mini-value" id="st-conduct">—</div>
+          </div>
+        </section>
+        <div id="years"></div>
+      </div>
+      <section class="card" id="no-data" style="display:none;">
+        <p class="muted">Không tìm thấy học sinh phù hợp. Hãy kiểm tra lại MSHS/Họ tên.</p>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const STUDENTS = [
+      {
+        id: "24001",
+        name: "Nguyễn Diệu Anh",
+        gender: "Nữ",
+        dob: "2007-05-12",
+        phone: "0901 234 567",
+        address: "123 Nguyễn Trãi, Q.5, TP.HCM",
+        currentClass: "12C3",
+        years: [
+          {
+            year: "2022 - 2023",
+            annualAvg: 8.2,
+            conduct: "Tốt",
+            ranking: "Giỏi",
+            semesters: [
+              { name: "HK1", absences: 2 },
+              { name: "HK2", absences: 1 }
+            ],
+            subjects: [
+              { subject: "Toán", sem: "HK1", d1p: 8.0, d15: 8.5, dck: 8.2 },
+              { subject: "Toán", sem: "HK2", d1p: 8.4, d15: 8.3, dck: 8.5 },
+              { subject: "Văn", sem: "HK1", d1p: 7.7, d15: 7.8, dck: 8.0 },
+              { subject: "Văn", sem: "HK2", d1p: 8.1, d15: 8.2, dck: 8.0 }
+            ]
+          },
+          {
+            year: "2023 - 2024",
+            annualAvg: 8.6,
+            conduct: "Tốt",
+            ranking: "Giỏi",
+            semesters: [
+              { name: "HK1", absences: 1 },
+              { name: "HK2", absences: 1 }
+            ],
+            subjects: [
+              { subject: "Toán", sem: "HK1", d1p: 8.7, d15: 8.8, dck: 8.9 },
+              { subject: "Toán", sem: "HK2", d1p: 8.5, d15: 8.7, dck: 8.8 },
+              { subject: "Văn", sem: "HK1", d1p: 8.2, d15: 8.3, dck: 8.4 },
+              { subject: "Văn", sem: "HK2", d1p: 8.1, d15: 8.2, dck: 8.2 }
+            ]
+          },
+          {
+            year: "2024 - 2025",
+            annualAvg: 8.8,
+            conduct: "Tốt",
+            ranking: "Giỏi",
+            semesters: [
+              { name: "HK1", absences: 0 },
+              { name: "HK2", absences: 0 }
+            ],
+            subjects: [
+              { subject: "Toán", sem: "HK1", d1p: 8.6, d15: 8.9, dck: 8.8 },
+              { subject: "Văn",  sem: "HK1", d1p: 8.5, d15: 8.7, dck: 8.8 }
+            ]
+          }
+        ]
+      },
+      {
+        id: "24002",
+        name: "Trần Minh Quân",
+        gender: "Nam",
+        dob: "2007-10-02",
+        phone: "0908 888 888",
+        address: "45 Lê Lợi, Q.1, TP.HCM",
+        currentClass: "11B1",
+        years: [
+          {
+            year: "2023 - 2024",
+            annualAvg: 7.3,
+            conduct: "Tốt",
+            ranking: "Khá",
+            semesters: [
+              { name: "HK1", absences: 3 },
+              { name: "HK2", absences: 2 }
+            ],
+            subjects: [
+              { subject: "Toán", sem: "HK1", d1p: 7.0, d15: 7.2, dck: 7.4 },
+              { subject: "Văn",  sem: "HK1", d1p: 7.0, d15: 7.1, dck: 7.2 },
+              { subject: "Toán", sem: "HK2", d1p: 7.1, d15: 7.3, dck: 7.5 }
+            ]
+          }
+        ]
+      }
+    ];
+
+    function round1(x){ return Math.round(x*10)/10; }
+    function calcAvg(d1p, d15, dck){
+      return round1((d1p*1 + d15*2 + dck*3)/6);
+    }
+
+    function fillProfile(s){
+      const initials = s.name.split(' ').map(p => p[0]).slice(-2).join('').toUpperCase();
+      document.getElementById('pf-avatar').textContent = initials || 'HS';
+      document.getElementById('pf-name').textContent = s.name;
+      document.getElementById('pf-sub').textContent  = `MSHS: ${s.id} · Lớp hiện tại: ${s.currentClass}`;
+      document.getElementById('pf-dob').textContent  = `Ngày sinh: ${new Date(s.dob).toLocaleDateString('vi-VN')}`;
+      document.getElementById('pf-gender').textContent = `Giới tính: ${s.gender}`;
+      document.getElementById('pf-phone').textContent = `Điện thoại: ${s.phone}`;
+      document.getElementById('pf-address').textContent = `Địa chỉ: ${s.address}`;
+      const avgs = s.years.map(y => y.annualAvg);
+      const best = Math.max(...avgs), worst = Math.min(...avgs);
+      const absTotal = s.years.reduce((t,y)=>t + y.semesters.reduce((a,b)=>a+b.absences,0),0);
+      const latestConduct = s.years[s.years.length-1]?.conduct || '—';
+      document.getElementById('st-best').textContent = best.toFixed(1);
+      document.getElementById('st-worst').textContent = worst.toFixed(1);
+      document.getElementById('st-abs').textContent = absTotal;
+      document.getElementById('st-conduct').textContent = latestConduct;
+    }
+
+    function yearBlock(y){
+      const rowsHK1 = y.subjects.filter(x=>x.sem==='HK1').map((x,i)=>`
+        <tr>
+          <td class="text-center">${i+1}</td>
+          <td>${x.subject}</td>
+          <td class="text-center">${x.d1p}</td>
+          <td class="text-center">${x.d15}</td>
+          <td class="text-center">${x.dck}</td>
+          <td class="text-center"><span class="score ${scoreClass(calcAvg(x.d1p,x.d15,x.dck))}">${calcAvg(x.d1p,x.d15,x.dck)}</span></td>
+        </tr>`).join('') || `<tr><td colspan="6" class="text-center muted">Chưa có dữ liệu</td></tr>`;
+
+      const rowsHK2 = y.subjects.filter(x=>x.sem==='HK2').map((x,i)=>`
+        <tr>
+          <td class="text-center">${i+1}</td>
+          <td>${x.subject}</td>
+          <td class="text-center">${x.d1p}</td>
+          <td class="text-center">${x.d15}</td>
+          <td class="text-center">${x.dck}</td>
+          <td class="text-center"><span class="score ${scoreClass(calcAvg(x.d1p,x.d15,x.dck))}">${calcAvg(x.d1p,x.d15,x.dck)}</span></td>
+        </tr>`).join('') || `<tr><td colspan="6" class="text-center muted">Chưa có dữ liệu</td></tr>`;
+
+      const absHK1 = y.semesters.find(s=>s.name==='HK1')?.absences ?? 0;
+      const absHK2 = y.semesters.find(s=>s.name==='HK2')?.absences ?? 0;
+
+      return `
+      <section class="card" data-year="${y.year}">
+        <div class="year-header">
+          <div>
+            <h3 class="p-name" style="font-size:18px;">Năm học ${y.year}</h3>
+            <div class="muted">Điểm TB cả năm: <strong>${y.annualAvg.toFixed(1)}</strong> · Hạnh kiểm: <strong>${y.conduct}</strong> · Xếp loại: <strong>${y.ranking}</strong></div>
+          </div>
+          <button class="collapse-btn" onclick="toggleYear('${y.year}')">Ẩn/Hiện</button>
+        </div>
+
+        <div class="grid cols-2" id="wrap-${cssId(y.year)}">
+          <div class="card">
+            <div class="page-title" style="font-size:16px; margin:0 0 10px;">Học kỳ 1 <span class="badge b-info">Vắng: ${absHK1}</span></div>
+            <div class="table-wrap" style="overflow:auto; max-height:360px;">
+              <table class="table table-scores">
+                <thead>
+                  <tr>
+                    <th style="width:60px;">STT</th>
+                    <th>Môn học</th>
+                    <th>Điểm 1p</th>
+                    <th>Điểm 1 tiết</th>
+                    <th>Điểm CK</th>
+                    <th>TB môn</th>
+                  </tr>
+                </thead>
+                <tbody>${rowsHK1}</tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="page-title" style="font-size:16px; margin:0 0 10px;">Học kỳ 2 <span class="badge b-info">Vắng: ${absHK2}</span></div>
+            <div class="table-wrap" style="overflow:auto; max-height:360px;">
+              <table class="table table-scores">
+                <thead>
+                  <tr>
+                    <th style="width:60px;">STT</th>
+                    <th>Môn học</th>
+                    <th>Điểm 1p</th>
+                    <th>Điểm 1 tiết</th>
+                    <th>Điểm CK</th>
+                    <th>TB môn</th>
+                  </tr>
+                </thead>
+                <tbody>${rowsHK2}</tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>`;
+    }
+
+    function cssId(text){ return text.replace(/\s|-/g,''); }
+    function scoreClass(v){
+      if (v >= 8) return 'score-excellent';
+      if (v >= 6.5) return 'score-good';
+      if (v >= 5) return 'score-average';
+      return 'score-weak';
+    }
+
+    function renderYears(s){
+      const container = document.getElementById('years');
+      container.innerHTML = s.years.map(yearBlock).join('');
+    }
+
+    function toggleYear(year){
+      const id = 'wrap-' + cssId(year);
+      const box = document.getElementById(id);
+      if(!box) return;
+      box.style.display = box.style.display === 'none' ? '' : 'none';
+    }
+
+    function doSearch(){
+      const q = (document.getElementById('q').value || '').trim().toLowerCase();
+      if(!q){ document.getElementById('no-data').style.display='block'; document.getElementById('result').style.display='none'; return; }
+      const s = STUDENTS.find(st => st.id.toLowerCase()===q || st.name.toLowerCase().includes(q));
+      if(!s){
+        document.getElementById('no-data').style.display='block';
+        document.getElementById('result').style.display='none';
+        return;
+      }
+      document.getElementById('no-data').style.display='none';
+      document.getElementById('result').style.display='block';
+      fillProfile(s);
+      renderYears(s);
+    }
+
+    document.getElementById('btn-search').addEventListener('click', doSearch);
+    document.getElementById('q').addEventListener('keydown', e=>{ if(e.key==='Enter') doSearch(); });
+    document.getElementById('btn-print').addEventListener('click', ()=>window.print());
+
+    window.addEventListener('DOMContentLoaded', ()=>{
+      document.getElementById('q').value = '24001';
+      doSearch();
+    });
+  </script>
+</body>
+</html>

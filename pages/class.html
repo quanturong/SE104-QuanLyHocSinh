@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Danh sách lớp – Quản lí học sinh</title>
+  <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body class="page-student">
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="logo">🎓</div>
+        <span>Student Management – Quản lí học sinh</span>
+      </div>
+      <nav class="nav">
+        <a href="./tablecontrol.html">Bảng điều khiển</a>
+        <a href="./student.html">Học sinh</a>
+        <a class="active" href="./class.html">Lớp học</a>
+        <a href="./attendance.html">Điểm danh</a>
+        <a href="./report.html">Báo cáo</a>
+        <a href="./scoretable.html">Điểm số</a>
+        <a href="./timetable.html">Thời khóa biểu</a>
+        <a href="./find.html">Tra cứu</a>
+        <a href="./teacher.html">Giáo viên</a>
+        <a href="./rules.html">Quy định</a>
+          
+      </nav>
+      <div class="spacer"></div>
+      <a class="nav logout" href="../login.html">Đăng xuất</a>
+    </aside>
+
+
+    <main class="main">
+
+      <div class="page-header">
+        <h1 class="page-title">Danh sách lớp học</h1>
+        <p class="page-desc">Quản lý danh sách học sinh theo từng lớp và năm học</p>
+      </div>
+      <section class="card" style="margin-bottom: 16px;">
+        <div class="class-info-grid">
+          <div class="class-info-item">
+            <label class="class-label">Năm học</label>
+            <select class="select class-select" id="select-year">
+              <option value="2024-2025">2039 - 2040</option>
+              <option value="2023-2024">2038 - 2039</option>
+              <option value="2022-2023">2037 - 2038</option>
+              <option value="2024-2025">2036 - 2037</option>
+              <option value="2023-2024">2035 - 2036</option>
+              <option value="2022-2023">2034 - 2035</option>
+              <option value="2024-2025">2033 - 2034</option>
+              <option value="2023-2024">2032 - 2033</option>
+              <option value="2022-2023">2031 - 2032</option>
+              <option value="2024-2025">2030 - 2031</option>
+              <option value="2023-2024">2029 - 2030</option>
+              <option value="2022-2023">2028 - 2029</option>
+              <option value="2024-2025">2027 - 2028</option>
+              <option value="2023-2024">2026 - 2027</option>
+              <option value="2022-2023">2025 - 2026</option>            
+              <option value="2024-2025">2024 - 2025</option>
+              <option value="2023-2024">2023 - 2024</option>
+              <option value="2022-2023">2022 - 2023</option>
+            </select>
+          </div>
+
+          <div class="class-info-item">
+            <label class="class-label">Lớp</label>
+            <select class="select class-select" id="select-class">
+              <option value="">-- Chọn lớp --</option>
+              <option value="10A1">10A1</option>
+              <option value="10A2">10A2</option>
+              <option value="10A3">10A3</option>
+              <option value="10A4">10A4</option>
+              <option value="10A1">11A1</option>
+              <option value="10A2">11A2</option>
+              <option value="11A3">11A3</option>
+              <option value="12A1">12A1</option>
+              <option value="12A2">12A2</option>
+            </select>
+          </div>
+
+          <div class="class-info-item">
+            <label class="class-label">Sĩ số</label>
+            <div class="class-count" id="class-count">
+              <span class="count-number">45</span>
+              <span class="count-label">học sinh</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="toolbar">
+          <input class="input" type="text" id="search" placeholder="Tìm học sinh theo họ tên..." />
+          <select class="select" id="filter-gender">
+            <option value="">Tất cả giới tính</option>
+            <option value="Nam">Nam</option>
+            <option value="Nữ">Nữ</option>
+          </select>
+          <button class="btn" id="btn-add">+ Thêm học sinh</button>
+          <button class="btn btn-export" id="btn-export">📊 Xuất Excel</button>
+        </div>
+
+        <div class="table-wrap" style="overflow:auto; max-height:520px;">
+          <table class="table" id="tbl-class-students">
+            <thead>
+              <tr>
+                <th style="width: 60px;">STT</th>
+                <th style="width: 200px;">Họ tên</th>
+                <th style="width: 100px;">Giới tính</th>
+                <th style="width: 120px;">Năm sinh</th>
+                <th>Địa chỉ</th>
+                <th style="width: 100px;">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="text-center">1</td>
+                <td>Nguyễn Diệu Anh</td>
+                <td>Nữ</td>
+                <td>2007</td>
+                <td>123 Lê Lợi, Quận 1, TP.HCM</td>
+                <td><button class="btn btn-sm">Sửa</button></td>
+              </tr>
+              <tr>
+                <td class="text-center">2</td>
+                <td>Trần Minh Quân</td>
+                <td>Nam</td>
+                <td>2007</td>
+                <td>456 Nguyễn Huệ, Quận 1, TP.HCM</td>
+                <td><button class="btn btn-sm">Sửa</button></td>
+              </tr>
+              <tr>
+                <td class="text-center">3</td>
+                <td>Phạm Hoàng Anh</td>
+                <td>Nam</td>
+                <td>2007</td>
+                <td>789 Trần Hưng Đạo, Quận 5, TP.HCM</td>
+                <td><button class="btn btn-sm">Sửa</button></td>
+              </tr>
+              <tr>
+                <td class="text-center">4</td>
+                <td>Lê Thị Bích Ngọc</td>
+                <td>Nữ</td>
+                <td>2007</td>
+                <td>234 Võ Văn Tần, Quận 3, TP.HCM</td>
+                <td><button class="btn btn-sm">Sửa</button></td>
+              </tr>
+              <tr>
+                <td class="text-center">5</td>
+                <td>Hoàng Văn Tùng</td>
+                <td>Nam</td>
+                <td>2007</td>
+                <td>567 Cách Mạng Tháng 8, Quận 10, TP.HCM</td>
+                <td><button class="btn btn-sm">Sửa</button></td>
+              </tr>
+              <tr>
+                <td class="text-center">6</td>
+                <td>Đặng Thị Hương</td>
+                <td>Nữ</td>
+                <td>2007</td>
+                <td>890 Lý Thường Kiệt, Quận 10, TP.HCM</td>
+                <td><button class="btn btn-sm">Sửa</button></td>
+              </tr>
+              <tr>
+                <td class="text-center">7</td>
+                <td>Vũ Minh Đức</td>
+                <td>Nam</td>
+                <td>2007</td>
+                <td>123 Hai Bà Trưng, Quận 3, TP.HCM</td>
+                <td><button class="btn btn-sm">Sửa</button></td>
+              </tr>
+              <tr>
+                <td class="text-center">8</td>
+                <td>Ngô Thị Mai</td>
+                <td>Nữ</td>
+                <td>2007</td>
+                <td>456 Phan Đình Phùng, Quận Phú Nhuận, TP.HCM</td>
+                <td><button class="btn btn-sm">Sửa</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="pagination">
+          <button class="btn-page" disabled>‹</button>
+          <span class="page-info">Trang <strong>1</strong> / <strong>1</strong></span>
+          <button class="btn-page" disabled>›</button>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const selectClass = document.getElementById('select-class');
+    const classCount = document.getElementById('class-count');
+    
+    const classSizes = {
+      '10A1': 45,
+      '10A2': 43,
+      '10A3': 42,
+      '10A4': 41,
+      '11A1': 47,
+      '11A2': 44,
+      '12A1': 43,
+      '12A2': 42
+    };
+
+    selectClass.addEventListener('change', function() {
+      const selected = this.value;
+      if (selected && classSizes[selected]) {
+        const size = classSizes[selected];
+        classCount.innerHTML = `<span class="count-number">${size}</span><span class="count-label">học sinh</span>`;
+      } else {
+        classCount.innerHTML = `<span class="count-number">--</span><span class="count-label">học sinh</span>`;
+      }
+    });
+
+    const searchInput = document.getElementById('search');
+    const tableBody = document.querySelector('#tbl-class-students tbody');
+    
+    searchInput.addEventListener('input', function() {
+      const searchTerm = this.value.toLowerCase();
+      const rows = tableBody.querySelectorAll('tr');
+      
+      rows.forEach(row => {
+        const name = row.cells[1].textContent.toLowerCase();
+        if (name.includes(searchTerm)) {
+          row.style.display = '';
+        } else {
+          row.style.display = 'none';
+        }
+      });
+    });
+
+    const filterGender = document.getElementById('filter-gender');
+    
+    filterGender.addEventListener('change', function() {
+      const gender = this.value;
+      const rows = tableBody.querySelectorAll('tr');
+      
+      rows.forEach(row => {
+        const rowGender = row.cells[2].textContent;
+        if (gender === '' || rowGender === gender) {
+          row.style.display = '';
+        } else {
+          row.style.display = 'none';
+        }
+      });
+    });
+  </script>
+</body>
+</html>
