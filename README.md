@@ -31,7 +31,7 @@ Dự án được phát triển bằng HTML, CSS và JavaScript, kết hợp v�
 #### 3️⃣ Trang Quản lý lớp học (class.html)
 - Chọn Năm học và Lớp học
 - Hiển thị: Sĩ số học sinh, Danh sách gồm: STT, Họ tên, Giới tính, Năm sinh, Địa chỉ
-+ Thêm học sinh, Xuất Excel
+- Thêm học sinh, Xuất Excel
 - Giúp giáo viên dễ dàng quản lý học sinh trong từng lớp và năm học cụ thể.
 
 #### 4️⃣ Trang Điểm danh học sinh (attendance.html)
