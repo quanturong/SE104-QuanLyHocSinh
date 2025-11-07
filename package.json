@@ -1,0 +1,29 @@
+{
+  "name": "se104-quanlyhocsinh",
+  "version": "1.0.0",
+  "description": "Student Management là hệ thống quản lý học sinh hiện đại, trực quan và dễ sử dụng — giúp nhà trường, giáo viên và nhân viên hành chính quản lý toàn bộ thông tin học sinh một cách tập trung.\r Dự án được phát triển bằng HTML, CSS và JavaScript, kết hợp với thư viện Chart.js để hiển thị thống kê sinh động.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node app.js",
+    "dev": "nodemon app.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/quanturong/SE104-QuanLyHocSinh.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/quanturong/SE104-QuanLyHocSinh/issues"
+  },
+  "homepage": "https://github.com/quanturong/SE104-QuanLyHocSinh#readme",
+  "dependencies": {
+    "body-parser": "^2.2.0",
+    "ejs": "^3.1.10",
+    "express": "^5.1.0",
+    "sequelize": "^6.37.7",
+    "sqlite3": "^5.1.7"
+  }
+}
