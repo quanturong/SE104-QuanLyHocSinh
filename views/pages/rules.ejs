@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Quy định</title>
+  <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body class="page-student">
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="logo">🎓</div>
+        <span>Student Management — Quản lí học sinh</span>
+      </div>
+      <nav class="nav">
+        <% 
+          const role = (user && user.role) ? user.role : ""; 
+        %>
+
+        <!-- Ai cũng vào được dashboard -->
+        <a class="<%= title === 'Bảng điều khiển' ? 'active' : '' %>" href="/tablecontrol">
+          Bảng điều khiển
+        </a>
+
+        <!-- Chỉ staff (không phải HocSinh) mới thấy các menu quản lý -->
+        <% if (role !== 'HocSinh') { %>
+          <a class="<%= title === 'Danh sách học sinh' ? 'active' : '' %>" href="/student">
+            Học sinh
+          </a>
+          <a class="<%= title === 'Danh sách lớp' ? 'active' : '' %>" href="/class">
+            Lớp học
+          </a>
+          <a class="<%= title === 'Điểm danh' ? 'active' : '' %>" href="/attendance">
+            Điểm danh
+          </a>
+          <a class="<%= title === 'Báo cáo' ? 'active' : '' %>" href="/report">
+            Báo cáo
+          </a>
+          <a class="<%= title === 'Bảng điểm' ? 'active' : '' %>" href="/scoretable">
+            Điểm số
+          </a>
+          <a class="<%= title === 'Tra cứu hồ sơ học sinh' ? 'active' : '' %>" href="/find">
+            Tra cứu
+          </a>
+        <% } %>
+          <a class="<%= title === 'Bảng điểm' ? 'active' : '' %>" href="/scoretable">
+            Điểm số
+          </a>
+        <% if (role !== 'HocSinh') { %>
+
+          <a class="<%= title === 'Tra cứu hồ sơ học sinh' ? 'active' : '' %>" href="/find">
+            Tra cứu
+          </a>
+        <% } %>
+
+        <!-- Các mục Học sinh được phép xem (và staff cũng xem được) -->
+        <a class="<%= title === 'Thời khóa biểu' ? 'active' : '' %>" href="/timetable">
+          Thời khóa biểu
+        </a>
+        <a class="<%= title === 'Danh sách giáo viên' ? 'active' : '' %>" href="/teacher">
+          Giáo viên
+        </a>
+        <a class="<%= title === 'Quy định' ? 'active' : '' %>" href="/rules">
+          Quy định
+        </a>
+      </nav>
+
+
+      <div class="spacer"></div>
+      <a class="nav logout" href="/login">Đăng xuất</a>
+    </aside>
+    <main class="main">
+      <div class="page-header">
+        <h1 class="page-title">Quy định dành cho giáo viên</h1>
+        <p class="page-desc">Áp dụng trong toàn trường. Mọi giáo viên cần đọc kỹ, tuân thủ và ký cam kết.</p>
+      </div>
+      <section class="card toc">
+        <h2>Mục lục</h2>
+        <ul>
+          <li><a href="#quy-dinh-chung">1. Quy định chung & Đạo đức nghề nghiệp</a></li>
+          <li><a href="#chuyen-mon">2. Chuyên môn & Hồ sơ giảng dạy</a></li>
+          <li><a href="#thoi-khoa-bieu">3. Thời khóa biểu, giờ giấc, thay tiết</a></li>
+          <li><a href="#kiem-tra-danh-gia">4. Kiểm tra — Đánh giá — Điểm số</a></li>
+          <li><a href="#hanh-kiem-ky-luat">5. Hành vi sư phạm & Kỷ luật lớp học</a></li>
+          <li><a href="#giao-tiep-phu-huynh">6. Giao tiếp với phụ huynh & Học sinh</a></li>
+          <li><a href="#cntt-du-lieu">7. CNTT, bảo mật & dữ liệu</a></li>
+          <li><a href="#antoan">8. An toàn, y tế & hoạt động ngoại khóa</a></li>
+          <li><a href="#nghiphep">9. Nghỉ phép, công tác & bồi dưỡng</a></li>
+          <li><a href="#khen-thuong-ky-luat">10. Khen thưởng & Kỷ luật</a></li>
+          <li><a href="#khieu-nai">11. Khiếu nại — Phản ánh — Báo cáo</a></li>
+          <li><a href="#xac-nhan">12. Xác nhận cam kết</a></li>
+        </ul>
+        <p class="note">Gợi ý: dùng <span class="kbd">Ctrl</span> + <span class="kbd">F</span> để tìm nhanh.</p>
+      </section>
+
+      <div class="rules">
+        <section id="quy-dinh-chung" class="card">
+          <h2>1. Quy định chung & Đạo đức nghề nghiệp</h2>
+          <ol>
+            <li>Tuân thủ pháp luật, quy chế ngành, quy định của nhà trường.</li>
+            <li>Ứng xử chuẩn mực: tôn trọng học sinh, đồng nghiệp, phụ huynh; không kỳ thị, không bạo lực.</li>
+            <li>Không sử dụng mạng xã hội để lan truyền thông tin sai lệch, gây ảnh hưởng uy tín nhà trường.</li>
+            <li>Trang phục gọn gàng, phù hợp môi trường sư phạm.</li>
+          </ol>
+        </section>
+        <section id="chuyen-mon" class="card">
+          <h2>2. Chuyên môn & Hồ sơ giảng dạy</h2>
+          <ol>
+            <li>Soạn giáo án đầy đủ, bám chương trình; cập nhật kế hoạch dạy học theo tuần/tháng.</li>
+            <li>Điểm danh và ghi chép sổ đầu bài (điện tử/giấy) ngay trong tiết dạy.</li>
+            <li>Đa dạng phương pháp dạy học, chú trọng phát triển năng lực và phẩm chất học sinh.</li>
+            <li>Hoàn thành hồ sơ chuyên môn: giáo án, đề kiểm tra, ma trận, đáp án, biên bản coi/chấm… đúng hạn.</li>
+          </ol>
+        </section>
+        <section id="thoi-khoa-bieu" class="card">
+          <h2>3. Thời khóa biểu, giờ giấc, thay tiết</h2>
+          <ol>
+            <li>Có mặt trước giờ vào lớp tối thiểu 5 phút; không rời lớp khi chưa hết tiết.</li>
+            <li>Nếu bận/ốm: báo ngay cho tổ trưởng & văn phòng để sắp xếp thay tiết.</li>
+            <li>Không tự ý đổi tiết/ghép lớp khi chưa có sự đồng ý của BGH.</li>
+          </ol>
+        </section>
+        <section id="kiem-tra-danh-gia" class="card">
+          <h2>4. Kiểm tra — Đánh giá — Điểm số</h2>
+          <ol>
+            <li>Ra đề theo ma trận, bám chuẩn đầu ra; thông báo hình thức & lịch kiểm tra trước cho học sinh.</li>
+            <li>Chấm bài, trả bài, cập nhật điểm trong hệ thống đúng thời hạn; có nhận xét/feedback cần thiết.</li>
+            <li>Bảo mật đề thi, bài thi; tuân thủ quy trình coi/chấm, chống gian lận.</li>
+            <li>Thực hiện phúc khảo, điều chỉnh sai sót (nếu có) theo quy định.</li>
+          </ol>
+        </section>
+        <section id="hanh-kiem-ky-luat" class="card">
+          <h2>5. Hành vi sư phạm & Kỷ luật lớp học</h2>
+          <ol>
+            <li>Tuyệt đối không dùng bạo lực/thái độ xúc phạm danh dự, nhân phẩm học sinh.</li>
+            <li>Xử lý vi phạm trên tinh thần giáo dục; ghi nhận sự việc vào sổ theo dõi lớp/biên bản.</li>
+            <li>Phối hợp GVCN, đoàn/đội để hỗ trợ học sinh cá biệt.</li>
+          </ol>
+        </section>
+        <section id="giao-tiep-phu-huynh" class="card">
+          <h2>6. Giao tiếp với phụ huynh & Học sinh</h2>
+          <ol>
+            <li>Trao đổi văn minh, bảo mật thông tin cá nhân & kết quả học tập của học sinh.</li>
+            <li>Tham dự đầy đủ họp phụ huynh, tư vấn lộ trình học phù hợp.</li>
+            <li>Không nhận quà/tiền từ phụ huynh/học sinh trái quy định.</li>
+          </ol>
+        </section>
+        <section id="cntt-du-lieu" class="card">
+          <h2>7. CNTT, bảo mật & dữ liệu</h2>
+          <ol>
+            <li>Sử dụng tài khoản hệ thống (điểm danh, điểm số, báo cáo) đúng mục đích; không chia sẻ mật khẩu.</li>
+            <li>Lưu trữ dữ liệu trên các kho an toàn theo hướng dẫn của nhà trường.</li>
+            <li>Không cài phần mềm lậu; không tải/đăng nội dung vi phạm bản quyền.</li>
+          </ol>
+        </section>
+        <section id="antoan" class="card">
+          <h2>8. An toàn, y tế & hoạt động ngoại khóa</h2>
+          <ol>
+            <li>Đảm bảo an toàn trong giờ học (phòng TN, thiết bị…); báo cáo ngay khi có sự cố.</li>
+            <li>Khi tổ chức hoạt động ngoại khóa/tham quan: lập kế hoạch, danh sách HS, phương án an toàn & xin phê duyệt.</li>
+          </ol>
+        </section>
+        <section id="nghiphep" class="card">
+          <h2>9. Nghỉ phép, công tác & bồi dưỡng</h2>
+          <ol>
+            <li>Xin nghỉ phép qua hệ thống/biểu mẫu trước thời hạn; bàn giao giáo án, đề cương cho người thay.</li>
+            <li>Tham gia đầy đủ các lớp bồi dưỡng chuyên môn, tập huấn theo kế hoạch.</li>
+          </ol>
+        </section>
+        <section id="khen-thuong-ky-luat" class="card">
+          <h2>10. Khen thưởng & Kỷ luật</h2>
+          <p>Nhà trường áp dụng cơ chế khen thưởng — kỷ luật công bằng, minh bạch dựa trên kết quả công tác.</p>
+          <table class="rules-table">
+            <thead>
+              <tr>
+                <th>Nhóm</th>
+                <th>Ví dụ</th>
+                <th>Hình thức</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Khen thưởng</td>
+                <td>Sáng kiến chuyên môn, CLB hoạt động tốt, thành tích mũi nhọn</td>
+                <td>Giấy khen, thưởng tài chính, ưu tiên xét thi đua</td>
+              </tr>
+              <tr>
+                <td>Kỷ luật mức 1</td>
+                <td>Chậm cập nhật điểm nhiều lần, đi dạy trễ không lý do</td>
+                <td>Nhắc nhở, ghi nhận xét, cam kết khắc phục</td>
+              </tr>
+              <tr>
+                <td>Kỷ luật mức 2</td>
+                <td>Vi phạm quy chế thi, phát ngôn thiếu chuẩn mực</td>
+                <td>Khiển trách, trừ thi đua, tạm đình chỉ công tác chuyên môn</td>
+              </tr>
+              <tr>
+                <td>Kỷ luật mức 3</td>
+                <td>Tiết lộ dữ liệu nhạy cảm, bạo lực/hạ nhục HS</td>
+                <td>Kỷ luật theo quy định pháp luật & nhà trường</td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+        <section id="khieu-nai" class="card">
+          <h2>11. Khiếu nại — Phản ánh — Báo cáo</h2>
+          <ol>
+            <li>Mọi phản ánh gửi qua tổ trưởng/BGH hoặc kênh nội bộ; bảo mật người phản ánh.</li>
+            <li>Tuân thủ quy trình tiếp nhận & xử lý, tránh phát tán thông tin chưa kiểm chứng.</li>
+          </ol>
+        </section>
+        <section id="xac-nhan" class="card">
+          <h2>12. Xác nhận cam kết</h2>
+          <p>Tôi đã đọc, hiểu và cam kết thực hiện nghiêm túc “Quy định dành cho giáo viên”.</p>
+          <div class="ack">
+            <input id="ack-check" type="checkbox" />
+            <label for="ack-check">Tôi đồng ý và cam kết thực hiện</label>
+          </div>
+          <div class="toolbar" style="margin-top:8px">
+            <button class="btn" id="btn-print">🖨️ In quy định</button>
+            <button class="btn btn-export" id="btn-save">💾 Lưu xác nhận</button>
+            <span class="note" id="save-status"></span>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    document.getElementById('btn-print').addEventListener('click', () => window.print());
+    document.getElementById('btn-save').addEventListener('click', () => {
+      const ok = document.getElementById('ack-check').checked;
+      const status = document.getElementById('save-status');
+      if(!ok){
+        status.textContent = 'Vui lòng tích đồng ý trước khi lưu.';
+        status.style.color = '#ef4444';
+        return;
+      }
+      try{
+        const key = 'rules_ack_teacher';
+        const payload = { accepted: true, at: new Date().toISOString() };
+        localStorage.setItem(key, JSON.stringify(payload));
+        status.textContent = 'Đã lưu xác nhận (local).';
+        status.style.color = '#065f46';
+      }catch(e){
+        status.textContent = 'Không thể lưu cục bộ. Hãy chụp/inh để xác nhận.';
+        status.style.color = '#92400e';
+      }
+    });
+    (function(){
+      try{
+        const raw = localStorage.getItem('rules_ack_teacher');
+        if(raw){
+          const { at } = JSON.parse(raw);
+          const status = document.getElementById('save-status');
+          status.textContent = 'Đã xác nhận trước đó: ' + new Date(at).toLocaleString();
+          status.style.color = '#065f46';
+          document.getElementById('ack-check').checked = true;
+        }
+      }catch(_){}
+    })();
+  </script>
+</body>
+</html>

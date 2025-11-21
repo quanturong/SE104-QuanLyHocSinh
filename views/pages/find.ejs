@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tra cứu hồ sơ học sinh</title>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body class="page-student">
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="logo">🎓</div>
+        <span>Student Management – Quản lí học sinh</span>
+      </div>
+
+      <% 
+        const role = (user && user.role) ? user.role : ""; 
+      %>
+
+      <nav class="nav">
+        <a class="<%= title === 'Bảng điều khiển' ? 'active' : '' %>" href="/tablecontrol">
+          Bảng điều khiển
+        </a>
+        <% if (role !== 'HocSinh') { %>
+          <a class="<%= title === 'Danh sách học sinh' ? 'active' : '' %>" href="/student">
+            Học sinh
+          </a>
+          <a class="<%= title === 'Danh sách lớp' ? 'active' : '' %>" href="/class">
+            Lớp học
+          </a>
+          <a class="<%= title === 'Điểm danh' ? 'active' : '' %>" href="/attendance">
+            Điểm danh
+          </a>
+          <a class="<%= title === 'Báo cáo' ? 'active' : '' %>" href="/report">
+            Báo cáo
+          </a>
+          <a class="<%= title === 'Bảng điểm' ? 'active' : '' %>" href="/scoretable">
+            Điểm số
+          </a>
+          <a class="<%= title === 'Tra cứu hồ sơ học sinh' ? 'active' : '' %>" href="/find">
+            Tra cứu
+          </a>
+        <% } %>
+        <a class="<%= title === 'Thời khóa biểu' ? 'active' : '' %>" href="/timetable">
+          Thời khóa biểu
+        </a>
+        <a class="<%= title === 'Danh sách giáo viên' ? 'active' : '' %>" href="/teacher">
+          Giáo viên
+        </a>
+        <a class="<%= title === 'Quy định' ? 'active' : '' %>" href="/rules">
+          Quy định
+        </a>
+      </nav>
+
+      <div class="spacer"></div>
+      <a class="nav logout" href="/logout">Đăng xuất</a>
+    </aside>
+
+    <main class="main">
+      <div class="page-header">
+        <h1 class="page-title">Tra cứu hồ sơ học sinh</h1>
+        <p class="page-desc">Nhập Mã học sinh (MSHS) hoặc Họ tên để xem toàn bộ hồ sơ từ database.</p>
+      </div>
+      <section class="card" style="margin-bottom:16px;">
+        <div class="toolbar">
+          <input
+            class="input"
+            id="q"
+            placeholder="Nhập MSHS hoặc họ tên..."
+            style="min-width:280px;"
+          />
+          <button class="btn" id="btn-search">🔎 Tra cứu</button>
+          <button class="btn btn-export" id="btn-print">🖨️ In hồ sơ</button>
+          <span class="muted" id="hint"></span>
+        </div>
+      </section>
+
+      <div id="result" style="display:none;">
+        <section class="card" style="margin-bottom:16px;">
+          <div class="profile">
+            <div class="avatar" id="pf-avatar">HS</div>
+            <div>
+              <h2 class="p-name" id="pf-name">—</h2>
+              <p class="p-sub" id="pf-sub">MSHS: — · Lớp hiện tại: —</p>
+              <div style="margin-top:6px;">
+                <span class="pill" id="pf-dob">Ngày sinh: —</span>
+                <span class="pill" id="pf-gender">Giới tính: —</span>
+                <span class="pill" id="pf-email">Email: —</span>
+                <span class="pill" id="pf-address">Địa chỉ: —</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="grid cols-4" style="margin-bottom:16px;">
+          <div class="card stat-mini">
+            <div class="stat-mini-label">Điểm TB môn cao nhất</div>
+            <div class="stat-mini-value" id="st-best">—</div>
+          </div>
+          <div class="card stat-mini">
+            <div class="stat-mini-label">Điểm TB môn thấp nhất</div>
+            <div class="stat-mini-value" id="st-worst">—</div>
+          </div>
+          <div class="card stat-mini">
+            <div class="stat-mini-label">Số buổi vắng</div>
+            <div class="stat-mini-value" id="st-abs">—</div>
+          </div>
+          <div class="card stat-mini">
+            <div class="stat-mini-label">Đánh giá gần nhất</div>
+            <div class="stat-mini-value" id="st-conduct">—</div>
+          </div>
+        </section>
+
+        <section class="card" style="margin-bottom:16px;">
+          <div class="page-header" style="margin-bottom:12px;">
+            <h2 class="page-title" style="font-size:18px;">Bảng điểm chi tiết</h2>
+            <p class="page-desc">Các cột được lấy trực tiếp từ bảng BangDiemMonHoc trong database.</p>
+          </div>
+          <div class="table-wrap" style="overflow:auto; max-height:520px;">
+            <table class="table" id="tbl-scores">
+              <thead>
+                <tr>
+                  <th style="width:60px;">STT</th>
+                  <th style="width:120px;">Năm học</th>
+                  <th style="width:80px;">Học kỳ</th>
+                  <th style="width:220px;">Môn học</th>
+                  <th style="width:120px;">Điểm 15'</th>
+                  <th style="width:120px;">Điểm 1 tiết</th>
+                  <th style="width:120px;">Điểm TB môn</th>
+                  <th style="width:140px;">Đánh giá</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td colspan="8" class="text-center muted">
+                    Chưa có dữ liệu điểm cho học sinh này.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="card" style="margin-bottom:16px;">
+          <div class="page-header" style="margin-bottom:12px;">
+            <h2 class="page-title" style="font-size:18px;">Lịch sử điểm danh</h2>
+            <p class="page-desc">Danh sách các lần điểm danh cho học sinh.</p>
+          </div>
+          <div class="table-wrap" style="overflow:auto; max-height:320px;">
+            <table class="table" id="tbl-attendance">
+              <thead>
+                <tr>
+                  <th style="width:60px;">STT</th>
+                  <th style="width:120px;">Ngày</th>
+                  <th style="width:100px;">Lớp</th>
+                  <th style="width:140px;">Trạng thái</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td colspan="4" class="text-center muted">
+                    Chưa có dữ liệu điểm danh cho học sinh này.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+
+      <section class="card" id="no-data" style="display:none;">
+        <p class="muted">
+          Không tìm thấy học sinh phù hợp. Hãy kiểm tra lại MSHS/Họ tên.
+        </p>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const STUDENTS = <%- JSON.stringify(typeof students !== "undefined" ? students : []) %>;
+    const SCORES = <%- JSON.stringify(typeof scores !== "undefined" ? scores : []) %>;
+    const ATTENDANCES = <%- JSON.stringify(typeof attendances !== "undefined" ? attendances : []) %>;
+
+
+    function round1(x){ return Math.round(x * 10) / 10; }
+
+    function scoreClass(v){
+      if (v >= 8) return 'score-excellent';
+      if (v >= 6.5) return 'score-good';
+      if (v >= 5) return 'score-average';
+      return 'score-weak';
+    }
+
+    function fillProfile(stu){
+      const parts = (stu.HoTen || '').trim().split(/\s+/);
+      const initials = parts.slice(-2).map(p => p[0]).join('').toUpperCase() || 'HS';
+      document.getElementById('pf-avatar').textContent = initials;
+
+      document.getElementById('pf-name').textContent = stu.HoTen || '—';
+      document.getElementById('pf-sub').textContent  = `MSHS: ${stu.MaHocSinh} · Lớp hiện tại: ${stu.MaLop || '—'}`;
+
+      let dobText = '—';
+      if (stu.NgaySinh) {
+        const d = new Date(stu.NgaySinh);
+        if (!isNaN(d.getTime())) {
+          dobText = d.toLocaleDateString('vi-VN');
+        } else {
+          dobText = stu.NgaySinh;
+        }
+      }
+
+      document.getElementById('pf-dob').textContent     = `Ngày sinh: ${dobText}`;
+      document.getElementById('pf-gender').textContent  = `Giới tính: ${stu.GioiTinh || '—'}`;
+      document.getElementById('pf-email').textContent   = `Email: ${stu.Email || '—'}`;
+      document.getElementById('pf-address').textContent = `Địa chỉ: ${stu.DiaChi || '—'}`;
+    }
+
+    function fillStats(stu){
+      const stuId = stu.MaHocSinh;
+
+      const stuScores = SCORES.filter(r => r.MaHocSinh === stuId);
+      const stuAtt    = ATTENDANCES.filter(r => r.MaHocSinh === stuId);
+
+      const tbList = stuScores
+        .map(r => r.DiemTBMon)
+        .filter(v => typeof v === 'number' && !isNaN(v));
+
+      if (tbList.length) {
+        const best = Math.max(...tbList);
+        const worst = Math.min(...tbList);
+        document.getElementById('st-best').textContent  = round1(best).toFixed(1);
+        document.getElementById('st-worst').textContent = round1(worst).toFixed(1);
+      } else {
+        document.getElementById('st-best').textContent  = '—';
+        document.getElementById('st-worst').textContent = '—';
+      }
+
+      const abs = stuAtt.filter(r => {
+        const st = (r.TrangThai || '').toLowerCase();
+        return st && st !== 'có mặt';
+      }).length;
+      document.getElementById('st-abs').textContent = abs || 0;
+
+      let latestConduct = '—';
+      for (let i = stuScores.length - 1; i >= 0; i--) {
+        if (stuScores[i].DanhGia) {
+          latestConduct = stuScores[i].DanhGia;
+          break;
+        }
+      }
+      document.getElementById('st-conduct').textContent = latestConduct;
+    }
+
+    function renderScores(stu){
+      const tbody = document.querySelector('#tbl-scores tbody');
+      const stuId = stu.MaHocSinh;
+      const stuScores = SCORES.filter(r => r.MaHocSinh === stuId);
+
+      if (!stuScores.length) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="8" class="text-center muted">
+              Chưa có dữ liệu điểm cho học sinh này.
+            </td>
+          </tr>`;
+        return;
+      }
+
+      const rows = stuScores.map((r, index) => {
+        const tb = typeof r.DiemTBMon === 'number' ? r.DiemTBMon : null;
+        const tbText = tb != null ? tb.toFixed(1) : '';
+        const cls = tb != null ? scoreClass(tb) : '';
+
+        return `
+          <tr>
+            <td class="text-center">${index + 1}</td>
+            <td>${r.NamHoc || ''}</td>
+            <td class="text-center">${r.HocKy != null ? r.HocKy : ''}</td>
+            <td>${r.TenMonHoc || r.MaMonHoc || ''}</td>
+            <td class="text-center">${r.Diem15Phut != null ? r.Diem15Phut : ''}</td>
+            <td class="text-center">${r.Diem1Tiet != null ? r.Diem1Tiet : ''}</td>
+            <td class="score-cell">
+              <span class="score ${cls}">${tbText}</span>
+            </td>
+            <td>${r.DanhGia || ''}</td>
+          </tr>
+        `;
+      }).join("");
+
+      tbody.innerHTML = rows;
+    }
+
+    function renderAttendance(stu){
+      const tbody = document.querySelector('#tbl-attendance tbody');
+      const stuId = stu.MaHocSinh;
+      const stuAtt = ATTENDANCES.filter(r => r.MaHocSinh === stuId);
+
+      if (!stuAtt.length) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="4" class="text-center muted">
+              Chưa có dữ liệu điểm danh cho học sinh này.
+            </td>
+          </tr>`;
+        return;
+      }
+
+      const rows = stuAtt.map((r, index) => {
+        let dateText = r.NgayDiemDanh || '';
+        const d = new Date(r.NgayDiemDanh);
+        if (!isNaN(d.getTime())) {
+          dateText = d.toLocaleDateString('vi-VN');
+        }
+
+        return `
+          <tr>
+            <td class="text-center">${index + 1}</td>
+            <td>${dateText}</td>
+            <td>${r.MaLop || ''}</td>
+            <td>${r.TrangThai || ''}</td>
+          </tr>`;
+      }).join("");
+
+      tbody.innerHTML = rows;
+    }
+
+    function doSearch(){
+      const qInput = document.getElementById('q');
+      const hint   = document.getElementById('hint');
+      const query  = (qInput.value || '').trim().toLowerCase();
+
+      if (!query) {
+        hint.textContent = "Vui lòng nhập MSHS hoặc một phần họ tên.";
+        document.getElementById('no-data').style.display = 'block';
+        document.getElementById('result').style.display  = 'none';
+        return;
+      }
+
+      const stu = STUDENTS.find(st =>
+        String(st.MaHocSinh).toLowerCase() === query ||
+        (st.HoTen || '').toLowerCase().includes(query)
+      );
+
+      if (!stu) {
+        hint.textContent = "Không tìm thấy học sinh.";
+        document.getElementById('no-data').style.display = 'block';
+        document.getElementById('result').style.display  = 'none';
+        return;
+      }
+
+      hint.textContent = "";
+      document.getElementById('no-data').style.display = 'none';
+      document.getElementById('result').style.display  = 'block';
+
+      fillProfile(stu);
+      fillStats(stu);
+      renderScores(stu);
+      renderAttendance(stu);
+    }
+
+    document.getElementById('btn-search').addEventListener('click', doSearch);
+    document.getElementById('q').addEventListener('keydown', e => {
+      if (e.key === 'Enter') doSearch();
+    });
+
+    document.getElementById('btn-print').addEventListener('click', () => {
+      window.print();
+    });
+  </script>
+</body>
+</html>

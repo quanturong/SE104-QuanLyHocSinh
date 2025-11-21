@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Bảng điểm</title>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body class="page-student">
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="logo">🎓</div>
+        <span>Student Management – Quản lí học sinh</span>
+      </div>
+
+    <%
+      const role = (user && user.role) ? user.role : "";
+    %>
+
+    <nav class="nav">
+      <a class="<%= title === 'Bảng điều khiển' ? 'active' : '' %>" href="/tablecontrol">
+        Bảng điều khiển
+      </a>
+
+      <% if (role !== 'HocSinh') { %>
+        <a class="<%= title === 'Danh sách học sinh' ? 'active' : '' %>" href="/student">
+          Học sinh
+        </a>
+        <a class="<%= title === 'Danh sách lớp' ? 'active' : '' %>" href="/class">
+          Lớp học
+        </a>
+        <a class="<%= title === 'Điểm danh' ? 'active' : '' %>" href="/attendance">
+          Điểm danh
+        </a>
+        <a class="<%= title === 'Báo cáo' ? 'active' : '' %>" href="/report">
+          Báo cáo
+        </a>
+      <% } %>
+      <a class="<%= title === 'Bảng điểm' ? 'active' : '' %>" href="/scoretable">
+        Điểm số
+      </a>
+      <% if (role !== 'HocSinh') { %>
+
+        <a class="<%= title === 'Tra cứu hồ sơ học sinh' ? 'active' : '' %>" href="/find">
+          Tra cứu
+        </a>
+      <% } %>
+
+      <a class="<%= title === 'Thời khóa biểu' ? 'active' : '' %>" href="/timetable">
+        Thời khóa biểu
+      </a>
+      <a class="<%= title === 'Danh sách giáo viên' ? 'active' : '' %>" href="/teacher">
+        Giáo viên
+      </a>
+      <a class="<%= title === 'Quy định' ? 'active' : '' %>" href="/rules">
+        Quy định
+      </a>
+    </nav>
+
+
+      <div class="spacer"></div>
+      <a class="nav logout" href="/logout">Đăng xuất</a>
+    </aside>
+
+    <main class="main">
+      <%
+        const canEditScore   = permissions && permissions.canEditScore;
+        const canEditAll     = permissions && permissions.canEditAll;
+        const teacherSubject = permissions && permissions.teacherSubject;
+        const teacherClasses = (permissions && permissions.teacherClasses) || [];
+
+        const isStudent = (role === 'HocSinh');
+        const studentAvgList = studentAverages || [];
+        const scoreList      = scores || [];
+        const classMap = {};
+        (studentAvgList || []).forEach(st => {
+          if (st.MaLop) classMap[st.MaLop] = true;
+        });
+        (scoreList || []).forEach(r => {
+          if (r.MaLop) classMap[r.MaLop] = true;
+        });
+        const classList = Object.keys(classMap).sort();
+      %>
+
+      <div class="page-header">
+        <h1 class="page-title">
+          <% if (isStudent) { %>
+            Bảng điểm cá nhân
+          <% } else { %>
+            Bảng điểm
+          <% } %>
+        </h1>
+        <p class="page-desc">
+          <% if (isStudent) { %>
+            Xem điểm tổng kết và điểm từng môn của bạn.
+          <% } else { %>
+            Chuyển tab để xem tổng kết học sinh hoặc bảng điểm từng môn.
+          <% } %>
+        </p>
+      </div>
+
+      <div class="report-buttons">
+        <button class="report-btn active" data-report="students" onclick="switchTab('students')">
+          <div class="report-btn-icon">🧑‍🎓</div>
+          <div>
+            <div class="report-btn-title">
+              <% if (isStudent) { %>Điểm tổng kết của tôi<% } else { %>Tổng kết học sinh<% } %>
+            </div>
+            <div class="report-btn-desc">TB HK1 · TB HK2 · Cả năm · Hạnh kiểm · Xếp loại</div>
+          </div>
+        </button>
+        <button class="report-btn" data-report="subject" onclick="switchTab('subject')">
+          <div class="report-btn-icon">📘</div>
+          <div>
+            <div class="report-btn-title">
+              <% if (isStudent) { %>Điểm từng môn của tôi<% } else { %>Bảng điểm môn học<% } %>
+            </div>
+            <div class="report-btn-desc">Điểm 15p · 1 tiết · TB môn · Đánh giá</div>
+          </div>
+        </button>
+      </div>
+
+      <section id="tab-students" class="report-content active">
+        <section class="card" style="margin-bottom:16px;">
+          <div class="report-filter-grid">
+            <div class="class-info-item">
+              <label class="class-label">Năm học</label>
+              <select class="select class-select" id="year-students">
+                <% if (namHocs && namHocs.length) { %>
+                  <% namHocs.forEach(function(nh){ %>
+                    <option value="<%= nh.MaNamHoc %>"><%= nh.MaNamHoc %></option>
+                  <% }) %>
+                <% } else { %>
+                  <option>Chưa có năm học</option>
+                <% } %>
+              </select>
+            </div>
+
+            <% if (!isStudent) { %>
+              <div class="class-info-item">
+                <label class="class-label">Lọc lớp</label>
+                <select class="select class-select" id="class-students">
+                  <option value="">Tất cả</option>
+                  <% if (classList && classList.length) { %>
+                    <% classList.forEach(function(maLop){ %>
+                      <option value="<%= maLop %>"><%= maLop %></option>
+                    <% }) %>
+                  <% } %>
+                </select>
+              </div>
+              <div class="class-info-item">
+                <label class="class-label">Tìm kiếm</label>
+                <input class="input" id="search-students" placeholder="Họ tên / mã HS / lớp..." />
+              </div>
+            <% } %>
+          </div>
+        </section>
+        <section class="card">
+          <div class="table-wrap" style="overflow:auto; max-height:520px;">
+            <table class="table" id="tbl-students">
+              <thead>
+                <tr>
+                  <th style="width:100px;">MÃ HS</th>
+                  <th style="width:200px;">HỌ TÊN</th>
+                  <th style="width:80px;">LỚP</th>
+                  <th style="width:110px;">NĂM HỌC</th>
+                  <th style="width:100px;">TB HK1</th>
+                  <th style="width:100px;">TB HK2</th>
+                  <th style="width:100px;">CẢ NĂM</th>
+                  <th style="width:120px;">XẾP LOẠI</th>
+                  <th style="width:120px;">HẠNH KIỂM</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                <% if (studentAvgList && studentAvgList.length) { %>
+                  <% studentAvgList.forEach(function(st){ %>
+                    <tr
+                      data-year="<%= st.NamHoc || '' %>"
+                      data-class="<%= st.MaLop || '' %>"
+                    >
+                      <td class="text-center"><%= st.MaHocSinh %></td>
+                      <td><%= st.HoTen %></td>
+                      <td class="text-center"><%= st.MaLop %></td>
+                      <td class="text-center"><%= st.NamHoc || '' %></td>
+                      <td class="score-cell">
+                        <span class="score"><%= st.TBHK1 != null ? st.TBHK1.toFixed(1) : "—" %></span>
+                      </td>
+                      <td class="score-cell">
+                        <span class="score"><%= st.TBHK2 != null ? st.TBHK2.toFixed(1) : "—" %></span>
+                      </td>
+                      <td class="score-cell">
+                        <span class="score"><%= st.CaNam != null ? st.CaNam.toFixed(1) : "—" %></span>
+                      </td>
+                      <td class="text-center"><%= st.XepLoai || "—" %></td>
+                      <td class="text-center"><%= st.HanhKiem || "—" %></td>
+                    </tr>
+                  <% }) %>
+                <% } else { %>
+                  <tr>
+                    <td colspan="9" style="text-align:center;">
+                      Chưa có dữ liệu tổng kết học sinh trong hệ thống.
+                    </td>
+                  </tr>
+                <% } %>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="pagination">
+            <button class="btn-page" disabled>‹</button>
+            <span class="page-info">Trang <strong>1</strong> / <strong>1</strong></span>
+            <button class="btn-page" disabled>›</button>
+          </div>
+        </section>
+      </section>
+
+      <section id="tab-subject" class="report-content">
+        <section class="card" style="margin-bottom:16px;">
+          <div class="report-filter-grid-3 compact-filters">
+            <div class="class-info-item">
+              <label class="class-label">Năm học</label>
+              <select class="select class-select select-sm" id="year-subject">
+                <option value="">Tất cả</option>
+                <% if (namHocs && namHocs.length) { %>
+                  <% namHocs.forEach(function(nh){ %>
+                    <option value="<%= nh.MaNamHoc %>"><%= nh.MaNamHoc %></option>
+                  <% }) %>
+                <% } %>
+              </select>
+            </div>
+
+            <div class="class-info-item">
+              <label class="class-label">Kỳ học</label>
+              <select class="select class-select select-sm" id="semester-subject">
+                <option value="">Cả năm</option>
+                <option value="hk1">Học kỳ 1</option>
+                <option value="hk2">Học kỳ 2</option>
+              </select>
+            </div>
+
+            <div class="class-info-item">
+              <label class="class-label">Lớp học</label>
+              <select class="select class-select select-sm" id="class-subject">
+                <option value="">Tất cả lớp</option>
+                <% if (classList && classList.length) { %>
+                  <% classList.forEach(function(maLop){ %>
+                    <option value="<%= maLop %>"><%= maLop %></option>
+                  <% }) %>
+                <% } %>
+              </select>
+            </div>
+
+            <div class="class-info-item">
+              <label class="class-label">Môn học</label>
+              <select class="select class-select select-sm" id="subject-subject">
+                <option value="">Tất cả môn</option>
+                <% if (subjects && subjects.length) { %>
+                  <% subjects.forEach(function(sub){ %>
+                    <option value="<%= sub.MaMonHoc %>"><%= sub.TenMonHoc %></option>
+                  <% }) %>
+                <% } %>
+              </select>
+            </div>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="table-wrap" style="overflow:auto; max-height:520px;">
+            <table class="table table-scores" id="tbl-subject">
+              <thead>
+                <tr>
+                  <th style="width:90px;">MÃ ĐIỂM</th>
+                  <th style="width:100px;">MÃ HS</th>
+                  <th style="width:180px;">HỌ TÊN</th>
+                  <th style="width:80px;">LỚP</th>
+                  <th style="width:150px;">MÔN HỌC</th>
+                  <th style="width:100px;">ĐIỂM 15P</th>
+                  <th style="width:100px;">ĐIỂM 1 TIẾT</th>
+                  <th style="width:110px;">ĐIỂM TB MÔN</th>
+                  <th style="width:130px;">ĐÁNH GIÁ</th>
+                  <% if (canEditScore) { %>
+                    <th style="width:90px;">THAO TÁC</th>
+                  <% } %>
+                </tr>
+              </thead>
+
+              <tbody>
+                <% if (scoreList && scoreList.length) { %>
+                  <% scoreList.forEach(function(row){ 
+                    const canEditThisRow =
+                      canEditScore && (
+                        canEditAll ||
+                        teacherClasses.includes(row.MaLop)
+                      );
+
+                  %>
+                    <tr
+                      data-year="<%= row.NamHoc || '' %>"
+                      data-sem="<%= row.HocKy || '' %>"
+                      data-subject="<%= row.MaMonHoc || '' %>"
+                      data-class="<%= row.MaLop || '' %>"
+                    >
+                      <td class="text-center"><%= row.MaDiem || ' ' %></td>
+                      <td class="text-center"><%= row.MaHocSinh %></td>
+                      <td><%= row.HoTen %></td>
+                      <td class="text-center"><%= row.MaLop || ' ' %></td>
+                      <td><%= row.TenMonHoc || row.MaMonHoc || ' ' %></td>
+                      <td class="score-cell">
+                        <span class="score"><%= row.Diem15Phut != null ? row.Diem15Phut : " " %></span>
+                      </td>
+                      <td class="score-cell">
+                        <span class="score"><%= row.Diem1Tiet != null ? row.Diem1Tiet : " " %></span>
+                      </td>
+                      <td class="score-cell">
+                        <span class="score"><%= row.DiemTBMon != null ? row.DiemTBMon : " " %></span>
+                      </td>
+                      <td><%= row.DanhGia || " " %></td>
+                      
+                      <% if (canEditScore) { %>
+                        <td class="action-cell text-center">
+                          <% if (canEditThisRow) { %>
+                            <button class="btn btn-sm btn-ghost" onclick="editScore('<%= row.MaDiem %>')">
+                              Sửa
+                            </button>
+                          <% } else { %>
+                            <span class="muted">—</span>
+                          <% } %>
+                        </td>
+                      <% } %>
+                    </tr>
+                  <% }) %>
+                <% } else { %>
+                  <tr>
+                    <td colspan="<%= canEditScore ? 12 : 11 %>" style="text-align:center;">
+                      Chưa có dữ liệu điểm môn học.
+                    </td>
+                  </tr>
+                <% } %>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="pagination">
+            <button class="btn-page" disabled>‹</button>
+            <span class="page-info">Trang <strong>1</strong> / <strong>1</strong></span>
+            <button class="btn-page" disabled>›</button>
+          </div>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    function switchTab(target){
+      document.querySelectorAll('.report-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.report-content').forEach(c => c.classList.remove('active'));
+      document.querySelector('[data-report="'+target+'"]').classList.add('active');
+      document.getElementById('tab-'+target).classList.add('active');
+      history.replaceState(null, '', '#'+target);
+    }
+
+    window.addEventListener('DOMContentLoaded', ()=>{
+      const t = (location.hash || '#students').replace('#','');
+      switchTab(t);
+    });
+
+    (function(){
+      const yearSel = document.getElementById('year-students');
+      const search  = document.getElementById('search-students');   
+      const clsSel  = document.getElementById('class-students');   
+      const tbody   = document.querySelector('#tbl-students tbody');
+
+      function apply(){
+        const q    = search ? (search.value || '').toLowerCase().trim() : '';
+        const c    = clsSel ? (clsSel.value || '').toLowerCase().trim() : '';
+        const year = (yearSel.value || '').toLowerCase().trim();
+
+        tbody.querySelectorAll('tr').forEach(tr => {
+          if (tr.cells.length < 9) return; 
+
+          const maHs    = (tr.cells[0]?.textContent || '').toLowerCase();
+          const name    = (tr.cells[1]?.textContent || '').toLowerCase();
+          const lop     = (tr.cells[2]?.textContent || '').toLowerCase();
+          const rowYear = (tr.getAttribute('data-year') || '').toLowerCase();
+
+          const okQ = !q || name.includes(q) || maHs.includes(q) || lop.includes(q);
+          const okC = !c || lop.includes(c);
+          const okY = !year || !rowYear || rowYear === year;
+
+          tr.style.display = (okQ && okC && okY) ? '' : 'none';
+        });
+      }
+
+      search  && search.addEventListener('input',  apply);
+      clsSel  && clsSel.addEventListener('change', apply);
+      yearSel && yearSel.addEventListener('change', apply);
+      apply();
+    })();
+
+    (function(){
+      const yearSel = document.getElementById('year-subject');
+      const semSel  = document.getElementById('semester-subject');
+      const subSel  = document.getElementById('subject-subject');
+      const clsSel  = document.getElementById('class-subject');
+      const tbody   = document.querySelector('#tbl-subject tbody');
+
+      function apply(){
+        const year = (yearSel.value || '').toLowerCase();
+        const sem  = semSel.value;
+        const sub  = (subSel.value || '').toLowerCase();
+        const cls  = (clsSel.value || '').toLowerCase();
+
+        const semWanted = sem === 'hk1' ? '1' : (sem === 'hk2' ? '2' : '');
+
+        tbody.querySelectorAll('tr').forEach(tr => {
+          if (tr.cells.length < 2) return;
+
+          const rowYear  = (tr.getAttribute('data-year')   || '').toLowerCase();
+          const rowSem   = (tr.getAttribute('data-sem')    || '').toString();
+          const rowSub   = (tr.getAttribute('data-subject')|| '').toLowerCase();
+          const rowClass = (tr.getAttribute('data-class')  || '').toLowerCase();
+
+          const okY  = !year || !rowYear || rowYear === year;
+          const okS  = !semWanted || !rowSem || rowSem === semWanted;
+          const okSb = !sub || rowSub.includes(sub);
+          const okC  = !cls || rowClass.includes(cls);
+
+          tr.style.display = (okY && okS && okSb && okC) ? '' : 'none';
+        });
+      }
+
+      yearSel && yearSel.addEventListener('change', apply);
+      semSel  && semSel.addEventListener('change',  apply);
+      subSel  && subSel.addEventListener('change',  apply);
+      clsSel  && clsSel.addEventListener('change',  apply);
+      apply();
+    })();
+    function editScore(maDiem) {
+      alert('Chức năng sửa điểm cho MaDiem: ' + maDiem + '\n(Cần implement form sửa điểm)');
+    }
+  </script>
+</body>
+</html>

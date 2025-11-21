@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Danh sách học sinh – Quản lí học sinh</title>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body class="page-student">
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="logo">🎓</div>
+        <span>Student Management – Quản lí học sinh</span>
+      </div>
+
+      <% 
+        // Lấy role từ user
+        const role = (user && user.role) ? user.role : "";
+        // Quyền quản lý HS (Admin + GiaoVu) do backend truyền sang
+        const canManageStudents = permissions && permissions.canManageStudents;
+      %>
+
+      <nav class="nav">
+        <a class="<%= title === 'Bảng điều khiển' ? 'active' : '' %>" href="/tablecontrol">
+          Bảng điều khiển
+        </a>
+        <% if (role !== 'HocSinh') { %>
+          <a class="<%= title === 'Danh sách học sinh' ? 'active' : '' %>" href="/student">
+            Học sinh
+          </a>
+          <a class="<%= title === 'Danh sách lớp' ? 'active' : '' %>" href="/class">
+            Lớp học
+          </a>
+          <a class="<%= title === 'Điểm danh' ? 'active' : '' %>" href="/attendance">
+            Điểm danh
+          </a>
+          <a class="<%= title === 'Báo cáo' ? 'active' : '' %>" href="/report">
+            Báo cáo
+          </a>
+          <a class="<%= title === 'Bảng điểm' ? 'active' : '' %>" href="/scoretable">
+            Điểm số
+          </a>
+          <a class="<%= title === 'Tra cứu hồ sơ học sinh' ? 'active' : '' %>" href="/find">
+            Tra cứu
+          </a>
+        <% } %>
+        <a class="<%= title === 'Thời khóa biểu' ? 'active' : '' %>" href="/timetable">
+          Thời khóa biểu
+        </a>
+        <a class="<%= title === 'Danh sách giáo viên' ? 'active' : '' %>" href="/teacher">
+          Giáo viên
+        </a>
+        <a class="<%= title === 'Quy định' ? 'active' : '' %>" href="/rules">
+          Quy định
+        </a>
+      </nav>
+      <div class="spacer"></div>
+      <a class="nav logout" href="/logout">Đăng xuất</a>
+    </aside>
+
+    <main class="main">
+      <div class="page-header">
+        <h1 class="page-title">Danh sách học sinh</h1>
+        <p class="page-desc">
+          Dữ liệu hiển thị trực tiếp từ bảng <strong>HoSoHocSinh</strong> (MaHocSinh, HoTen, GioiTinh, NgaySinh, DiaChi, Email, MaLop).
+        </p>
+      </div>
+      <section class="card" style="margin-bottom: 16px;">
+        <div class="toolbar" style="justify-content: space-between;">
+          <div>
+            <div style="font-weight: 600; font-size: 16px;">
+              <%= (students && students.length) ? students.length : 0 %> học sinh
+            </div>
+            <div class="muted" style="font-size: 13px;">
+              Mỗi dòng tương ứng một bản ghi trong <code>HoSoHocSinh</code>.
+            </div>
+          </div>
+
+          <div style="display:flex; gap:8px; align-items:center;">
+            <input
+              class="input"
+              id="search-name"
+              placeholder="Tìm theo họ tên hoặc mã HS..."
+              style="min-width: 240px;"
+            />
+            <select class="select" id="filter-gender">
+              <option value="">Tất cả giới tính</option>
+              <option value="Nam">Nam</option>
+              <option value="Nữ">Nữ</option>
+            </select>
+            <select class="select" id="filter-class">
+              <option value="">Tất cả lớp</option>
+              <% if (students && students.length) { 
+                   const set = new Set();
+                   students.forEach(s => { if (s.MaLop) set.add(s.MaLop); });
+                   Array.from(set).sort().forEach(function(lop){ %>
+                     <option value="<%= lop %>"><%= lop %></option>
+              <%   });
+                 } %>
+            </select>
+
+            <% if (canManageStudents) { %>
+              <button class="btn" id="btn-add">+ Thêm học sinh</button>
+            <% } %>
+            <button class="btn btn-export" id="btn-export">📊 Xuất Excel</button>
+          </div>
+        </div>
+      </section>
+      <section class="card">
+        <div class="table-wrap" style="overflow:auto; max-height:560px;">
+          <table class="table" id="tbl-students">
+            <thead>
+              <tr>
+                <th style="width:60px;">STT</th>
+                <th style="width:90px;">MÃ HS</th>
+                <th style="width:220px;">HỌ TÊN</th>
+                <th style="width:90px;">GIỚI TÍNH</th>
+                <th style="width:130px;">NGÀY SINH</th>
+                <th style="width:220px;">ĐỊA CHỈ</th>
+                <th style="width:160px;">EMAIL</th>
+                <th style="width:80px;">LỚP</th>
+                <% if (canManageStudents) { %>
+                  <th style="width:110px;">THAO TÁC</th>
+                <% } %>
+              </tr>
+            </thead>
+            <tbody>
+              <% if (students && students.length) { %>
+                <% students.forEach(function(st, index) { %>
+                  <tr
+                    data-name="<%= ((st.HoTen || '') + ' ' + (st.MaHocSinh || '')).toLowerCase() %>"
+                    data-gender="<%= (st.GioiTinh || '').toLowerCase() %>"
+                    data-class="<%= (st.MaLop || '').toLowerCase() %>"
+                  >
+                    <td class="text-center"><%= index + 1 %></td>
+                    <td><%= st.MaHocSinh %></td>
+                    <td><strong><%= st.HoTen %></strong></td>
+                    <td><%= st.GioiTinh || '' %></td>
+                    <td><%= st.NgaySinh || '' %></td>
+                    <td><%= st.DiaChi || '' %></td>
+                    <td><%= st.Email || '' %></td>
+                    <td><%= st.MaLop || '' %></td>
+
+                    <% if (canManageStudents) { %>
+                      <td class="text-center">
+                        <button class="btn btn-sm">Sửa</button>
+                      </td>
+                    <% } %>
+                  </tr>
+                <% }) %>
+              <% } else { %>
+                <tr>
+                  <td colspan="<%= canManageStudents ? 9 : 8 %>" class="text-center muted">
+                    Chưa có dữ liệu học sinh trong hệ thống.
+                  </td>
+                </tr>
+              <% } %>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="pagination">
+          <button class="btn-page" disabled>‹</button>
+          <span class="page-info">Trang <strong>1</strong> / <strong>1</strong></span>
+          <button class="btn-page" disabled>›</button>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    (function() {
+      const searchInput  = document.getElementById('search-name');
+      const filterGender = document.getElementById('filter-gender');
+      const filterClass  = document.getElementById('filter-class');
+      const rows         = document.querySelectorAll('#tbl-students tbody tr');
+
+      function applyFilter(){
+        const q  = (searchInput.value || '').toLowerCase();
+        const g  = (filterGender.value || '').toLowerCase();
+        const cl = (filterClass.value  || '').toLowerCase();
+
+        rows.forEach(tr => {
+          const name   = tr.getAttribute('data-name')   || '';
+          const gender = tr.getAttribute('data-gender') || '';
+          const clazz  = tr.getAttribute('data-class')  || '';
+
+          const okQ  = !q  || name.includes(q);
+          const okG  = !g  || gender === g;
+          const okCl = !cl || clazz === cl;
+
+          tr.style.display = (okQ && okG && okCl) ? '' : 'none';
+        });
+      }
+
+      searchInput && searchInput.addEventListener('input', applyFilter);
+      filterGender && filterGender.addEventListener('change', applyFilter);
+      filterClass && filterClass.addEventListener('change', applyFilter);
+    })();
+    (function() {
+      const btnAdd = document.getElementById('btn-add');
+      if (btnAdd) {
+        btnAdd.addEventListener('click', function () {
+          alert('Thêm học sinh: hiện mới là giao diện demo, chưa nối API.');
+        });
+      }
+
+      const btnExport = document.getElementById('btn-export');
+      if (btnExport) {
+        btnExport.addEventListener('click', function () {
+          alert('Xuất Excel: hiện mới là giao diện demo, chưa nối API.');
+        });
+      }
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Điểm danh – Quản lí học sinh</title>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body class="page-student">
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="logo">🎓</div>
+        <span>Student Management – Quản lí học sinh</span>
+      </div>
+
+      <%
+        // Lấy role từ user (backend đã truyền user: req.session.user)
+        const role = (user && user.role) ? user.role : "";
+      %>
+
+      <nav class="nav">
+        <a href="/tablecontrol">Bảng điều khiển</a>
+        <% if (role !== 'HocSinh') { %>
+          <a href="/student">Học sinh</a>
+          <a href="/class">Lớp học</a>
+          <a class="active" href="/attendance">Điểm danh</a>
+          <a href="/report">Báo cáo</a>
+          <a href="/scoretable">Điểm số</a>
+          <a href="/find">Tra cứu</a>
+        <% } %>
+        <a href="/timetable">Thời khóa biểu</a>
+        <a href="/teacher">Giáo viên</a>
+        <a href="/rules">Quy định</a>
+      </nav>
+
+      <div class="spacer"></div>
+      <a class="nav logout" href="/logout">Đăng xuất</a>
+    </aside>
+
+    <main class="main">
+      <div class="page-header">
+        <h1 class="page-title">Điểm danh học sinh</h1>
+        <p class="page-desc">Quản lý điểm danh hàng ngày theo lớp và tháng (dữ liệu từ database).</p>
+      </div>
+
+      <section class="card" style="margin-bottom: 16px;">
+        <div class="att-filter-grid">
+          <div class="class-info-item">
+            <label class="class-label">Năm</label>
+            <select class="select class-select" id="select-year">
+            </select>
+          </div>
+
+          <div class="class-info-item">
+            <label class="class-label">Lớp học</label>
+            <select class="select class-select" id="select-class">
+            </select>
+          </div>
+
+          <div class="class-info-item">
+            <label class="class-label">Tháng</label>
+            <select class="select class-select" id="select-month">
+              <% for (let m = 1; m <= 12; m++) { %>
+                <option value="<%= m %>">Tháng <%= m %></option>
+              <% } %>
+            </select>
+          </div>
+
+          <div class="class-info-item">
+            <label class="class-label">Sĩ số</label>
+            <div class="class-count" id="class-count">
+              <span class="count-number">0</span>
+              <span class="count-label">học sinh</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div class="grid cols-4" style="margin-bottom: 16px;">
+        <section class="card stat-mini">
+          <div class="stat-mini-label">Tổng ngày học (tháng)</div>
+          <div class="stat-mini-value" id="stat-total-days">0</div>
+        </section>
+
+        <section class="card stat-mini">
+          <div class="stat-mini-label">Có mặt trung bình</div>
+          <div class="stat-mini-value stat-success" id="stat-present">--</div>
+        </section>
+
+        <section class="card stat-mini">
+          <div class="stat-mini-label">Vắng có phép</div>
+          <div class="stat-mini-value stat-warning" id="stat-excused">--</div>
+        </section>
+
+        <section class="card stat-mini">
+          <div class="stat-mini-label">Vắng không phép</div>
+          <div class="stat-mini-value stat-danger" id="stat-absent">--</div>
+        </section>
+      </div>
+
+      <section class="card">
+        <% const canEditAttendance = permissions && permissions.canEditAttendance; %>
+
+        <% if (canEditAttendance) { %>
+          <div class="toolbar">
+            <button class="btn" id="btn-mark-all-present">Điểm danh tất cả có mặt</button>
+            <button class="btn btn-export" id="btn-export">📊 Xuất Excel</button>
+            <button class="btn" style="background: #f59e0b" id="btn-save">💾 Lưu điểm danh</button>
+          </div>
+        <% } %>
+
+        <div class="att-legend">
+          <span class="att-legend-item"><span class="att-dot att-present"></span> Có mặt (P)</span>
+          <span class="att-legend-item"><span class="att-dot att-absent"></span> Vắng (A)</span>
+          <span class="att-legend-item"><span class="att-dot att-excused"></span> Vắng có phép (E)</span>
+          <span class="att-legend-item"><span class="att-dot att-late"></span> Đi muộn (L)</span>
+        </div>
+
+        <div class="table-wrap att-table-wrap" style="overflow:auto; max-height:580px;">
+          <table class="table att-table" id="tbl-attendance">
+            <thead>
+              <tr id="att-head-row">
+              </tr>
+            </thead>
+            <tbody id="att-body">
+              <tr>
+                <td colspan="8" class="text-center muted">
+                  Hãy chọn năm, lớp và tháng để xem bảng điểm danh.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const STUDENTS     = <%- JSON.stringify(students || []) %>;
+    const ATTENDANCES  = <%- JSON.stringify(attendances || []) %>;
+    const CAN_EDIT     = <%= (permissions && permissions.canEditAttendance) ? 'true' : 'false' %>;
+    const ROLE            = '<%= role %>';
+    const TEACHER_CLASSES = <%- JSON.stringify(teacherClasses || []) %>;
+
+    const yearSelect  = document.getElementById('select-year');
+    const classSelect = document.getElementById('select-class');
+    const monthSelect = document.getElementById('select-month');
+    const classCount  = document.getElementById('class-count').querySelector('.count-number');
+
+    const headRow = document.getElementById('att-head-row');
+    const body    = document.getElementById('att-body');
+
+    const statTotalDays = document.getElementById('stat-total-days');
+    const statPresent   = document.getElementById('stat-present');
+    const statExcused   = document.getElementById('stat-excused');
+    const statAbsent    = document.getElementById('stat-absent');
+
+    function uniqueSorted(arr) {
+      return Array.from(new Set(arr)).filter(Boolean).sort();
+    }
+
+    function initFilters() {
+      let years = ATTENDANCES
+        .map(r => {
+          if (!r.NgayDiemDanh) return null;
+          const d = new Date(r.NgayDiemDanh);
+          return isNaN(d.getTime()) ? null : d.getFullYear();
+        })
+        .filter(Boolean);
+
+      years = Array.from(new Set(years)).sort((a,b) => b - a);
+      if (!years.length) {
+        years = [new Date().getFullYear()];
+      }
+
+      yearSelect.innerHTML = years.map(y => `<option value="${y}">${y}</option>`).join('');
+
+      let classes = uniqueSorted(STUDENTS.map(s => s.MaLop));
+
+      if (ROLE === 'GiaoVien' && TEACHER_CLASSES && TEACHER_CLASSES.length) {
+        classes = classes.filter(c => TEACHER_CLASSES.includes(c));
+      }
+
+      classSelect.innerHTML =
+        '<option value="">-- Chọn lớp --</option>' +
+        classes.map(c => `<option value="${c}">${c}</option>`).join('');
+
+      const now = new Date();
+      monthSelect.value = (now.getMonth() + 1).toString();
+    }
+
+
+    function getDaysInMonth(year, month) {
+      return new Date(year, month, 0).getDate();
+    }
+
+    function normalizeStatus(raw) {
+      const s = (raw || '').toString().trim().toUpperCase();
+      if (!s) return '';
+      if (['P', 'CÓ MẶT', 'CO MAT'].includes(s)) return 'P';
+      if (['A', 'VẮNG', 'VANG'].includes(s)) return 'A';
+      if (['E', 'VẮNG CÓ PHÉP', 'VANG CO PHEP'].includes(s)) return 'E';
+      if (['L', 'ĐI MUỘN', 'DI MUON'].includes(s)) return 'L';
+      return s; 
+    }
+
+    function buildGrid() {
+      const year  = parseInt(yearSelect.value, 10);
+      const month = parseInt(monthSelect.value, 10);
+      const cls   = classSelect.value;
+
+      if (!cls) {
+        body.innerHTML = `
+          <tr>
+            <td colspan="8" class="text-center muted">
+              Hãy chọn lớp để xem bảng điểm danh.
+            </td>
+          </tr>`;
+        headRow.innerHTML = `
+          <th class="att-sticky-col">STT</th>
+          <th class="att-sticky-col">Họ tên</th>
+          <th class="att-summary">Tổng có mặt</th>
+        `;
+        classCount.textContent   = '0';
+        statTotalDays.textContent = '0';
+        statPresent.textContent   = '--';
+        statExcused.textContent   = '--';
+        statAbsent.textContent    = '--';
+        return;
+      }
+
+      const studentsInClass = STUDENTS.filter(s => s.MaLop === cls);
+      classCount.textContent = studentsInClass.length;
+
+      const daysInMonth = getDaysInMonth(year, month);
+      statTotalDays.textContent = daysInMonth;
+      let headHTML = `
+        <th class="att-sticky-col">STT</th>
+        <th class="att-sticky-col">Họ tên</th>
+      `;
+      for (let d = 1; d <= daysInMonth; d++) {
+        headHTML += `<th>${d}/${month}</th>`;
+      }
+      headHTML += `<th class="att-summary">Tổng có mặt</th>`;
+      headRow.innerHTML = headHTML;
+
+      if (!studentsInClass.length) {
+        body.innerHTML = `
+          <tr>
+            <td colspan="${daysInMonth + 3}" class="text-center muted">
+              Lớp này chưa có học sinh trong hệ thống.
+            </td>
+          </tr>`;
+        statPresent.textContent = '--';
+        statExcused.textContent = '--';
+        statAbsent.textContent  = '--';
+        return;
+      }
+
+      const attMap = {};
+      ATTENDANCES.forEach(r => {
+        if (!r.NgayDiemDanh) return;
+        const d = new Date(r.NgayDiemDanh);
+        if (isNaN(d.getTime())) return;
+        const y   = d.getFullYear();
+        const m   = d.getMonth() + 1;
+        const day = d.getDate();
+        if (y !== year || m !== month) return;
+        const key = `${r.MaHocSinh}-${day}`;
+        attMap[key] = normalizeStatus(r.TrangThai);
+      });
+
+      let presentTotal = 0;
+      let excusedTotal = 0;
+      let absentTotal  = 0;
+
+      const rows = studentsInClass.map((stu, index) => {
+        const statuses = [];
+        let presentCount = 0;
+
+        for (let day = 1; day <= daysInMonth; day++) {
+          const key = `${stu.MaHocSinh}-${day}`;
+          const st  = attMap[key] || '';
+          statuses.push(st);
+          if (st === 'P') presentCount++;
+          if (st === 'E') excusedTotal++;
+          if (st === 'A') absentTotal++;
+        }
+
+        presentTotal += presentCount;
+
+        const cells = statuses.map(st => {
+          const display = st || '';
+          return `<td class="att-cell" data-status="${st}">${display}</td>`;
+        }).join('');
+
+        return `
+          <tr data-student="${stu.MaHocSinh}">
+            <td class="text-center att-sticky-col">${index + 1}</td>
+            <td class="att-sticky-col">${stu.HoTen}</td>
+            ${cells}
+            <td class="att-summary text-center"><strong>${presentCount}/${daysInMonth}</strong></td>
+          </tr>
+        `;
+      }).join('');
+
+      body.innerHTML = rows;
+
+      const totalSlots = studentsInClass.length * daysInMonth;
+      if (totalSlots > 0) {
+        const presentPct = Math.round((presentTotal / totalSlots) * 100);
+        const excusedPct = Math.round((excusedTotal / totalSlots) * 100);
+        const absentPct  = Math.round((absentTotal  / totalSlots) * 100);
+
+        statPresent.textContent = presentPct + '%';
+        statExcused.textContent = excusedPct + '%';
+        statAbsent.textContent  = absentPct + '%';
+      } else {
+        statPresent.textContent = '--';
+        statExcused.textContent = '--';
+        statAbsent.textContent  = '--';
+      }
+
+      attachCellEvents();
+    }
+
+    function recalcStatsAndRowSummary() {
+      const rows = body.querySelectorAll('tr');
+      if (!rows.length) return;
+
+      const daysInMonth = headRow.querySelectorAll('th').length - 3; // STT, Họ tên, Tổng
+
+      let totalSlots   = 0;
+      let presentTotal = 0;
+      let excusedTotal = 0;
+      let absentTotal  = 0;
+
+      rows.forEach(row => {
+        const cells = row.querySelectorAll('td.att-cell');
+        if (!cells.length) return;
+
+        let presentCount = 0;
+
+        cells.forEach(cell => {
+          const st = cell.getAttribute('data-status') || '';
+          totalSlots++;
+          if (st === 'P') {
+            presentTotal++;
+            presentCount++;
+          }
+          if (st === 'E') excusedTotal++;
+          if (st === 'A') absentTotal++;
+        });
+
+        const summaryCell = row.querySelector('td.att-summary');
+        if (summaryCell) {
+          summaryCell.innerHTML = `<strong>${presentCount}/${daysInMonth}</strong>`;
+        }
+      });
+
+      if (totalSlots > 0) {
+        const presentPct = Math.round((presentTotal / totalSlots) * 100);
+        const excusedPct = Math.round((excusedTotal / totalSlots) * 100);
+        const absentPct  = Math.round((absentTotal  / totalSlots) * 100);
+
+        statPresent.textContent = presentPct + '%';
+        statExcused.textContent = excusedPct + '%';
+        statAbsent.textContent  = absentPct + '%';
+      } else {
+        statPresent.textContent = '--';
+        statExcused.textContent = '--';
+        statAbsent.textContent  = '--';
+      }
+    }
+
+    function attachCellEvents() {
+      if (!CAN_EDIT) return;
+
+      const attCells = document.querySelectorAll('#tbl-attendance .att-cell');
+      attCells.forEach(cell => {
+        cell.addEventListener('click', function () {
+          const current = this.getAttribute('data-status') || '';
+          const next =
+            current === 'P' ? 'A' :
+            current === 'A' ? 'E' :
+            current === 'E' ? 'L' : 'P';
+
+          this.textContent = next;
+          this.setAttribute('data-status', next);
+          recalcStatsAndRowSummary();
+        });
+      });
+    }
+    if (CAN_EDIT) {
+      const btnMarkAll = document.getElementById('btn-mark-all-present');
+      const btnSave    = document.getElementById('btn-save');
+      const btnExport  = document.getElementById('btn-export');
+
+      if (btnMarkAll) {
+        btnMarkAll.addEventListener('click', () => {
+          const cells = document.querySelectorAll('#tbl-attendance .att-cell');
+          cells.forEach(c => {
+            c.textContent = 'P';
+            c.setAttribute('data-status', 'P');
+          });
+          recalcStatsAndRowSummary();
+          alert('Đã điểm danh tất cả có mặt (chỉ thay đổi trên giao diện, chưa ghi DB).');
+        });
+      }
+
+      if (btnSave) {
+        btnSave.addEventListener('click', () => {
+          alert('Đây là bản demo: nút Lưu mới ghi thay đổi trên giao diện, chưa có API lưu vào DB.');
+        });
+      }
+
+      if (btnExport) {
+        btnExport.addEventListener('click', () => {
+          alert('Chức năng xuất Excel chưa được hiện thực (demo UI).');
+        });
+      }
+    }
+
+    yearSelect.addEventListener('change', buildGrid);
+    classSelect.addEventListener('change', buildGrid);
+    monthSelect.addEventListener('change', buildGrid);
+
+    document.addEventListener('DOMContentLoaded', () => {
+      initFilters();
+      buildGrid();
+    });
+  </script>
+</body>
+</html>

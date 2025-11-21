@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Thông tin giáo viên</title>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body class="page-student">
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="logo">🎓</div>
+        <span>Student Management – Quản lí học sinh</span>
+      </div>
+
+      <%
+        // Lấy role & quyền quản lý giáo viên từ backend
+        const role = (user && user.role) ? user.role : "";
+        const canManageTeachers = permissions && permissions.canManageTeachers;
+      %>
+
+      <nav class="nav">
+        <a class="<%= title === 'Bảng điều khiển' ? 'active' : '' %>" href="/tablecontrol">
+          Bảng điều khiển
+        </a>
+
+        <% if (role !== 'HocSinh') { %>
+          <a class="<%= title === 'Danh sách học sinh' ? 'active' : '' %>" href="/student">
+            Học sinh
+          </a>
+          <a class="<%= title === 'Danh sách lớp' ? 'active' : '' %>" href="/class">
+            Lớp học
+          </a>
+          <a class="<%= title === 'Điểm danh' ? 'active' : '' %>" href="/attendance">
+            Điểm danh
+          </a>
+          <a class="<%= title === 'Báo cáo' ? 'active' : '' %>" href="/report">
+            Báo cáo
+          </a>
+          <a class="<%= title === 'Tra cứu hồ sơ học sinh' ? 'active' : '' %>" href="/find">
+            Tra cứu
+          </a>
+        <% } %>
+        <a class="<%= title === 'Bảng điểm' ? 'active' : '' %>" href="/scoretable">
+          Điểm số
+        </a>
+
+        <a class="<%= title === 'Thời khóa biểu' ? 'active' : '' %>" href="/timetable">
+          Thời khóa biểu
+        </a>
+        <a class="<%= title === 'Danh sách giáo viên' ? 'active' : '' %>" href="/teacher">
+          Giáo viên
+        </a>
+        <a class="<%= title === 'Quy định' ? 'active' : '' %>" href="/rules">
+          Quy định
+        </a>
+      </nav>
+
+
+      <div class="spacer"></div>
+      <a class="nav logout" href="/logout">Đăng xuất</a>
+    </aside>
+
+    <main class="main">
+      <div class="page-header">
+        <h1 class="page-title">Thông tin giáo viên</h1>
+        <p class="page-desc">
+          Danh sách giáo viên toàn trường: bộ môn giảng dạy, liên hệ, chủ nhiệm lớp…
+        </p>
+      </div>
+
+      <!-- Thanh lọc / tìm kiếm / nút thêm, xuất -->
+      <section class="card" style="margin-bottom:16px;">
+        <div class="toolbar">
+          <div class="class-info-item" style="min-width:220px;">
+            <label class="class-label">Bộ môn</label>
+            <select id="filter-subject" class="select class-select">
+              <option value="">Tất cả bộ môn</option>
+              <% if (subjects && subjects.length) { %>
+                <% subjects.forEach(function(s) { %>
+                  <option value="<%= (s.TenMonHoc || '').toLowerCase() %>">
+                    <%= s.TenMonHoc %>
+                  </option>
+                <% }) %>
+              <% } %>
+            </select>
+          </div>
+
+          <input
+            id="search-teacher"
+            class="input"
+            placeholder="Tìm theo họ tên / email / địa chỉ…"
+            style="min-width:260px;"
+          >
+
+          <!-- Chỉ Admin + BGH được thêm/sửa giáo viên -->
+          <% if (canManageTeachers) { %>
+            <button class="btn" id="btn-add" title="Thêm giáo viên (demo)">➕ Thêm</button>
+          <% } %>
+
+          <button class="btn btn-export" id="btn-export" title="Xuất danh sách">⬇️ Xuất</button>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="table-wrap" style="overflow:auto; max-height:560px;">
+          <table class="table" id="tbl-teachers">
+            <thead>
+              <tr>
+                <th style="width:60px;">STT</th>
+                <th style="min-width:220px;">Họ tên</th>
+                <th style="min-width:140px;">Bộ môn</th>
+                <th style="min-width:220px;">Email</th>
+                <th style="min-width:220px;">Địa chỉ</th>
+                <th style="min-width:120px;">Hành động</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% if (teachers && teachers.length) { %>
+                <% teachers.forEach(function(t, index) { %>
+                  <tr
+                    data-name="<%= (t.HoTen || '').toLowerCase() %>"
+                    data-subject="<%= (t.TenMonHoc || t.MaMonGiangDay || '').toLowerCase() %>"
+                    data-contact="<%= (t.Email || '').toLowerCase() %>"
+                    data-address="<%= (t.DiaChi || '').toLowerCase() %>"
+                  >
+                    <td class="text-center"><%= index + 1 %></td>
+                    <td><%= t.HoTen %></td>
+                    <td><%= t.TenMonHoc || t.MaMonGiangDay || '' %></td>
+                    <td><%= t.Email || '' %></td>
+                    <td><%= t.DiaChi || '' %></td>
+                    <td>
+                      <button class="btn btn-small" data-view="<%= t.MaGiaoVien %>">Xem</button>
+                      <% if (canManageTeachers) { %>
+                        <button class="btn btn-small btn-ghost" data-edit="<%= t.MaGiaoVien %>">
+                          Sửa
+                        </button>
+                      <% } %>
+                    </td>
+                  </tr>
+                <% }) %>
+              <% } else { %>
+                <tr>
+                  <td colspan="6" style="text-align:center;">Chưa có giáo viên.</td>
+                </tr>
+              <% } %>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="pagination">
+          <button class="btn-page" disabled>‹</button>
+          <span class="page-info">Trang <strong>1</strong> / <strong>1</strong></span>
+          <button class="btn-page" disabled>›</button>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const subFilter = document.getElementById('filter-subject');
+    const searchBox = document.getElementById('search-teacher');
+    const tbody = document.querySelector('#tbl-teachers tbody');
+
+    function applyFilter(){
+      const s = (searchBox.value || '').toLowerCase().trim();
+      const subject = (subFilter.value || '').toLowerCase().trim();
+
+      [...tbody.rows].forEach(tr => {
+        const name     = tr.getAttribute('data-name')     || '';
+        const sub      = tr.getAttribute('data-subject')  || '';
+        const contact  = tr.getAttribute('data-contact')  || '';
+        const address  = tr.getAttribute('data-address')  || '';
+
+        const okSearch =
+          !s ||
+          name.includes(s) ||
+          contact.includes(s) ||
+          address.includes(s);
+
+        const okSub = !subject || sub === subject;
+
+        tr.style.display = (okSearch && okSub) ? '' : 'none';
+      });
+    }
+
+    subFilter.addEventListener('change', applyFilter);
+    searchBox.addEventListener('input', applyFilter);
+
+    document.addEventListener('click', (e)=>{
+      const view = e.target.closest('[data-view]');
+      const edit = e.target.closest('[data-edit]');
+      if(view){
+        const id = view.getAttribute('data-view');
+        alert('Xem hồ sơ chi tiết giáo viên #' + id + ' (demo)');
+      }
+      if(edit){
+        const id = edit.getAttribute('data-edit');
+        alert('Sửa thông tin giáo viên #' + id + ' (demo)');
+      }
+    });
+
+    // Nút demo thêm / xuất
+    (function(){
+      const btnAdd = document.getElementById('btn-add');
+      if (btnAdd) {
+        btnAdd.addEventListener('click', () => {
+          alert('Thêm giáo viên (demo) – chưa nối API.');
+        });
+      }
+      const btnExport = document.getElementById('btn-export');
+      if (btnExport) {
+        btnExport.addEventListener('click', () => {
+          alert('Xuất danh sách giáo viên (demo) – chưa nối API.');
+        });
+      }
+    })();
+  </script>
+</body>
+</html>
