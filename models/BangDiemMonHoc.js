@@ -12,6 +12,9 @@ const BangDiemMonHoc = sequelize.define("BangDiemMonHoc", {
   Diem1Tiet: { type: DataTypes.REAL },
   DiemTBMon: { type: DataTypes.REAL },
   DanhGia: { type: DataTypes.STRING }
+}, {
+  freezeTableName: true,
+  timestamps: false
 });
 
 module.exports = BangDiemMonHoc;

@@ -9,6 +9,9 @@ const GiaoVien = sequelize.define("GiaoVien", {
   DiaChi: { type: DataTypes.STRING },
   Email: { type: DataTypes.STRING },
   MaMonGiangDay: { type: DataTypes.STRING, allowNull: false }
+}, {
+  freezeTableName: true,
+  timestamps: false
 });
 
 module.exports = GiaoVien;

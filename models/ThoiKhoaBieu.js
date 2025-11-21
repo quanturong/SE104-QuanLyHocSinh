@@ -8,6 +8,9 @@ const ThoiKhoaBieu = sequelize.define("ThoiKhoaBieu", {
   TietHoc: { type: DataTypes.INTEGER, primaryKey: true },
   MaMonHoc: { type: DataTypes.STRING, allowNull: false },
   MaGiaoVien: { type: DataTypes.INTEGER, allowNull: false }
+}, {
+  freezeTableName: true,
+  timestamps: false
 });
 
 module.exports = ThoiKhoaBieu;

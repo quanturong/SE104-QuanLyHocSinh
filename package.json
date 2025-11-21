@@ -7,7 +7,8 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node app.js",
     "dev": "nodemon app.js",
-    "import-users": "node scripts/import-users.js"
+    "import-users": "node scripts/import-users.js",
+    "cleanup-tables": "node scripts/cleanup-duplicate-tables.js"
   },
   "repository": {
     "type": "git",
