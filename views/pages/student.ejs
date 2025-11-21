@@ -3,125 +3,159 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Học sinh – Quản lí học sinh</title>
-  <link rel="stylesheet" href="../css/style.css" />
+  <title>Danh sách học sinh – Quản lí học sinh</title>
+  <link rel="stylesheet" href="/css/style.css" />
 </head>
-<body class="page-student sp-page">
+<body class="page-student">
   <div class="layout">
     <aside class="sidebar">
       <div class="brand">
         <div class="logo">🎓</div>
         <span>Student Management – Quản lí học sinh</span>
       </div>
+
+      <% 
+        // Lấy role từ user
+        const role = (user && user.role) ? user.role : "";
+        // Quyền quản lý HS (Admin + GiaoVu) do backend truyền sang
+        const canManageStudents = permissions && permissions.canManageStudents;
+      %>
+
       <nav class="nav">
-        <a href="/tablecontrol">Bảng điều khiển</a>
-        <a class="active" href="/student">Học sinh</a>
-        <a href="/class">Lớp học</a>
-        <a href="/attendance">Điểm danh</a>
-        <a href="/report">Báo cáo</a>
-        <a href="/scoretable">Điểm số</a>
-        <a href="/timetable">Thời khóa biểu</a>
-        <a href="/find">Tra cứu</a>
-        <a href="/teacher">Giáo viên</a>  
-        <a href="/rules">Quy định</a>
-        
+        <a class="<%= title === 'Bảng điều khiển' ? 'active' : '' %>" href="/tablecontrol">
+          Bảng điều khiển
+        </a>
+        <% if (role !== 'HocSinh') { %>
+          <a class="<%= title === 'Danh sách học sinh' ? 'active' : '' %>" href="/student">
+            Học sinh
+          </a>
+          <a class="<%= title === 'Danh sách lớp' ? 'active' : '' %>" href="/class">
+            Lớp học
+          </a>
+          <a class="<%= title === 'Điểm danh' ? 'active' : '' %>" href="/attendance">
+            Điểm danh
+          </a>
+          <a class="<%= title === 'Báo cáo' ? 'active' : '' %>" href="/report">
+            Báo cáo
+          </a>
+          <a class="<%= title === 'Bảng điểm' ? 'active' : '' %>" href="/scoretable">
+            Điểm số
+          </a>
+          <a class="<%= title === 'Tra cứu hồ sơ học sinh' ? 'active' : '' %>" href="/find">
+            Tra cứu
+          </a>
+        <% } %>
+        <a class="<%= title === 'Thời khóa biểu' ? 'active' : '' %>" href="/timetable">
+          Thời khóa biểu
+        </a>
+        <a class="<%= title === 'Danh sách giáo viên' ? 'active' : '' %>" href="/teacher">
+          Giáo viên
+        </a>
+        <a class="<%= title === 'Quy định' ? 'active' : '' %>" href="/rules">
+          Quy định
+        </a>
       </nav>
       <div class="spacer"></div>
-      <a class="nav logout" href="/login">Đăng xuất</a>
+      <a class="nav logout" href="/logout">Đăng xuất</a>
     </aside>
 
     <main class="main">
       <div class="page-header">
         <h1 class="page-title">Danh sách học sinh</h1>
-        <p class="page-desc">Quản lý thông tin học sinh trong hệ thống</p>
+        <p class="page-desc">
+          Dữ liệu hiển thị trực tiếp từ bảng <strong>HoSoHocSinh</strong> (MaHocSinh, HoTen, GioiTinh, NgaySinh, DiaChi, Email, MaLop).
+        </p>
       </div>
+      <section class="card" style="margin-bottom: 16px;">
+        <div class="toolbar" style="justify-content: space-between;">
+          <div>
+            <div style="font-weight: 600; font-size: 16px;">
+              <%= (students && students.length) ? students.length : 0 %> học sinh
+            </div>
+            <div class="muted" style="font-size: 13px;">
+              Mỗi dòng tương ứng một bản ghi trong <code>HoSoHocSinh</code>.
+            </div>
+          </div>
 
-      <section class="card">
-        <div class="toolbar">
-          <input class="input" type="text" id="search" placeholder="Tìm học sinh theo tên hoặc mã..." />
-          <select class="select" id="filter-class">
-            <option value="">Tất cả lớp</option>
-                <option>12A1</option>
-                <option>12A2</option>
-                <option>11A1</option>
-                <option>11A2</option>
-                <option>10A1</option>
-                <option>10A2</option>
-                <option>10A3</option>
-                <option>10A4</option>
-          </select>
-          <select class="select" id="filter-years">
-            <option value="">Năm học</option>
-              <option value="2024-2025">2039 - 2040</option>
-              <option value="2023-2024">2038 - 2039</option>
-              <option value="2022-2023">2037 - 2038</option>
-              <option value="2024-2025">2036 - 2037</option>
-              <option value="2023-2024">2035 - 2036</option>
-              <option value="2022-2023">2034 - 2035</option>
-              <option value="2024-2025">2033 - 2034</option>
-              <option value="2023-2024">2032 - 2033</option>
-              <option value="2022-2023">2031 - 2032</option>
-              <option value="2024-2025">2030 - 2031</option>
-              <option value="2023-2024">2029 - 2030</option>
-              <option value="2022-2023">2028 - 2029</option>
-              <option value="2024-2025">2027 - 2028</option>
-              <option value="2023-2024">2026 - 2027</option>
-              <option value="2022-2023">2025 - 2026</option>            
-              <option value="2024-2025">2024 - 2025</option>
-              <option value="2023-2024">2023 - 2024</option>
-              <option value="2022-2023">2022 - 2023</option>
-          </select>
-          <select class="select" id="filter-status">
-            <option value="">Tất cả trạng thái</option>
-            <option value="ok">Đang học</option>
-            <option value="warn">Cảnh báo nghỉ học</option>
-            <option value="debt">Đã thôi học</option>
-          </select>
-          <button class="btn" id="btn-add">+ Thêm học sinh</button>
-          <button class="btn" id="btn-del">- Xóa học sinh</button>
+          <div style="display:flex; gap:8px; align-items:center;">
+            <input
+              class="input"
+              id="search-name"
+              placeholder="Tìm theo họ tên hoặc mã HS..."
+              style="min-width: 240px;"
+            />
+            <select class="select" id="filter-gender">
+              <option value="">Tất cả giới tính</option>
+              <option value="Nam">Nam</option>
+              <option value="Nữ">Nữ</option>
+            </select>
+            <select class="select" id="filter-class">
+              <option value="">Tất cả lớp</option>
+              <% if (students && students.length) { 
+                   const set = new Set();
+                   students.forEach(s => { if (s.MaLop) set.add(s.MaLop); });
+                   Array.from(set).sort().forEach(function(lop){ %>
+                     <option value="<%= lop %>"><%= lop %></option>
+              <%   });
+                 } %>
+            </select>
+
+            <% if (canManageStudents) { %>
+              <button class="btn" id="btn-add">+ Thêm học sinh</button>
+            <% } %>
+            <button class="btn btn-export" id="btn-export">📊 Xuất Excel</button>
+          </div>
         </div>
-
-        <div class="table-wrap" style="overflow:auto; max-height:520px;">
+      </section>
+      <section class="card">
+        <div class="table-wrap" style="overflow:auto; max-height:560px;">
           <table class="table" id="tbl-students">
             <thead>
               <tr>
-                <th>Mã HS</th>
-                <th>Họ tên</th>
-                <th>Lớp</th>
-                <th>Ngày sinh</th>
-                <th>Liên lạc</th>
-                <th>Trạng thái</th>
-                <th>Thao tác</th>
+                <th style="width:60px;">STT</th>
+                <th style="width:90px;">MÃ HS</th>
+                <th style="width:220px;">HỌ TÊN</th>
+                <th style="width:90px;">GIỚI TÍNH</th>
+                <th style="width:130px;">NGÀY SINH</th>
+                <th style="width:220px;">ĐỊA CHỈ</th>
+                <th style="width:160px;">EMAIL</th>
+                <th style="width:80px;">LỚP</th>
+                <% if (canManageStudents) { %>
+                  <th style="width:110px;">THAO TÁC</th>
+                <% } %>
               </tr>
             </thead>
             <tbody>
-              <tr>
-                <td>HS0921</td>
-                <td>Nguyễn Diệu Anh</td>
-                <td>12C3</td>
-                <td>18/11/2007</td>
-                <td>0901 234 567</td>
-                <td><span class="badge b-success">Đang học</span></td>
-                <td><button class="btn btn-sm">Sửa</button></td>
-              </tr>
-              <tr>
-                <td>HS1042</td>
-                <td>Trần Minh Quân</td>
-                <td>11B1</td>
-                <td>22/05/2008</td>
-                <td>0912 111 222</td>
-                <td><span class="badge b-warn">Cảnh báo</span></td>
-                <td><button class="btn btn-sm">Sửa</button></td>
-              </tr>
-              <tr>
-                <td>HS1168</td>
-                <td>Phạm Hoàng Anh</td>
-                <td>10A2</td>
-                <td>14/03/2009</td>
-                <td>0988 345 666</td>
-                <td><span class="badge b-danger">Nợ học phí</span></td>
-                <td><button class="btn btn-sm">Sửa</button></td>
-              </tr>
+              <% if (students && students.length) { %>
+                <% students.forEach(function(st, index) { %>
+                  <tr
+                    data-name="<%= ((st.HoTen || '') + ' ' + (st.MaHocSinh || '')).toLowerCase() %>"
+                    data-gender="<%= (st.GioiTinh || '').toLowerCase() %>"
+                    data-class="<%= (st.MaLop || '').toLowerCase() %>"
+                  >
+                    <td class="text-center"><%= index + 1 %></td>
+                    <td><%= st.MaHocSinh %></td>
+                    <td><strong><%= st.HoTen %></strong></td>
+                    <td><%= st.GioiTinh || '' %></td>
+                    <td><%= st.NgaySinh || '' %></td>
+                    <td><%= st.DiaChi || '' %></td>
+                    <td><%= st.Email || '' %></td>
+                    <td><%= st.MaLop || '' %></td>
+
+                    <% if (canManageStudents) { %>
+                      <td class="text-center">
+                        <button class="btn btn-sm">Sửa</button>
+                      </td>
+                    <% } %>
+                  </tr>
+                <% }) %>
+              <% } else { %>
+                <tr>
+                  <td colspan="<%= canManageStudents ? 9 : 8 %>" class="text-center muted">
+                    Chưa có dữ liệu học sinh trong hệ thống.
+                  </td>
+                </tr>
+              <% } %>
             </tbody>
           </table>
         </div>
@@ -134,122 +168,51 @@
       </section>
     </main>
   </div>
-  <div id="sp-overlay" class="sp-overlay" style="display:none">
-    <div class="sp-modal" role="dialog" aria-modal="true" aria-labelledby="sp-title">
-      <h2 id="sp-title" class="sp-title">Hồ sơ học sinh</h2>
-
-      <form id="sp-form" class="sp-form">
-        <div class="sp-grid">
-          <label class="sp-field">Mã HS
-            <input name="code" type="text" placeholder="VD: HS1234" />
-          </label>
-          <label class="sp-field">Lớp
-            <input name="class" type="text" placeholder="VD: 10A1" />
-          </label>
-        </div>
-        <label class="sp-field">Họ và tên <span class="sp-required">*</span>
-          <input name="fullname" type="text" required placeholder="Nhập họ và tên học sinh" />
-        </label>
-
-        <div class="sp-grid">
-          <label class="sp-field">Giới tính <span class="sp-required">*</span>
-            <select name="gender" required>
-              <option value="">-- Chọn giới tính --</option>
-              <option>Nam</option>
-              <option>Nữ</option>
-              <option>Khác</option>
-            </select>
-          </label>
-          <label class="sp-field">Ngày sinh <span class="sp-required">*</span>
-            <input name="birthday" type="date" required />
-          </label>
-        </div>
-
-        <label class="sp-field">Địa chỉ <span class="sp-required">*</span>
-          <input name="address" type="text" required placeholder="Nhập địa chỉ nơi ở" />
-        </label>
-
-        <label class="sp-field">Email <span class="sp-required">*</span>
-          <input name="email" type="email" required placeholder="example@gmail.com" />
-        </label>
-        <div class="sp-grid">
-          <label class="sp-field">SĐT
-            <input name="phone" type="tel" placeholder="VD: 09xx xxx xxx" />
-          </label>
-          <label class="sp-field">Ngày nhập học
-            <input name="enroll_date" type="date" />
-          </label>
-        </div>
-
-        <div class="sp-grid">
-          <label class="sp-field">Phụ huynh
-            <input name="guardian_name" type="text" placeholder="Họ tên phụ huynh" />
-          </label>
-          <label class="sp-field">SĐT phụ huynh
-            <input name="guardian_phone" type="tel" placeholder="VD: 09xx xxx xxx" />
-          </label>
-        </div>
-
-        <label class="sp-field">Trạng thái
-          <select name="status">
-            <option value="">-- Chọn trạng thái --</option>
-            <option value="ok">Đang học</option>
-            <option value="warn">Cảnh báo nghỉ học</option>
-            <option value="debt">Nợ học phí</option>
-            <option value="hold">Bảo lưu</option>
-            <option value="grad">Đã tốt nghiệp</option>
-          </select>
-        </label>
-
-        <label class="sp-field">Ghi chú
-          <input name="note" type="text" placeholder="Thông tin thêm (nếu có)" />
-        </label>
-
-        <div class="sp-actions">
-          <button type="button" class="sp-btn sp-btn--ghost" id="sp-cancel">Hủy</button>
-          <button type="submit" class="sp-btn">Lưu hồ sơ</button>
-        </div>
-      </form>
-    </div>
-  </div>
 
   <script>
-    const overlay = document.getElementById('sp-overlay');
-    const btnAdd = document.getElementById('btn-add');
-    const editBtns = document.querySelectorAll('#tbl-students .btn');
+    (function() {
+      const searchInput  = document.getElementById('search-name');
+      const filterGender = document.getElementById('filter-gender');
+      const filterClass  = document.getElementById('filter-class');
+      const rows         = document.querySelectorAll('#tbl-students tbody tr');
 
-    function openStudentModal(prefill = {}) {
-      Object.entries(prefill).forEach(([k,v])=>{
-        const el = document.querySelector(`[name="${k}"]`);
-        if (el) el.value = v;
-      });
-      overlay.style.display = 'grid';
-      document.body.style.overflow = 'hidden';
-    }
-    function closeStudentModal(){
-      overlay.style.display = 'none';
-      document.body.style.overflow = '';
-      document.getElementById('sp-form').reset();
-    }
+      function applyFilter(){
+        const q  = (searchInput.value || '').toLowerCase();
+        const g  = (filterGender.value || '').toLowerCase();
+        const cl = (filterClass.value  || '').toLowerCase();
 
-    btnAdd && (btnAdd.onclick = () => openStudentModal());
-    editBtns.forEach(b => b.onclick = () => {
-      const row = b.closest('tr').children;
-      openStudentModal({
-        code: row[0].innerText,
-        fullname: row[1].innerText,
-        class: row[2].innerText
-      });
-    });
+        rows.forEach(tr => {
+          const name   = tr.getAttribute('data-name')   || '';
+          const gender = tr.getAttribute('data-gender') || '';
+          const clazz  = tr.getAttribute('data-class')  || '';
 
-    document.getElementById('sp-cancel').onclick = closeStudentModal;
-    overlay.addEventListener('click', (e)=>{ if(e.target === overlay) closeStudentModal(); });
+          const okQ  = !q  || name.includes(q);
+          const okG  = !g  || gender === g;
+          const okCl = !cl || clazz === cl;
 
-    document.getElementById('sp-form').onsubmit = (e)=>{
-      e.preventDefault();
-      alert('Đã lưu hồ sơ học sinh!');
-      closeStudentModal();
-    };
+          tr.style.display = (okQ && okG && okCl) ? '' : 'none';
+        });
+      }
+
+      searchInput && searchInput.addEventListener('input', applyFilter);
+      filterGender && filterGender.addEventListener('change', applyFilter);
+      filterClass && filterClass.addEventListener('change', applyFilter);
+    })();
+    (function() {
+      const btnAdd = document.getElementById('btn-add');
+      if (btnAdd) {
+        btnAdd.addEventListener('click', function () {
+          alert('Thêm học sinh: hiện mới là giao diện demo, chưa nối API.');
+        });
+      }
+
+      const btnExport = document.getElementById('btn-export');
+      if (btnExport) {
+        btnExport.addEventListener('click', function () {
+          alert('Xuất Excel: hiện mới là giao diện demo, chưa nối API.');
+        });
+      }
+    })();
   </script>
 </body>
 </html>

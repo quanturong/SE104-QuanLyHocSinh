@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Báo cáo — Quản lí học sinh</title>
-  <link rel="stylesheet" href="../css/style.css" />
+  <link rel="stylesheet" href="/css/style.css" />
 </head>
 <body class="page-student">
   <div class="layout">
@@ -13,27 +13,57 @@
         <div class="logo">🎓</div>
         <span>Student Management – Quản lí học sinh</span>
       </div>
+
+      <% 
+        const role = (user && user.role) ? user.role : ""; 
+      %>
+
       <nav class="nav">
-        <a href="/tablecontrol">Bảng điều khiển</a>
-        <a href="/student">Học sinh</a>
-        <a href="/class">Lớp học</a>
-        <a href="/attendance">Điểm danh</a>
-        <a class="active" href="/report">Báo cáo</a>
-        <a href="/scoretable">Điểm số</a>
-        <a href="/timetable">Thời khóa biểu</a>
-        <a href="/find">Tra cứu</a>
-        <a href="/teacher">Giáo viên</a>
-        <a href="/rules">Quy định</a>
-          
+        <a class="<%= title === 'Bảng điều khiển' ? 'active' : '' %>" href="/tablecontrol">
+          Bảng điều khiển
+        </a>
+        <% if (role !== 'HocSinh') { %>
+          <a class="<%= title === 'Danh sách học sinh' ? 'active' : '' %>" href="/student">
+            Học sinh
+          </a>
+          <a class="<%= title === 'Danh sách lớp' ? 'active' : '' %>" href="/class">
+            Lớp học
+          </a>
+          <a class="<%= title === 'Điểm danh' ? 'active' : '' %>" href="/attendance">
+            Điểm danh
+          </a>
+          <a class="<%= title === 'Báo cáo' ? 'active' : '' %>" href="/report">
+            Báo cáo
+          </a>
+          <a class="<%= title === 'Bảng điểm' ? 'active' : '' %>" href="/scoretable">
+            Điểm số
+          </a>
+          <a class="<%= title === 'Tra cứu hồ sơ học sinh' ? 'active' : '' %>" href="/find">
+            Tra cứu
+          </a>
+        <% } %>
+        <a class="<%= title === 'Thời khóa biểu' ? 'active' : '' %>" href="/timetable">
+          Thời khóa biểu
+        </a>
+        <a class="<%= title === 'Danh sách giáo viên' ? 'active' : '' %>" href="/teacher">
+          Giáo viên
+        </a>
+        <a class="<%= title === 'Quy định' ? 'active' : '' %>" href="/rules">
+          Quy định
+        </a>
       </nav>
       <div class="spacer"></div>
-      <a class="nav logout" href="/login">Đăng xuất</a>
+      <a class="nav logout" href="/logout">Đăng xuất</a>
     </aside>
+
     <main class="main">
+      <% const canExportReport = permissions && permissions.canExportReport; %>
+
       <div class="page-header">
         <h1 class="page-title">Báo cáo học tập</h1>
         <p class="page-desc">Thống kê và báo cáo kết quả học tập theo môn học và tổng kết học kì</p>
       </div>
+
       <div class="report-buttons">
         <button class="report-btn active" data-report="subject" onclick="switchTab('subject')">
           <span class="report-btn-icon">📊</span>
@@ -56,24 +86,15 @@
             <div class="class-info-item">
               <label class="class-label">Năm học</label>
               <select class="select class-select" id="subject-year">
-              <option value="2024-2025">2039 - 2040</option>
-              <option value="2023-2024">2038 - 2039</option>
-              <option value="2022-2023">2037 - 2038</option>
-              <option value="2024-2025">2036 - 2037</option>
-              <option value="2023-2024">2035 - 2036</option>
-              <option value="2022-2023">2034 - 2035</option>
-              <option value="2024-2025">2033 - 2034</option>
-              <option value="2023-2024">2032 - 2033</option>
-              <option value="2022-2023">2031 - 2032</option>
-              <option value="2024-2025">2030 - 2031</option>
-              <option value="2023-2024">2029 - 2030</option>
-              <option value="2022-2023">2028 - 2029</option>
-              <option value="2024-2025">2027 - 2028</option>
-              <option value="2023-2024">2026 - 2027</option>
-              <option value="2022-2023">2025 - 2026</option>            
-              <option value="2024-2025">2024 - 2025</option>
-              <option value="2023-2024">2023 - 2024</option>
-              <option value="2022-2023">2022 - 2023</option>
+                <% if (namHocs && namHocs.length) { %>
+                  <% namHocs.forEach(function(nh, idx) { %>
+                    <option value="<%= nh.MaNamHoc %>" <%= idx === 0 ? "selected" : "" %>>
+                      <%= nh.MaNamHoc %>
+                    </option>
+                  <% }) %>
+                <% } else { %>
+                  <option>Chưa có năm học</option>
+                <% } %>
               </select>
             </div>
 
@@ -90,16 +111,15 @@
               <label class="class-label">Môn học</label>
               <select class="select class-select" id="subject-subject">
                 <option value="">-- Chọn môn học --</option>
-                  <option value="toan">Toán</option>
-                  <option value="vatly">Vật lý</option>
-                  <option value="hoahoc">Hóa học</option>
-                  <option value="sinhhoc">Sinh học</option>
-                  <option value="nguvan">Ngữ văn</option>
-                  <option value="lichsu">Lịch sử</option>
-                  <option value="dialy">Địa lý</option>
-                  <option value="daoduc">Đạo đức</option>
-                  <option value="educ">Thể dục</option>
-                </optgroup>
+                <option value="toan">Toán</option>
+                <option value="vatly">Vật lý</option>
+                <option value="hoahoc">Hóa học</option>
+                <option value="sinhhoc">Sinh học</option>
+                <option value="nguvan">Ngữ văn</option>
+                <option value="lichsu">Lịch sử</option>
+                <option value="dialy">Địa lý</option>
+                <option value="daoduc">Đạo đức</option>
+                <option value="educ">Thể dục</option>
               </select>
             </div>
           </div>
@@ -108,22 +128,53 @@
         <div class="grid cols-4" style="margin-bottom: 16px;">
           <section class="card stat-mini">
             <div class="stat-mini-label">Tổng số lớp</div>
-            <div class="stat-mini-value" id="subject-stat-classes">18</div>
+            <div class="stat-mini-value" id="subject-stat-classes">
+              <%= reportMon ? reportMon.length : 0 %>
+            </div>
           </section>
 
           <section class="card stat-mini">
             <div class="stat-mini-label">Tổng học sinh</div>
-            <div class="stat-mini-value" id="subject-stat-students">756</div>
+            <div class="stat-mini-value" id="subject-stat-students">
+              <%
+                let tongHSMon = 0;
+                if (reportMon && reportMon.length) {
+                  reportMon.forEach(r => { tongHSMon += (r.SiSo || r.SiSoLop || 0); });
+                }
+              %>
+              <%= tongHSMon %>
+            </div>
           </section>
 
           <section class="card stat-mini">
             <div class="stat-mini-label">Số lượng đạt</div>
-            <div class="stat-mini-value stat-success" id="subject-stat-pass">692</div>
+            <div class="stat-mini-value stat-success" id="subject-stat-pass">
+              <%
+                let tongDatMon = 0;
+                if (reportMon && reportMon.length) {
+                  reportMon.forEach(r => { tongDatMon += (r.SoLuongDat || r.SoDat || 0); });
+                }
+              %>
+              <%= tongDatMon %>
+            </div>
           </section>
 
           <section class="card stat-mini">
-            <div class="stat-mini-label">Tỉ lệ đạt</div>
-            <div class="stat-mini-value stat-success" id="subject-stat-rate">91.5%</div>
+            <div class="stat-mini-label">Tỉ lệ đạt (TB)</div>
+            <div class="stat-mini-value stat-success" id="subject-stat-rate">
+              <%
+                let avgRateMon = 0;
+                if (reportMon && reportMon.length) {
+                  let sumRate = 0, cnt = 0;
+                  reportMon.forEach(r => {
+                    const rr = Number(r.TiLe || r.TiLeDat || 0);
+                    if (!isNaN(rr)) { sumRate += rr; cnt++; }
+                  });
+                  avgRateMon = cnt ? (sumRate / cnt) : 0;
+                }
+              %>
+              <%= avgRateMon ? avgRateMon.toFixed(1) : 0 %>%
+            </div>
           </section>
         </div>
 
@@ -133,8 +184,11 @@
               Báo cáo môn: <span id="subject-name-display">Toán</span> - Học kì <span id="semester-display">I</span>
             </h3>
             <div style="flex: 1;"></div>
-            <button class="btn btn-export" id="btn-export-subject">📊 Xuất Excel</button>
-            <button class="btn" style="background: #8b5cf6" id="btn-print-subject">🖨️ In báo cáo</button>
+
+            <% if (canExportReport) { %>
+              <button class="btn btn-export" id="btn-export-subject">📊 Xuất Excel</button>
+              <button class="btn" style="background: #8b5cf6" id="btn-print-subject">🖨️ In báo cáo</button>
+            <% } %>
           </div>
 
           <div class="table-wrap" style="overflow:auto; max-height:520px;">
@@ -154,103 +208,53 @@
                 </tr>
               </thead>
               <tbody>
-                <tr>
-                  <td class="text-center">1</td>
-                  <td><strong>10A1</strong></td>
-                  <td class="text-center">45</td>
-                  <td class="text-center">42</td>
-                  <td class="text-center"><span class="rate-badge rate-excellent">93.3%</span></td>
-                  <td class="text-center">15</td>
-                  <td class="text-center">18</td>
-                  <td class="text-center">9</td>
-                  <td class="text-center">3</td>
-                  <td class="text-center"><strong>7.8</strong></td>
-                </tr>
-                <tr>
-                  <td class="text-center">2</td>
-                  <td><strong>10A2</strong></td>
-                  <td class="text-center">43</td>
-                  <td class="text-center">40</td>
-                  <td class="text-center"><span class="rate-badge rate-excellent">93.0%</span></td>
-                  <td class="text-center">12</td>
-                  <td class="text-center">20</td>
-                  <td class="text-center">8</td>
-                  <td class="text-center">3</td>
-                  <td class="text-center"><strong>7.7</strong></td>
-                </tr>
-                <tr>
-                  <td class="text-center">3</td>
-                  <td><strong>11B1</strong></td>
-                  <td class="text-center">42</td>
-                  <td class="text-center">39</td>
-                  <td class="text-center"><span class="rate-badge rate-excellent">92.9%</span></td>
-                  <td class="text-center">18</td>
-                  <td class="text-center">14</td>
-                  <td class="text-center">7</td>
-                  <td class="text-center">3</td>
-                  <td class="text-center"><strong>8.1</strong></td>
-                </tr>
-                <tr>
-                  <td class="text-center">4</td>
-                  <td><strong>11B2</strong></td>
-                  <td class="text-center">41</td>
-                  <td class="text-center">36</td>
-                  <td class="text-center"><span class="rate-badge rate-good">87.8%</span></td>
-                  <td class="text-center">10</td>
-                  <td class="text-center">16</td>
-                  <td class="text-center">10</td>
-                  <td class="text-center">5</td>
-                  <td class="text-center"><strong>7.2</strong></td>
-                </tr>
-                <tr>
-                  <td class="text-center">5</td>
-                  <td><strong>12C3</strong></td>
-                  <td class="text-center">47</td>
-                  <td class="text-center">44</td>
-                  <td class="text-center"><span class="rate-badge rate-excellent">93.6%</span></td>
-                  <td class="text-center">20</td>
-                  <td class="text-center">15</td>
-                  <td class="text-center">9</td>
-                  <td class="text-center">3</td>
-                  <td class="text-center"><strong>8.3</strong></td>
-                </tr>
-                <tr>
-                  <td class="text-center">6</td>
-                  <td><strong>12C4</strong></td>
-                  <td class="text-center">44</td>
-                  <td class="text-center">38</td>
-                  <td class="text-center"><span class="rate-badge rate-good">86.4%</span></td>
-                  <td class="text-center">11</td>
-                  <td class="text-center">17</td>
-                  <td class="text-center">10</td>
-                  <td class="text-center">6</td>
-                  <td class="text-center"><strong>7.4</strong></td>
-                </tr>
-                <tr class="report-summary-row">
-                  <td colspan="2" class="text-center"><strong>TỔNG CỘNG</strong></td>
-                  <td class="text-center"><strong>262</strong></td>
-                  <td class="text-center"><strong>239</strong></td>
-                  <td class="text-center"><strong><span class="rate-badge rate-excellent">91.2%</span></strong></td>
-                  <td class="text-center"><strong>86</strong></td>
-                  <td class="text-center"><strong>100</strong></td>
-                  <td class="text-center"><strong>53</strong></td>
-                  <td class="text-center"><strong>23</strong></td>
-                  <td class="text-center"><strong>7.8</strong></td>
-                </tr>
+                <% if (reportMon && reportMon.length) { %>
+                  <% reportMon.forEach(function(r, index) { %>
+                    <tr>
+                      <td class="text-center"><%= index + 1 %></td>
+                      <td class="text-center"><strong><%= r.MaLop || '' %></strong></td>
+                      <td class="text-center"><%= r.SiSo || r.SiSoLop || 0 %></td>
+                      <td class="text-center"><%= r.SoLuongDat || r.SoDat || 0 %></td>
+                      <td class="text-center">
+                        <span class="rate-badge rate-excellent">
+                          <%= r.TiLe || r.TiLeDat || 0 %>%
+                        </span>
+                      </td>
+                      <td class="text-center"><%= r.SoGioi || '' %></td>
+                      <td class="text-center"><%= r.SoKha || '' %></td>
+                      <td class="text-center"><%= r.SoTrungBinh || '' %></td>
+                      <td class="text-center"><%= r.SoYeu || '' %></td>
+                      <td class="text-center"><strong><%= r.DiemTrungBinhLop || r.DiemTB || '' %></strong></td>
+                    </tr>
+                  <% }) %>
+                <% } else { %>
+                  <tr>
+                    <td colspan="10" class="text-center muted">
+                      Chưa có dữ liệu báo cáo tổng kết môn học.
+                    </td>
+                  </tr>
+                <% } %>
               </tbody>
             </table>
           </div>
         </section>
       </div>
+
       <div id="tab-semester" class="report-content">
         <section class="card" style="margin-bottom: 16px;">
           <div class="report-filter-grid-2">
             <div class="class-info-item">
               <label class="class-label">Năm học</label>
               <select class="select class-select" id="semester-year">
-                <option value="2024-2025">2024 - 2025</option>
-                <option value="2023-2024">2023 - 2024</option>
-                <option value="2022-2023">2022 - 2023</option>
+                <% if (namHocs && namHocs.length) { %>
+                  <% namHocs.forEach(function(nh, idx) { %>
+                    <option value="<%= nh.MaNamHoc %>" <%= idx === 0 ? "selected" : "" %>>
+                      <%= nh.MaNamHoc %>
+                    </option>
+                  <% }) %>
+                <% } else { %>
+                  <option>Chưa có năm học</option>
+                <% } %>
               </select>
             </div>
 
@@ -264,35 +268,73 @@
             </div>
           </div>
         </section>
+
         <div class="grid cols-4" style="margin-bottom: 16px;">
           <section class="card stat-mini">
             <div class="stat-mini-label">Tổng số lớp</div>
-            <div class="stat-mini-value" id="semester-stat-classes">18</div>
+            <div class="stat-mini-value" id="semester-stat-classes">
+              <%= reportHK ? reportHK.length : 0 %>
+            </div>
           </section>
 
           <section class="card stat-mini">
             <div class="stat-mini-label">Tổng học sinh</div>
-            <div class="stat-mini-value" id="semester-stat-students">756</div>
+            <div class="stat-mini-value" id="semester-stat-students">
+              <%
+                let tongHSHK = 0;
+                if (reportHK && reportHK.length) {
+                  reportHK.forEach(r => { tongHSHK += (r.SiSo || r.SiSoLop || 0); });
+                }
+              %>
+              <%= tongHSHK %>
+            </div>
           </section>
 
           <section class="card stat-mini">
             <div class="stat-mini-label">Số lượng đạt</div>
-            <div class="stat-mini-value stat-success" id="semester-stat-pass">710</div>
+            <div class="stat-mini-value stat-success" id="semester-stat-pass">
+              <%
+                let tongDatHK = 0;
+                if (reportHK && reportHK.length) {
+                  reportHK.forEach(r => { tongDatHK += (r.SoLuongDat || r.SoDat || 0); });
+                }
+              %>
+              <%= tongDatHK %>
+            </div>
           </section>
 
           <section class="card stat-mini">
-            <div class="stat-mini-label">Tỉ lệ đạt</div>
-            <div class="stat-mini-value stat-success" id="semester-stat-rate">93.9%</div>
+            <div class="stat-mini-label">Tỉ lệ đạt (TB)</div>
+            <div class="stat-mini-value stat-success" id="semester-stat-rate">
+              <%
+                let avgRateHK = 0;
+                if (reportHK && reportHK.length) {
+                  let sumRate = 0, cnt = 0;
+                  reportHK.forEach(r => {
+                    const rr = Number(r.TiLe || r.TiLeDat || 0);
+                    if (!isNaN(rr)) { sumRate += rr; cnt++; }
+                  });
+                  avgRateHK = cnt ? (sumRate / cnt) : 0;
+                }
+              %>
+              <%= avgRateHK ? avgRateHK.toFixed(1) : 0 %>%
+            </div>
           </section>
         </div>
+
         <section class="card">
           <div class="toolbar">
             <h3 style="margin: 0; font-size: 16px; font-weight: 700; color: #073b4c;">
-              Báo cáo tổng kết Học kì <span id="semester-display-2">I</span> - Năm học <span id="year-display">2024-2025</span>
+              Báo cáo tổng kết Học kì <span id="semester-display-2">I</span> - Năm học <span id="year-display">
+                <%= (namHocs && namHocs.length) ? namHocs[0].MaNamHoc : '' %>
+              </span>
             </h3>
             <div style="flex: 1;"></div>
-            <button class="btn btn-export" id="btn-export-semester">📊 Xuất Excel</button>
-            <button class="btn" style="background: #8b5cf6" id="btn-print-semester">🖨️ In báo cáo</button>
+
+            <% if (canExportReport) { %>
+              <button class="btn btn-export" id="btn-export-semester">📊 Xuất Excel</button>
+              <button class="btn" style="background: #8b5cf6" id="btn-print-semester">🖨️ In báo cáo</button>
+            <% } %>
           </div>
 
           <div class="table-wrap" style="overflow:auto; max-height:520px;">
@@ -312,90 +354,32 @@
                 </tr>
               </thead>
               <tbody>
-                <tr>
-                  <td class="text-center">1</td>
-                  <td><strong>10A1</strong></td>
-                  <td class="text-center">45</td>
-                  <td class="text-center">43</td>
-                  <td class="text-center"><span class="rate-badge rate-excellent">95.6%</span></td>
-                  <td class="text-center">12</td>
-                  <td class="text-center">22</td>
-                  <td class="text-center">9</td>
-                  <td class="text-center">2</td>
-                  <td class="text-center"><strong>7.9</strong></td>
-                </tr>
-                <tr>
-                  <td class="text-center">2</td>
-                  <td><strong>10A2</strong></td>
-                  <td class="text-center">43</td>
-                  <td class="text-center">41</td>
-                  <td class="text-center"><span class="rate-badge rate-excellent">95.3%</span></td>
-                  <td class="text-center">10</td>
-                  <td class="text-center">21</td>
-                  <td class="text-center">10</td>
-                  <td class="text-center">2</td>
-                  <td class="text-center"><strong>7.7</strong></td>
-                </tr>
-                <tr>
-                  <td class="text-center">3</td>
-                  <td><strong>11B1</strong></td>
-                  <td class="text-center">42</td>
-                  <td class="text-center">40</td>
-                  <td class="text-center"><span class="rate-badge rate-excellent">95.2%</span></td>
-                  <td class="text-center">15</td>
-                  <td class="text-center">18</td>
-                  <td class="text-center">7</td>
-                  <td class="text-center">2</td>
-                  <td class="text-center"><strong>8.2</strong></td>
-                </tr>
-                <tr>
-                  <td class="text-center">4</td>
-                  <td><strong>11B2</strong></td>
-                  <td class="text-center">41</td>
-                  <td class="text-center">38</td>
-                  <td class="text-center"><span class="rate-badge rate-excellent">92.7%</span></td>
-                  <td class="text-center">8</td>
-                  <td class="text-center">20</td>
-                  <td class="text-center">10</td>
-                  <td class="text-center">3</td>
-                  <td class="text-center"><strong>7.5</strong></td>
-                </tr>
-                <tr>
-                  <td class="text-center">5</td>
-                  <td><strong>12C3</strong></td>
-                  <td class="text-center">47</td>
-                  <td class="text-center">45</td>
-                  <td class="text-center"><span class="rate-badge rate-excellent">95.7%</span></td>
-                  <td class="text-center">18</td>
-                  <td class="text-center">19</td>
-                  <td class="text-center">8</td>
-                  <td class="text-center">2</td>
-                  <td class="text-center"><strong>8.1</strong></td>
-                </tr>
-                <tr>
-                  <td class="text-center">6</td>
-                  <td><strong>12C4</strong></td>
-                  <td class="text-center">44</td>
-                  <td class="text-center">40</td>
-                  <td class="text-center"><span class="rate-badge rate-excellent">90.9%</span></td>
-                  <td class="text-center">9</td>
-                  <td class="text-center">19</td>
-                  <td class="text-center">12</td>
-                  <td class="text-center">4</td>
-                  <td class="text-center"><strong>7.4</strong></td>
-                </tr>
-                <tr class="report-summary-row">
-                  <td colspan="2" class="text-center"><strong>TỔNG CỘNG</strong></td>
-                  <td class="text-center"><strong>262</strong></td>
-                  <td class="text-center"><strong>247</strong></td>
-                  <td class="text-center"><strong><span class="rate-badge rate-excellent">94.3%</span></strong></td>
-                  <td class="text-center"><strong>72</strong></td>
-                  <td class="text-center"><strong>119</strong></td>
-                  <td class="text-center"><strong>56</strong></td>
-                  <td class="text-center"><strong>15</strong></td>
-                  <td class="text-center"><strong>7.8</strong></td>
-                  <td class="text-center"><strong>-</strong></td>
-                </tr>
+                <% if (reportHK && reportHK.length) { %>
+                  <% reportHK.forEach(function(r, index) { %>
+                    <tr>
+                      <td class="text-center"><%= index + 1 %></td>
+                      <td class="text-center"><strong><%= r.MaLop || '' %></strong></td>
+                      <td class="text-center"><%= r.SiSo || r.SiSoLop || 0 %></td>
+                      <td class="text-center"><%= r.SoLuongDat || r.SoDat || 0 %></td>
+                      <td class="text-center">
+                        <span class="rate-badge rate-excellent">
+                          <%= r.TiLe || r.TiLeDat || 0 %>%
+                        </span>
+                      </td>
+                      <td class="text-center"><%= r.SoGioi || '' %></td>
+                      <td class="text-center"><%= r.SoKha || '' %></td>
+                      <td class="text-center"><%= r.SoTrungBinh || '' %></td>
+                      <td class="text-center"><%= r.SoYeu || '' %></td>
+                      <td class="text-center"><strong><%= r.DiemTrungBinhChung || r.DiemTB || '' %></strong></td>
+                    </tr>
+                  <% }) %>
+                <% } else { %>
+                  <tr>
+                    <td colspan="10" class="text-center muted">
+                      Chưa có dữ liệu báo cáo tổng kết học kì.
+                    </td>
+                  </tr>
+                <% } %>
               </tbody>
             </table>
           </div>
@@ -412,41 +396,72 @@
       reportButtons.forEach(b => b.classList.remove('active'));
       contents.forEach(c => c.classList.remove('active'));
       
-      document.querySelector('[data-report="' + targetReport + '"]').classList.add('active');
-      document.getElementById('tab-' + targetReport).classList.add('active');
+      const btn = document.querySelector('[data-report="' + targetReport + '"]');
+      const tab = document.getElementById('tab-' + targetReport);
+      if (btn) btn.classList.add('active');
+      if (tab) tab.classList.add('active');
     }
-    document.getElementById('subject-subject').addEventListener('change', function() {
-      const selectedOption = this.options[this.selectedIndex];
-      document.getElementById('subject-name-display').textContent = selectedOption.text || 'Toán';
-    });
 
-    document.getElementById('subject-semester').addEventListener('change', function() {
-      const semesterMap = {'1': 'I', '2': 'II', 'full': 'Cả năm'};
-      document.getElementById('semester-display').textContent = semesterMap[this.value];
-    });
+    const subjectSelect  = document.getElementById('subject-subject');
+    const subjectSemesterSelect = document.getElementById('subject-semester');
+    const semesterSelect2 = document.getElementById('semester-semester');
+    const semesterYearSelect = document.getElementById('semester-year');
 
-    document.getElementById('semester-semester').addEventListener('change', function() {
-      const semesterMap = {'1': 'I', '2': 'II', 'full': 'Cả năm'};
-      document.getElementById('semester-display-2').textContent = semesterMap[this.value];
-    });
+    if (subjectSelect) {
+      subjectSelect.addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        document.getElementById('subject-name-display').textContent = selectedOption.text || 'Toán';
+      });
+    }
 
-    document.getElementById('semester-year').addEventListener('change', function() {
-      document.getElementById('year-display').textContent = this.value;
-    });
-    document.getElementById('btn-export-subject').addEventListener('click', function() {
-      alert('Xuất báo cáo môn học ra Excel!');
-    });
+    if (subjectSemesterSelect) {
+      subjectSemesterSelect.addEventListener('change', function() {
+        const semesterMap = {'1': 'I', '2': 'II', 'full': 'Cả năm'};
+        document.getElementById('semester-display').textContent = semesterMap[this.value] || 'I';
+      });
+    }
 
-    document.getElementById('btn-export-semester').addEventListener('click', function() {
-      alert('Xuất báo cáo tổng kết ra Excel!');
-    });
-    document.getElementById('btn-print-subject').addEventListener('click', function() {
-      window.print();
-    });
+    if (semesterSelect2) {
+      semesterSelect2.addEventListener('change', function() {
+        const semesterMap = {'1': 'I', '2': 'II', 'full': 'Cả năm'};
+        document.getElementById('semester-display-2').textContent = semesterMap[this.value] || 'I';
+      });
+    }
 
-    document.getElementById('btn-print-semester').addEventListener('click', function() {
-      window.print();
-    });
+    if (semesterYearSelect) {
+      semesterYearSelect.addEventListener('change', function() {
+        document.getElementById('year-display').textContent = this.value;
+      });
+    }
+
+    const btnExportSubject   = document.getElementById('btn-export-subject');
+    const btnExportSemester  = document.getElementById('btn-export-semester');
+    const btnPrintSubject    = document.getElementById('btn-print-subject');
+    const btnPrintSemester   = document.getElementById('btn-print-semester');
+
+    if (btnExportSubject) {
+      btnExportSubject.addEventListener('click', function() {
+        alert('Xuất báo cáo môn học ra Excel (dữ liệu từ BaoCaoTongKetMon)!');
+      });
+    }
+
+    if (btnExportSemester) {
+      btnExportSemester.addEventListener('click', function() {
+        alert('Xuất báo cáo tổng kết học kì ra Excel (dữ liệu từ BaoCaoTongKetHK)!');
+      });
+    }
+
+    if (btnPrintSubject) {
+      btnPrintSubject.addEventListener('click', function() {
+        window.print();
+      });
+    }
+
+    if (btnPrintSemester) {
+      btnPrintSemester.addEventListener('click', function() {
+        window.print();
+      });
+    }
   </script>
 </body>
 </html>

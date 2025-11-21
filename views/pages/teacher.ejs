@@ -4,8 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Thông tin giáo viên</title>
-  <link rel="stylesheet" href="../css/style.css" />
-
+  <link rel="stylesheet" href="/css/style.css" />
 </head>
 <body class="page-student">
   <div class="layout">
@@ -14,49 +13,96 @@
         <div class="logo">🎓</div>
         <span>Student Management – Quản lí học sinh</span>
       </div>
+
+      <%
+        // Lấy role & quyền quản lý giáo viên từ backend
+        const role = (user && user.role) ? user.role : "";
+        const canManageTeachers = permissions && permissions.canManageTeachers;
+      %>
+
       <nav class="nav">
-        <a href="/tablecontrol">Bảng điều khiển</a>
-        <a href="/student">Học sinh</a>
-        <a href="/class">Lớp học</a>
-        <a href="/attendance">Điểm danh</a>
-        <a href="/report">Báo cáo</a>
-        <a href="/scoretable">Điểm số</a>
-        <a href="/timetable">Thời khóa biểu</a>
-        <a href="/find">Tra cứu</a>
-        <a class="active" href="/teacher">Giáo viên</a>
-        <a href="/rules">Quy định</a>
-          
+        <a class="<%= title === 'Bảng điều khiển' ? 'active' : '' %>" href="/tablecontrol">
+          Bảng điều khiển
+        </a>
+
+        <% if (role !== 'HocSinh') { %>
+          <a class="<%= title === 'Danh sách học sinh' ? 'active' : '' %>" href="/student">
+            Học sinh
+          </a>
+          <a class="<%= title === 'Danh sách lớp' ? 'active' : '' %>" href="/class">
+            Lớp học
+          </a>
+          <a class="<%= title === 'Điểm danh' ? 'active' : '' %>" href="/attendance">
+            Điểm danh
+          </a>
+          <a class="<%= title === 'Báo cáo' ? 'active' : '' %>" href="/report">
+            Báo cáo
+          </a>
+          <a class="<%= title === 'Tra cứu hồ sơ học sinh' ? 'active' : '' %>" href="/find">
+            Tra cứu
+          </a>
+        <% } %>
+        <a class="<%= title === 'Bảng điểm' ? 'active' : '' %>" href="/scoretable">
+          Điểm số
+        </a>
+
+        <a class="<%= title === 'Thời khóa biểu' ? 'active' : '' %>" href="/timetable">
+          Thời khóa biểu
+        </a>
+        <a class="<%= title === 'Danh sách giáo viên' ? 'active' : '' %>" href="/teacher">
+          Giáo viên
+        </a>
+        <a class="<%= title === 'Quy định' ? 'active' : '' %>" href="/rules">
+          Quy định
+        </a>
       </nav>
+
+
       <div class="spacer"></div>
-      <a class="nav logout" href="/login">Đăng xuất</a>
+      <a class="nav logout" href="/logout">Đăng xuất</a>
     </aside>
+
     <main class="main">
       <div class="page-header">
         <h1 class="page-title">Thông tin giáo viên</h1>
-        <p class="page-desc">Danh sách giáo viên toàn trường: bộ môn giảng dạy, liên hệ, chủ nhiệm lớp…</p>
+        <p class="page-desc">
+          Danh sách giáo viên toàn trường: bộ môn giảng dạy, liên hệ, chủ nhiệm lớp…
+        </p>
       </div>
+
+      <!-- Thanh lọc / tìm kiếm / nút thêm, xuất -->
       <section class="card" style="margin-bottom:16px;">
         <div class="toolbar">
           <div class="class-info-item" style="min-width:220px;">
             <label class="class-label">Bộ môn</label>
             <select id="filter-subject" class="select class-select">
               <option value="">Tất cả bộ môn</option>
-              <option>Toán</option>
-              <option>Ngữ văn</option>
-              <option>Vật lý</option>
-              <option>Hóa học</option>
-              <option>Sinh học</option>
-              <option>Lịch sử</option>
-              <option>Địa lý</option>
-              <option>Đạo đức</option>
-              <option>Thể dục</option>
+              <% if (subjects && subjects.length) { %>
+                <% subjects.forEach(function(s) { %>
+                  <option value="<%= (s.TenMonHoc || '').toLowerCase() %>">
+                    <%= s.TenMonHoc %>
+                  </option>
+                <% }) %>
+              <% } %>
             </select>
           </div>
-          <input id="search-teacher" class="input" placeholder="Tìm theo họ tên / email / SĐT…" style="min-width:260px;">
-          <button class="btn" id="btn-add" title="Thêm giáo viên (demo)">➕ Thêm</button>
+
+          <input
+            id="search-teacher"
+            class="input"
+            placeholder="Tìm theo họ tên / email / địa chỉ…"
+            style="min-width:260px;"
+          >
+
+          <!-- Chỉ Admin + BGH được thêm/sửa giáo viên -->
+          <% if (canManageTeachers) { %>
+            <button class="btn" id="btn-add" title="Thêm giáo viên (demo)">➕ Thêm</button>
+          <% } %>
+
           <button class="btn btn-export" id="btn-export" title="Xuất danh sách">⬇️ Xuất</button>
         </div>
       </section>
+
       <section class="card">
         <div class="table-wrap" style="overflow:auto; max-height:560px;">
           <table class="table" id="tbl-teachers">
@@ -65,103 +111,40 @@
                 <th style="width:60px;">STT</th>
                 <th style="min-width:220px;">Họ tên</th>
                 <th style="min-width:140px;">Bộ môn</th>
-                <th style="min-width:200px;">Liên hệ</th>
-                <th style="min-width:120px;">Chủ nhiệm</th>
-                <th style="min-width:120px;">Trạng thái</th>
+                <th style="min-width:220px;">Email</th>
+                <th style="min-width:220px;">Địa chỉ</th>
                 <th style="min-width:120px;">Hành động</th>
               </tr>
             </thead>
             <tbody>
-              <tr>
-                <td class="text-center">1</td>
-                <td>Nguyễn Thị Hương</td>
-                <td>Toán</td>
-                <td>
-                  0901 234 567<br>
-                  <span class="muted">huong.nguyen@school.edu.vn</span>
-                </td>
-                <td><span class="badge b-info">12C3</span></td>
-                <td><span class="badge b-success">Đang giảng dạy</span></td>
-                <td class="text-center">
-                  <button class="btn btn-sm btn-ghost" data-view="1">Xem</button>
-                  <button class="btn btn-sm" data-edit="1">Sửa</button>
-                </td>
-              </tr>
-              <tr>
-                <td class="text-center">2</td>
-                <td>Trần Văn Sơn</td>
-                <td>Ngữ văn</td>
-                <td>
-                  0908 111 222<br>
-                  <span class="muted">son.tran@school.edu.vn</span>
-                </td>
-                <td><span class="badge b-info">—</span></td>
-                <td><span class="badge b-success">Đang giảng dạy</span></td>
-                <td class="text-center">
-                  <button class="btn btn-sm btn-ghost" data-view="2">Xem</button>
-                  <button class="btn btn-sm" data-edit="2">Sửa</button>
-                </td>
-              </tr>
-              <tr>
-                <td class="text-center">3</td>
-                <td>Đặng Quốc Đức</td>
-                <td>Vật lý</td>
-                <td>
-                  0912 333 444<br>
-                  <span class="muted">duc.dang@school.edu.vn</span>
-                </td>
-                <td><span class="badge b-info">11B1</span></td>
-                <td><span class="badge b-success">Đang giảng dạy</span></td>
-                <td class="text-center">
-                  <button class="btn btn-sm btn-ghost" data-view="3">Xem</button>
-                  <button class="btn btn-sm" data-edit="3">Sửa</button>
-                </td>
-              </tr>
-              <tr>
-                <td class="text-center">4</td>
-                <td>Lê Thu Nhung</td>
-                <td>Hóa học</td>
-                <td>
-                  0913 555 666<br>
-                  <span class="muted">nhung.le@school.edu.vn</span>
-                </td>
-                <td><span class="badge b-info">—</span></td>
-                <td><span class="badge b-success">Đang giảng dạy</span></td>
-                <td class="text-center">
-                  <button class="btn btn-sm btn-ghost" data-view="4">Xem</button>
-                  <button class="btn btn-sm" data-edit="4">Sửa</button>
-                </td>
-              </tr>
-              <tr>
-                <td class="text-center">5</td>
-                <td>Phạm Hải Lan</td>
-                <td>Tiếng Anh</td>
-                <td>
-                  0902 777 888<br>
-                  <span class="muted">lan.pham@school.edu.vn</span>
-                </td>
-                <td><span class="badge b-info">10A2</span></td>
-                <td><span class="badge b-success">Đang giảng dạy</span></td>
-                <td class="text-center">
-                  <button class="btn btn-sm btn-ghost" data-view="5">Xem</button>
-                  <button class="btn btn-sm" data-edit="5">Sửa</button>
-                </td>
-              </tr>
-              <tr>
-                <td class="text-center">6</td>
-                <td>Vũ Minh Tài</td>
-                <td>Sinh học</td>
-                <td>
-                  0909 000 999<br>
-                  <span class="muted">tai.vu@school.edu.vn</span>
-                </td>
-                <td><span class="badge b-info">—</span></td>
-                <td><span class="badge b-success">Đang giảng dạy</span></td>
-                <td class="text-center">
-                  <button class="btn btn-sm btn-ghost" data-view="6">Xem</button>
-                  <button class="btn btn-sm" data-edit="6">Sửa</button>
-                </td>
-              </tr>
+              <% if (teachers && teachers.length) { %>
+                <% teachers.forEach(function(t, index) { %>
+                  <tr
+                    data-name="<%= (t.HoTen || '').toLowerCase() %>"
+                    data-subject="<%= (t.TenMonHoc || t.MaMonGiangDay || '').toLowerCase() %>"
+                    data-contact="<%= (t.Email || '').toLowerCase() %>"
+                    data-address="<%= (t.DiaChi || '').toLowerCase() %>"
+                  >
+                    <td class="text-center"><%= index + 1 %></td>
+                    <td><%= t.HoTen %></td>
+                    <td><%= t.TenMonHoc || t.MaMonGiangDay || '' %></td>
+                    <td><%= t.Email || '' %></td>
+                    <td><%= t.DiaChi || '' %></td>
+                    <td>
+                      <button class="btn btn-small" data-view="<%= t.MaGiaoVien %>">Xem</button>
+                      <% if (canManageTeachers) { %>
+                        <button class="btn btn-small btn-ghost" data-edit="<%= t.MaGiaoVien %>">
+                          Sửa
+                        </button>
+                      <% } %>
+                    </td>
+                  </tr>
+                <% }) %>
+              <% } else { %>
+                <tr>
+                  <td colspan="6" style="text-align:center;">Chưa có giáo viên.</td>
+                </tr>
+              <% } %>
             </tbody>
           </table>
         </div>
@@ -185,19 +168,26 @@
       const subject = (subFilter.value || '').toLowerCase().trim();
 
       [...tbody.rows].forEach(tr => {
-        const name = tr.cells[1].textContent.toLowerCase();
-        const sub  = tr.cells[2].textContent.toLowerCase();
-        const contact = tr.cells[3].textContent.toLowerCase();
-        const homeroom = tr.cells[4].textContent.toLowerCase();
+        const name     = tr.getAttribute('data-name')     || '';
+        const sub      = tr.getAttribute('data-subject')  || '';
+        const contact  = tr.getAttribute('data-contact')  || '';
+        const address  = tr.getAttribute('data-address')  || '';
 
-        const okSearch = !s || name.includes(s) || contact.includes(s) || homeroom.includes(s);
+        const okSearch =
+          !s ||
+          name.includes(s) ||
+          contact.includes(s) ||
+          address.includes(s);
+
         const okSub = !subject || sub === subject;
 
         tr.style.display = (okSearch && okSub) ? '' : 'none';
       });
     }
+
     subFilter.addEventListener('change', applyFilter);
     searchBox.addEventListener('input', applyFilter);
+
     document.addEventListener('click', (e)=>{
       const view = e.target.closest('[data-view]');
       const edit = e.target.closest('[data-edit]');
@@ -210,6 +200,22 @@
         alert('Sửa thông tin giáo viên #' + id + ' (demo)');
       }
     });
+
+    // Nút demo thêm / xuất
+    (function(){
+      const btnAdd = document.getElementById('btn-add');
+      if (btnAdd) {
+        btnAdd.addEventListener('click', () => {
+          alert('Thêm giáo viên (demo) – chưa nối API.');
+        });
+      }
+      const btnExport = document.getElementById('btn-export');
+      if (btnExport) {
+        btnExport.addEventListener('click', () => {
+          alert('Xuất danh sách giáo viên (demo) – chưa nối API.');
+        });
+      }
+    })();
   </script>
 </body>
 </html>

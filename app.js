@@ -1,34 +1,37 @@
-//Import các module cần thiết
 const express = require("express");
 const path = require("path");
 const bodyParser = require("body-parser");
+const session = require("express-session");
 
-//Khởi tạo app
+const { sequelize, NguoiDung } = require("./models");
+
 const app = express();
 
-//Cấu hình EJS view engine 
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 
-//Cho phép truy cập file tĩnh (CSS, ảnh, JS)
 app.use(express.static(path.join(__dirname, "public")));
 
-//Middleware để đọc dữ liệu từ form 
 app.use(bodyParser.urlencoded({ extended: true }));
 
-//Kết nối database
-const { sequelize } = require("./models");
+app.use(
+  session({
+    secret: "secret-qlhs",
+    resave: false,
+    saveUninitialized: false,
+  })
+);
 
-sequelize.authenticate()
+sequelize
+  .authenticate()
   .then(() => console.log("✅ Kết nối thành công tới database có sẵn!"))
-  .catch(err => console.error("❌ Lỗi kết nối database:", err));
+  .catch((err) => console.error("❌ Lỗi kết nối database:", err));
 
-//Định nghĩa route đăng nhập
 app.get("/login", (req, res) => {
   res.render("login", {
     title: "Student Management – Đăng nhập",
     error: null,
-    username: ""
+    username: "",
   });
 });
 
@@ -36,30 +39,80 @@ app.get("/", (req, res) => {
   res.redirect("/login");
 });
 
-//Xử lý POST /login
-app.post("/login", (req, res) => {
-  const { username, password } = req.body;
+app.post("/login", async (req, res) => {
+  let { username, password } = req.body;
 
-  if (username === "admin" && password === "123") {
-    res.redirect("/tablecontrol");
-  } else {
-    res.render("login", {
+  username = (username || "").trim();
+  password = (password || "").trim();
+
+  console.log("User gửi lên:", username, password);
+
+  try {
+    const user = await NguoiDung.findOne({
+      where: {
+        TenDangNhap: username,
+        MatKhau: password,
+      },
+    });
+
+    if (!user) {
+      console.log("❌ Sai tài khoản hoặc mật khẩu");
+      return res.render("login", {
+        title: "Student Management – Đăng nhập",
+        error: "Sai tên đăng nhập hoặc mật khẩu!",
+        username,
+      });
+    }
+
+    console.log("✅ Đăng nhập thành công:", user.TenDangNhap, user.VaiTro);
+
+    let finalUsername = user.TenDangNhap;
+
+    if (user.VaiTro && user.VaiTro.toLowerCase() === "hocsinh") {
+      const [hsRows] = await sequelize.query(
+        `
+        SELECT MaHocSinh
+        FROM HoSoHocSinh
+        WHERE Email = ? OR MaHocSinh = ?;
+        `,
+        { replacements: [user.TenDangNhap, user.TenDangNhap] }
+      );
+
+      if (hsRows[0]) {
+        finalUsername = hsRows[0].MaHocSinh;
+      } else {
+        console.warn("⚠ Không tìm được MaHocSinh cho TenDangNhap =", user.TenDangNhap);
+      }
+    }
+
+    req.session.user = {
+      id: user.MaNguoiDung,
+      username: finalUsername,
+      role: user.VaiTro,
+    };
+
+    return res.redirect("/tablecontrol");
+
+  } catch (err) {
+    console.error("❌ Lỗi khi đăng nhập:", err);
+    return res.render("login", {
       title: "Student Management – Đăng nhập",
-      error: "Sai tên đăng nhập hoặc mật khẩu!",
-      username
+      error: "Có lỗi hệ thống, vui lòng thử lại sau.",
+      username,
     });
   }
 });
 
+app.get("/logout", (req, res) => {
+  req.session.destroy(() => {
+    res.redirect("/login");
+  });
+});
 
-//Định tuyến đến trang quản lý học sinh 
-try {
-  const pageRoutes = require("./routes/pages.route");
-  app.use("/", pageRoutes);
-} catch (err) {
-  console.warn("Chưa có routes/pages.route.js - bỏ qua phần này.");
-}
+const pageRoutes = require("./routes/pages.route");
+app.use("/", pageRoutes);
 
-//Khởi động server
 const PORT = 3000;
-app.listen(PORT, () => console.log(`🚀 Server chạy tại: http://localhost:${PORT}`));
+app.listen(PORT, () =>
+  console.log(`🚀 Server chạy tại: http://localhost:${PORT}`)
+);

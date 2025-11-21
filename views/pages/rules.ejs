@@ -14,18 +14,59 @@
         <span>Student Management — Quản lí học sinh</span>
       </div>
       <nav class="nav">
-        <a href="/tablecontrol">Bảng điều khiển</a>
-        <a href="/student">Học sinh</a>
-        <a href="/class">Lớp học</a>
-        <a href="/attendance">Điểm danh</a>
-        <a href="/report">Báo cáo</a>
-        <a href="/scoretable">Điểm số</a>
-        <a href="/timetable">Thời khóa biểu</a>
-        <a href="/find">Tra cứu</a>
-        <a href="/teacher">Giáo viên</a> 
-        <a class="active" href="/rules">Quy định</a>
-         
+        <% 
+          const role = (user && user.role) ? user.role : ""; 
+        %>
+
+        <!-- Ai cũng vào được dashboard -->
+        <a class="<%= title === 'Bảng điều khiển' ? 'active' : '' %>" href="/tablecontrol">
+          Bảng điều khiển
+        </a>
+
+        <!-- Chỉ staff (không phải HocSinh) mới thấy các menu quản lý -->
+        <% if (role !== 'HocSinh') { %>
+          <a class="<%= title === 'Danh sách học sinh' ? 'active' : '' %>" href="/student">
+            Học sinh
+          </a>
+          <a class="<%= title === 'Danh sách lớp' ? 'active' : '' %>" href="/class">
+            Lớp học
+          </a>
+          <a class="<%= title === 'Điểm danh' ? 'active' : '' %>" href="/attendance">
+            Điểm danh
+          </a>
+          <a class="<%= title === 'Báo cáo' ? 'active' : '' %>" href="/report">
+            Báo cáo
+          </a>
+          <a class="<%= title === 'Bảng điểm' ? 'active' : '' %>" href="/scoretable">
+            Điểm số
+          </a>
+          <a class="<%= title === 'Tra cứu hồ sơ học sinh' ? 'active' : '' %>" href="/find">
+            Tra cứu
+          </a>
+        <% } %>
+          <a class="<%= title === 'Bảng điểm' ? 'active' : '' %>" href="/scoretable">
+            Điểm số
+          </a>
+        <% if (role !== 'HocSinh') { %>
+
+          <a class="<%= title === 'Tra cứu hồ sơ học sinh' ? 'active' : '' %>" href="/find">
+            Tra cứu
+          </a>
+        <% } %>
+
+        <!-- Các mục Học sinh được phép xem (và staff cũng xem được) -->
+        <a class="<%= title === 'Thời khóa biểu' ? 'active' : '' %>" href="/timetable">
+          Thời khóa biểu
+        </a>
+        <a class="<%= title === 'Danh sách giáo viên' ? 'active' : '' %>" href="/teacher">
+          Giáo viên
+        </a>
+        <a class="<%= title === 'Quy định' ? 'active' : '' %>" href="/rules">
+          Quy định
+        </a>
       </nav>
+
+
       <div class="spacer"></div>
       <a class="nav logout" href="/login">Đăng xuất</a>
     </aside>
