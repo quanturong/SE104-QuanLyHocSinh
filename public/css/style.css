@@ -112,6 +112,8 @@ body.page-student{
 .nav a[href*="find"]::before        { background-image:url("../img/search.png"); }
 .nav a[href*="teacher"]::before     { background-image:url("../img/teacher.png"); }
 .nav a[href*="rules"]::before       { background-image:url("../img/rules.png"); }
+.nav a[href*="create-user"]::before { display: none; }
+.nav a[href*="create-user"]         { padding-left: 14px; }
 .spacer{flex:1}
 .logout{
   display:flex;align-items:center;justify-content:center;margin-top:6px;padding:12px 14px;border-radius:12px;

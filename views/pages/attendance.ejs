@@ -32,6 +32,9 @@
         <a href="/timetable">Thời khóa biểu</a>
         <a href="/teacher">Giáo viên</a>
         <a href="/rules">Quy định</a>
+        <% if (role === 'Admin') { %>
+          <a href="/create-user">👤 Tạo tài khoản</a>
+        <% } %>
       </nav>
 
       <div class="spacer"></div>

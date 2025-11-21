@@ -2,6 +2,7 @@ const express = require("express");
 const path = require("path");
 const bodyParser = require("body-parser");
 const session = require("express-session");
+const bcrypt = require("bcrypt");
 
 const { sequelize, NguoiDung } = require("./models");
 
@@ -51,11 +52,28 @@ app.post("/login", async (req, res) => {
     const user = await NguoiDung.findOne({
       where: {
         TenDangNhap: username,
-        MatKhau: password,
       },
     });
 
     if (!user) {
+      console.log("❌ Sai tài khoản hoặc mật khẩu");
+      return res.render("login", {
+        title: "Student Management – Đăng nhập",
+        error: "Sai tên đăng nhập hoặc mật khẩu!",
+        username,
+      });
+    }
+
+    let passwordMatch = false;
+    if (user.MatKhau.startsWith("$2b$") || user.MatKhau.startsWith("$2a$")) {
+      // Mật khẩu đã được hash
+      passwordMatch = await bcrypt.compare(password, user.MatKhau);
+    } else {
+      // Mật khẩu plain text (dữ liệu cũ)
+      passwordMatch = user.MatKhau === password;
+    }
+
+    if (!passwordMatch) {
       console.log("❌ Sai tài khoản hoặc mật khẩu");
       return res.render("login", {
         title: "Student Management – Đăng nhập",
@@ -110,6 +128,7 @@ app.get("/logout", (req, res) => {
 });
 
 const pageRoutes = require("./routes/pages.route");
+
 app.use("/", pageRoutes);
 
 const PORT = 3000;

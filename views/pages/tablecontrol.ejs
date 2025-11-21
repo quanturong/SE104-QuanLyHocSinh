@@ -57,6 +57,11 @@
       <a class="<%= title === 'Thời khóa biểu' ? 'active' : '' %>" href="/timetable">Thời khóa biểu</a>
       <a class="<%= title === 'Danh sách giáo viên' ? 'active' : '' %>" href="/teacher">Giáo viên</a>
       <a class="<%= title === 'Quy định' ? 'active' : '' %>" href="/rules">Quy định</a>
+      <% if (role === 'Admin') { %>
+        <a class="<%= title === 'Tạo tài khoản' ? 'active' : '' %>" href="/create-user">
+          👤 Tạo tài khoản
+        </a>
+      <% } %>
     </nav>
 
 

@@ -6,7 +6,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node app.js",
-    "dev": "nodemon app.js"
+    "dev": "nodemon app.js",
+    "import-users": "node scripts/import-users.js"
   },
   "repository": {
     "type": "git",
@@ -20,10 +21,12 @@
   },
   "homepage": "https://github.com/quanturong/SE104-QuanLyHocSinh#readme",
   "dependencies": {
+    "bcrypt": "^5.1.1",
     "body-parser": "^2.2.0",
     "ejs": "^3.1.10",
     "express": "^5.1.0",
     "express-session": "^1.18.2",
+    "multer": "^1.4.5-lts.1",
     "sequelize": "^6.37.7",
     "sqlite3": "^5.1.7"
   }

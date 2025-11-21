@@ -1,6 +1,34 @@
 const express = require("express");
 const router = express.Router();
+const multer = require("multer");
+const path = require("path");
 const { sequelize } = require("../models");
+const pageController = require("../controllers/page.controller");
+const userController = require("../controllers/user.controller");
+
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, path.join(__dirname, "../uploads/"));
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    cb(null, "csv-" + uniqueSuffix + path.extname(file.originalname));
+  },
+});
+
+const upload = multer({
+  storage: storage,
+  fileFilter: function (req, file, cb) {
+    if (path.extname(file.originalname).toLowerCase() === ".csv") {
+      cb(null, true);
+    } else {
+      cb(new Error("Chỉ chấp nhận file CSV"));
+    }
+  },
+  limits: {
+    fileSize: 5 * 1024 * 1024,
+  },
+});
 
 const requireLogin = (req, res, next) => {
   if (!req.session || !req.session.user) {
@@ -65,6 +93,16 @@ const allowRoles = (roles) => {
   };
 };
 
+const requireAdmin = (req, res, next) => {
+  if (!req.session || !req.session.user) {
+    return res.redirect("/login");
+  }
+  if (req.session.user.role !== "Admin") {
+    return res.redirect("/tablecontrol");
+  }
+  next();
+};
+
 
 const staffRoles = ["Admin", "BGH", "GiaoVu", "GiaoVien"]; 
 const allRoles   = ["Admin", "BGH", "GiaoVu", "GiaoVien", "HocSinh"];
@@ -73,6 +111,12 @@ const getRole = (req) => (req.session?.user?.role || "").trim();
 
 router.get(
   "/tablecontrol",
+  requireLogin,
+  (req, res) => pageController.showTableControl(req, res)
+);
+
+router.get(
+  "/tablecontrol-old",
   requireLogin,          
   async (req, res) => {
     try {
@@ -755,30 +799,7 @@ router.get(
   "/rules",
   requireLogin,
   allowRoles(allRoles),
-  async (req, res) => {
-    try {
-      const [rules] = await sequelize.query(`
-        SELECT TenQuyDinh, GiaTri
-        FROM ThongSoQuyDinh
-        ORDER BY TenQuyDinh ASC;
-      `);
-
-      const role = getRole(req);
-      const canEditRules = role === "Admin" || role === "BGH";
-
-      res.render("pages/rules", {
-        title: "Quy định",
-        user: req.session.user,
-        rules,
-        permissions: {
-          canEditRules,
-        },
-      });
-    } catch (err) {
-      console.error("Lỗi /rules:", err);
-      res.status(500).send("Không tải được thông số quy định.");
-    }
-  }
+  (req, res) => pageController.showRulesPage(req, res)
 );
 
 
@@ -786,54 +807,12 @@ router.get(
   "/find",
   requireLogin,
   allowRoles(staffRoles),
-  async (req, res) => {
-    try {
-      const [students] = await sequelize.query(`
-        SELECT MaHocSinh, HoTen, GioiTinh, NgaySinh, DiaChi, Email, MaLop
-        FROM HoSoHocSinh
-        ORDER BY HoTen;
-      `);
-
-      const [scores] = await sequelize.query(`
-        SELECT b.MaDiem,
-               b.MaHocSinh,
-               hs.HoTen,
-               hs.MaLop,
-               b.MaMonHoc,
-               m.TenMonHoc,
-               b.HocKy,
-               b.NamHoc,
-               b.Diem15Phut,
-               b.Diem1Tiet,
-               b.DiemTBMon,
-               b.DanhGia
-        FROM BangDiemMonHoc b
-        LEFT JOIN HoSoHocSinh hs ON b.MaHocSinh = hs.MaHocSinh
-        LEFT JOIN MonHoc m ON b.MaMonHoc = m.MaMonHoc;
-      `);
-
-      const [attendances] = await sequelize.query(`
-        SELECT d.MaDiemDanh,
-               d.MaHocSinh,
-               hs.MaLop,
-               d.NgayDiemDanh,
-               d.TrangThai
-        FROM DiemDanh d
-        LEFT JOIN HoSoHocSinh hs ON d.MaHocSinh = hs.MaHocSinh;
-      `);
-
-      res.render("pages/find", {
-        title: "Tra cứu hồ sơ học sinh",
-        user: req.session.user,
-        students,
-        scores,
-        attendances,
-      });
-    } catch (err) {
-      console.error("Lỗi /find:", err);
-      res.status(500).send("Không tải được dữ liệu tra cứu.");
-    }
-  }
+  (req, res) => pageController.showFindPage(req, res)
 );
+
+router.get("/create-user", requireLogin, requireAdmin, (req, res) => userController.showCreateUserForm(req, res));
+router.post("/create-user", requireLogin, requireAdmin, (req, res) => userController.createUser(req, res));
+router.post("/import-users-csv", requireLogin, requireAdmin, upload.single("csvFile"), (req, res) => userController.importUsersFromCSV(req, res));
+router.get("/api/users", requireLogin, requireAdmin, (req, res) => userController.getAllUsers(req, res));
 
 module.exports = router;
