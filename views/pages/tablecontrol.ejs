@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title><%= title || "Quản lí học sinh – Bảng điều khiển" %></title>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body class="page-student">
+  <%
+    // Helper: lấy 2 chữ cái cuối của họ tên làm avatar
+    const fullName = (profile && profile.HoTen) || (user && user.username) || "User";
+    const nameParts = fullName.trim().split(" ").filter(Boolean);
+    const initials = nameParts.length
+      ? nameParts.slice(-2).map(p => p[0]).join("").toUpperCase()
+      : "US";
+
+    function formatDate(d) {
+      if (!d) return "";
+      const s = String(d);
+      const parts = s.split("-");
+      if (parts.length === 3) {
+        return parts[2] + "/" + parts[1] + "/" + parts[0];
+      }
+      return s;
+    }
+  %>
+
+  <div class="layout">
+
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="logo">🎓</div>
+        <span>Student Management – Quản lí học sinh</span>
+      </div>
+      <% 
+        // Lấy role từ user (do backend truyền vào: user: req.session.user)
+        const role = (user && user.role) ? user.role : ""; 
+      %>
+
+    <nav class="nav">
+      <a class="<%= title === 'Bảng điều khiển' ? 'active' : '' %>" href="/tablecontrol">
+        Bảng điều khiển
+      </a>
+      <% if (role !== 'HocSinh') { %>
+        <a class="<%= title === 'Danh sách học sinh' ? 'active' : '' %>" href="/student">Học sinh</a>
+        <a class="<%= title === 'Danh sách lớp' ? 'active' : '' %>" href="/class">Lớp học</a>
+        <a class="<%= title === 'Điểm danh' ? 'active' : '' %>" href="/attendance">Điểm danh</a>
+        <a class="<%= title === 'Báo cáo' ? 'active' : '' %>" href="/report">Báo cáo</a>
+      <% } %>
+      <a class="<%= title === 'Bảng điểm' ? 'active' : '' %>" href="/scoretable">
+        Điểm số
+      </a>
+      <% if (role !== 'HocSinh') { %>
+        <a class="<%= title === 'Tra cứu hồ sơ học sinh' ? 'active' : '' %>" href="/find">Tra cứu</a>
+      <% } %>
+      <a class="<%= title === 'Thời khóa biểu' ? 'active' : '' %>" href="/timetable">Thời khóa biểu</a>
+      <a class="<%= title === 'Danh sách giáo viên' ? 'active' : '' %>" href="/teacher">Giáo viên</a>
+      <a class="<%= title === 'Quy định' ? 'active' : '' %>" href="/rules">Quy định</a>
+      <% if (role === 'Admin') { %>
+        <a class="<%= title === 'Tạo tài khoản' ? 'active' : '' %>" href="/create-user">
+          👤 Tạo tài khoản
+        </a>
+      <% } %>
+    </nav>
+
+
+
+      <div class="spacer"></div>
+      <a class="nav logout" href="/logout">Đăng xuất</a>
+    </aside>
+
+    <main class="main">
+
+      <section class="card" style="margin-bottom: 16px;">
+        <div style="display:flex; align-items:center; gap:24px; flex-wrap:wrap;">
+
+          <div style="
+            width:90px;
+            height:90px;
+            border-radius:50%;
+            background:linear-gradient(135deg,#36a2eb,#4bc0c0);
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            color:#fff;
+            font-size:32px;
+            font-weight:700;
+            box-shadow:0 10px 25px rgba(0,0,0,0.08);
+          ">
+            <%= initials %>
+          </div>
+          <div style="flex:1; min-width:220px;">
+            <div style="font-size:24px; font-weight:700; color:#1d86e6; margin-bottom:4px;">
+              <%= fullName %>
+            </div>
+            <div style="color:#555; font-size:15px;">
+              Mã số: <strong><%= profile.MaSo || "—" %></strong>
+              <% if (profile.LopHienTai) { %>
+                · Lớp hiện tại: <strong><%= profile.LopHienTai %></strong>
+              <% } %>
+              <% if (profile.VaiTro) { %>
+                · Vai trò: <strong><%= profile.VaiTro %></strong>
+              <% } %>
+            </div>
+            <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:10px;">
+
+              <% if (profile.NgaySinh) { %>
+                <div class="badge" style="
+                  background:#e6f2ff;
+                  color:#1d86e6;
+                  border-radius:999px;
+                  padding:6px 14px;
+                  font-size:13px;
+                ">
+                  Ngày sinh: <%= formatDate(profile.NgaySinh) %>
+                </div>
+              <% } %>
+
+              <% if (profile.GioiTinh) { %>
+                <div class="badge" style="
+                  background:#eaf7ff;
+                  color:#1d86e6;
+                  border-radius:999px;
+                  padding:6px 14px;
+                  font-size:13px;
+                ">
+                  Giới tính: <%= profile.GioiTinh %>
+                </div>
+              <% } %>
+
+              <% if (profile.Email) { %>
+                <div class="badge" style="
+                  background:#e6fdf6;
+                  color:#03966a;
+                  border-radius:999px;
+                  padding:6px 14px;
+                  font-size:13px;
+                ">
+                  Email: <%= profile.Email %>
+                </div>
+              <% } %>
+
+              <% if (profile.DiaChi) { %>
+                <div class="badge" style="
+                  background:#fff4e6;
+                  color:#d68a1a;
+                  border-radius:999px;
+                  padding:6px 14px;
+                  font-size:13px;
+                ">
+                  Địa chỉ: <%= profile.DiaChi %>
+                </div>
+              <% } %>
+
+              <% if (profile.LopChuNhiem) { %>
+                <div class="badge" style="
+                  background:#f1e6ff;
+                  color:#7a3dd9;
+                  border-radius:999px;
+                  padding:6px 14px;
+                  font-size:13px;
+                ">
+                  Lớp chủ nhiệm: <%= profile.LopChuNhiem %>
+                </div>
+              <% } %>
+
+            </div>
+          </div>
+        </div>
+      </section>
+      <div class="grid cols-3">
+        <section class="card stat">
+          <div>
+            <div class="label">Số học sinh</div>
+            <div class="value" id="stat-students">
+              <%= stats.SoHocSinh %>
+            </div>
+          </div>
+          <div class="icon">👨‍🎓</div>
+        </section>
+
+        <section class="card stat">
+          <div>
+            <div class="label">Điểm danh hôm nay</div>
+            <div class="value" id="stat-att">
+              <%= stats.DiemDanhHomNay %>%
+            </div>
+          </div>
+          <div class="icon">🗓️</div>
+        </section>
+
+        <section class="card stat">
+          <div>
+            <div class="label">Tổng số lớp</div>
+            <div class="value" id="stat-classes">
+              <%= stats.SoLop %>
+            </div>
+          </div>
+          <div class="icon">🏫</div>
+        </section>
+      </div>
+
+      <div class="grid cols-2" style="margin-top:16px;">
+        <section class="card">
+          <h3>Điểm danh 7 ngày qua</h3>
+          <canvas id="chartAttendance" height="140"></canvas>
+        </section>
+
+        <section class="card">
+          <h3>Top lớp có sĩ số cao</h3>
+          <canvas id="chartClasses" height="140"></canvas>
+        </section>
+      </div>
+
+    </main>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script>
+    (function(){
+      const attLabels   = <%- JSON.stringify(chartData.attendance7Days.labels || []) %>;
+      const attPercents = <%- JSON.stringify(chartData.attendance7Days.percents || []) %>;
+
+      const topClassLabels = <%- JSON.stringify(chartData.topClasses.labels || []) %>;
+      const topClassCounts = <%- JSON.stringify(chartData.topClasses.counts || []) %>;
+      const ctx1 = document.getElementById('chartAttendance');
+      if (ctx1) {
+        new Chart(ctx1, {
+          type:'line',
+          data:{
+            labels: attLabels,
+            datasets:[{
+              label:'% điểm danh',
+              data: attPercents,
+              tension:.35,
+              fill:true,
+              backgroundColor:'rgba(83,179,174,.15)',
+              borderColor:'#53b3ae',
+              borderWidth:2,
+              pointRadius:3
+            }]
+          },
+          options:{
+            plugins:{legend:{display:false}},
+            scales:{
+              y:{
+                beginAtZero:true,
+                ticks:{callback:v => v + "%"}
+              }
+            }
+          }
+        });
+      }
+
+      const ctx2 = document.getElementById('chartClasses');
+      if (ctx2) {
+        new Chart(ctx2, {
+          type:'bar',
+          data:{
+            labels: topClassLabels,
+            datasets:[{
+              label:'Sĩ số',
+              data: topClassCounts,
+              backgroundColor:'rgba(83,179,174,.6)',
+              borderColor:'#3aa29b',
+              borderWidth:1
+            }]
+          },
+          options:{
+            plugins:{legend:{display:false}},
+            scales:{y:{beginAtZero:true}}
+          }
+        });
+      }
+    })();
+  </script>
+</body>
+</html>

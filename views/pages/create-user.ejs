@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tạo tài khoản – Quản lí học sinh</title>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body class="page-student">
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="logo">🎓</div>
+        <span>Student Management – Quản lí học sinh</span>
+      </div>
+      <nav class="nav">
+        <% 
+          const role = (user && user.role) ? user.role : ""; 
+        %>
+
+        <a class="<%= title === 'Bảng điều khiển' ? 'active' : '' %>" href="/tablecontrol">
+          Bảng điều khiển
+        </a>
+
+        <% if (role !== 'HocSinh') { %>
+          <a class="<%= title === 'Danh sách học sinh' ? 'active' : '' %>" href="/student">
+            Học sinh
+          </a>
+          <a class="<%= title === 'Danh sách lớp' ? 'active' : '' %>" href="/class">
+            Lớp học
+          </a>
+          <a class="<%= title === 'Điểm danh' ? 'active' : '' %>" href="/attendance">
+            Điểm danh
+          </a>
+          <a class="<%= title === 'Báo cáo' ? 'active' : '' %>" href="/report">
+            Báo cáo
+          </a>
+        <% } %>
+          <a class="<%= title === 'Bảng điểm' ? 'active' : '' %>" href="/scoretable">
+            Điểm số
+          </a>
+        <% if (role !== 'HocSinh') { %>
+          <a class="<%= title === 'Tra cứu hồ sơ học sinh' ? 'active' : '' %>" href="/find">
+            Tra cứu
+          </a>
+        <% } %>
+
+        <a class="<%= title === 'Thời khóa biểu' ? 'active' : '' %>" href="/timetable">
+          Thời khóa biểu
+        </a>
+        <a class="<%= title === 'Danh sách giáo viên' ? 'active' : '' %>" href="/teacher">
+          Giáo viên
+        </a>
+        <a class="<%= title === 'Quy định' ? 'active' : '' %>" href="/rules">
+          Quy định
+        </a>
+        <% if (role === 'Admin') { %>
+          <a class="<%= title === 'Tạo tài khoản' ? 'active' : '' %>" href="/create-user">
+            👤 Tạo tài khoản
+          </a>
+        <% } %>
+      </nav>
+
+      <div class="spacer"></div>
+      <a class="nav logout" href="/logout">Đăng xuất</a>
+    </aside>
+
+    <main class="main">
+      <div class="page-header">
+        <h1 class="page-title">Tạo tài khoản mới</h1>
+        <p class="page-desc">
+          Tạo tài khoản người dùng mới cho hệ thống. Mật khẩu sẽ được mã hóa an toàn.
+        </p>
+      </div>
+
+      <section class="card">
+        <% if (error) { %>
+          <div style="background: #fee; color: #c33; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #fcc;">
+            <strong>❌ Lỗi:</strong> <%- error %>
+          </div>
+        <% } %>
+
+        <% if (success) { %>
+          <div style="background: #efe; color: #3c3; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #cfc;">
+            <strong>✅ Thành công:</strong> <%= success %>
+          </div>
+        <% } %>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 32px;">
+          <div>
+            <h2 style="margin-bottom: 16px; font-size: 18px;">Tạo tài khoản thủ công</h2>
+            <form method="POST" action="/create-user" style="max-width: 100%;">
+          <div style="margin-bottom: 20px;">
+            <label class="class-label" for="TenDangNhap">
+              Tên đăng nhập <span style="color: #c33;">*</span>
+            </label>
+            <input
+              type="text"
+              id="TenDangNhap"
+              name="TenDangNhap"
+              class="input"
+              placeholder="Nhập tên đăng nhập (email hoặc username)"
+              value="<%= formData && formData.TenDangNhap ? formData.TenDangNhap : '' %>"
+              required
+              style="width: 100%;"
+            />
+          </div>
+
+          <div style="margin-bottom: 20px;">
+            <label class="class-label" for="MatKhau">
+              Mật khẩu <span style="color: #c33;">*</span>
+            </label>
+            <input
+              type="password"
+              id="MatKhau"
+              name="MatKhau"
+              class="input"
+              placeholder="Nhập mật khẩu (tối thiểu 6 ký tự)"
+              minlength="6"
+              required
+              style="width: 100%;"
+            />
+            <small style="color: #666; font-size: 13px; margin-top: 4px; display: block;">
+              Mật khẩu sẽ được mã hóa bằng bcrypt trước khi lưu vào database.
+            </small>
+          </div>
+
+          <div style="margin-bottom: 24px;">
+            <label class="class-label" for="VaiTro">
+              Vai trò <span style="color: #c33;">*</span>
+            </label>
+            <select
+              id="VaiTro"
+              name="VaiTro"
+              class="select class-select"
+              required
+              style="width: 100%;"
+            >
+              <option value="">-- Chọn vai trò --</option>
+              <option value="Admin" <%= formData && formData.VaiTro === 'Admin' ? 'selected' : '' %>>Admin - Quản trị viên</option>
+              <option value="BGH" <%= formData && formData.VaiTro === 'BGH' ? 'selected' : '' %>>BGH - Ban Giám Hiệu</option>
+              <option value="GiaoVu" <%= formData && formData.VaiTro === 'GiaoVu' ? 'selected' : '' %>>GiaoVu - Giáo vụ</option>
+              <option value="GiaoVien" <%= formData && formData.VaiTro === 'GiaoVien' ? 'selected' : '' %>>GiaoVien - Giáo viên</option>
+              <option value="HocSinh" <%= formData && formData.VaiTro === 'HocSinh' ? 'selected' : '' %>>HocSinh - Học sinh</option>
+            </select>
+          </div>
+
+          <div style="display: flex; gap: 12px;">
+            <button type="submit" class="btn" style="flex: 1;">
+              ➕ Tạo tài khoản
+            </button>
+            <a href="/tablecontrol" class="btn btn-ghost" style="flex: 1; text-align: center; text-decoration: none;">
+              Hủy
+            </a>
+          </div>
+        </form>
+          </div>
+
+          <div>
+            <h2 style="margin-bottom: 16px; font-size: 18px;">Import từ file CSV</h2>
+            <form method="POST" action="/import-users-csv" enctype="multipart/form-data" style="max-width: 100%;">
+              <div style="margin-bottom: 20px;">
+                <label class="class-label" for="csvFile">
+                  Chọn file CSV <span style="color: #c33;">*</span>
+                </label>
+                <input
+                  type="file"
+                  id="csvFile"
+                  name="csvFile"
+                  accept=".csv"
+                  required
+                  style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;"
+                />
+                <small style="color: #666; font-size: 13px; margin-top: 4px; display: block;">
+                  File CSV phải có định dạng: MaNguoiDung,TenDangNhap,MatKhau,VaiTro
+                </small>
+              </div>
+
+              <div style="display: flex; gap: 12px;">
+                <button type="submit" class="btn" style="flex: 1;">
+                  📤 Import CSV
+                </button>
+                <a href="/tablecontrol" class="btn btn-ghost" style="flex: 1; text-align: center; text-decoration: none;">
+                  Hủy
+                </a>
+              </div>
+            </form>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+</body>
+</html>
+

@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Thời khóa biểu – Quản lí học sinh</title>
+  <link rel="stylesheet" href="/css/style.css" />
+
+</head>
+<body class="page-student">
+  <div class="layout">
+    <% 
+      const role = (user && user.role) ? user.role : "";
+      const canEditTimetable = permissions && permissions.canEditTimetable; 
+    %>
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="logo">🎓</div>
+        <span>Student Management – Quản lí học sinh</span>
+      </div>
+      <nav class="nav">
+        <a class="<%= title === 'Bảng điều khiển' ? 'active' : '' %>" href="/tablecontrol">
+          Bảng điều khiển
+        </a>
+
+        <% if (role !== 'HocSinh') { %>
+          <a class="<%= title === 'Danh sách học sinh' ? 'active' : '' %>" href="/student">
+            Học sinh
+          </a>
+          <a class="<%= title === 'Danh sách lớp' ? 'active' : '' %>" href="/class">
+            Lớp học
+          </a>
+          <a class="<%= title === 'Điểm danh' ? 'active' : '' %>" href="/attendance">
+            Điểm danh
+          </a>
+          <a class="<%= title === 'Báo cáo' ? 'active' : '' %>" href="/report">
+            Báo cáo
+          </a>
+
+        <% } %>
+          <a class="<%= title === 'Bảng điểm' ? 'active' : '' %>" href="/scoretable">
+            Điểm số
+          </a>
+        <% if (role !== 'HocSinh') { %>
+          <a class="<%= title === 'Tra cứu hồ sơ học sinh' ? 'active' : '' %>" href="/find">
+            Tra cứu
+          </a>
+
+        <% } %>
+
+        <a class="<%= title === 'Thời khóa biểu' ? 'active' : '' %>" href="/timetable">
+          Thời khóa biểu
+        </a>
+        <a class="<%= title === 'Danh sách giáo viên' ? 'active' : '' %>" href="/teacher">
+          Giáo viên
+        </a>
+        <a class="<%= title === 'Quy định' ? 'active' : '' %>" href="/rules">
+          Quy định
+        </a>
+        <% if (role === 'Admin') { %>
+          <a class="<%= title === 'Tạo tài khoản' ? 'active' : '' %>" href="/create-user">
+            👤 Tạo tài khoản
+          </a>
+        <% } %>
+      </nav>
+      <div class="spacer"></div>
+      <a class="nav logout" href="/logout">Đăng xuất</a>
+    </aside>
+
+    <main class="main">
+      <div class="page-header">
+        <h1 class="page-title">Thời khóa biểu</h1>
+        <p class="page-desc">
+          Chọn năm học, học kỳ và lớp để xem thời khóa biểu chi tiết theo từng tiết.
+        </p>
+      </div>
+
+      <section class="card" style="margin-bottom:16px;">
+        <div class="ttb-filter-inline">
+          <div class="class-info-item">
+            <label class="class-label">Năm học</label>
+            <select class="select select-sm" id="ttb-year">
+              <% if (typeof namHocs !== 'undefined' && namHocs && namHocs.length) { %>
+                <% namHocs.forEach(function(nh, idx){ %>
+                  <option value="<%= nh.MaNamHoc %>" <%= idx === 0 ? "selected" : "" %>>
+                    <%= nh.MaNamHoc %>
+                  </option>
+                <% }) %>
+              <% } else { %>
+                <option>Chưa có năm học</option>
+              <% } %>
+            </select>
+          </div>
+
+          <div class="class-info-item">
+            <label class="class-label">Học kỳ</label>
+            <select class="select select-sm" id="ttb-semester">
+              <option value="1" selected>Học kỳ 1</option>
+              <option value="2">Học kỳ 2</option>
+            </select>
+          </div>
+
+          <div class="class-info-item">
+            <label class="class-label">Lớp</label>
+            <select class="select select-sm" id="ttb-class">
+              <% if (typeof classes !== 'undefined' && classes && classes.length) { %>
+                <% classes.forEach(function(c, idx){ %>
+                  <option value="<%= c.MaLop %>" <%= idx === 0 ? "selected" : "" %>>
+                    <%= c.MaLop %>
+                  </option>
+                <% }) %>
+              <% } else { %>
+                <option>Chưa có lớp</option>
+              <% } %>
+            </select>
+          </div>
+        </div>
+
+        <p class="ttb-note" style="margin-top:10px;">
+          Gợi ý: Kéo ngang bảng để xem đầy đủ các ngày trong tuần trên màn hình nhỏ.
+          Mỗi ô hiển thị <strong>môn học</strong> và dòng dưới là <strong>tên giáo viên</strong>.
+        </p>
+      </section>
+
+      <section class="card">
+        <div class="table-wrap" style="overflow:auto; max-height:560px;">
+          <table class="table tt-table">
+            <thead>
+              <tr>
+                <th class="sticky-col tt-period">Tiết</th>
+                <th class="tt-cell">Thứ 2</th>
+                <th class="tt-cell">Thứ 3</th>
+                <th class="tt-cell">Thứ 4</th>
+                <th class="tt-cell">Thứ 5</th>
+                <th class="tt-cell">Thứ 6</th>
+                <th class="tt-cell">Thứ 7</th>
+              </tr>
+            </thead>
+            <tbody id="ttb-body">
+            </tbody>
+          </table>
+        </div>
+
+        <% if (canEditTimetable) { %>
+          <div style="display:flex;justify-content:flex-end;margin-top:14px;">
+            <button class="btn-edit-tkb" id="btn-edit-tkb">🖊️ Sửa thời khóa biểu</button>
+          </div>
+        <% } %>
+      </section>
+    <div class="sp-overlay" id="modal-edit-timetable" style="display:none;">
+      <div class="sp-modal">
+        <h2 class="sp-title">Sửa thời khóa biểu</h2>
+        
+        <form class="sp-form" id="form-edit-timetable">
+          <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px;">
+            <div class="sp-field">
+              <label>Thứ</label>
+              <select id="edit-thu">
+                <option value="2">Thứ 2</option>
+                <option value="3">Thứ 3</option>
+                <option value="4">Thứ 4</option>
+                <option value="5">Thứ 5</option>
+                <option value="6">Thứ 6</option>
+                <option value="7">Thứ 7</option>
+              </select>
+            </div>
+
+            <div class="sp-field">
+              <label>Tiết học</label>
+              <select id="edit-tiet">
+                <option value="1">Tiết 1</option>
+                <option value="2">Tiết 2</option>
+                <option value="3">Tiết 3</option>
+                <option value="4">Tiết 4</option>
+                <option value="5">Tiết 5</option>
+                <option value="6">Tiết 6</option>
+                <option value="7">Tiết 7</option>
+                <option value="8">Tiết 8</option>
+              </select>
+            </div>
+
+            <div class="sp-field">
+              <label>Lớp</label>
+              <input type="text" id="edit-lop-tkb" readonly style="background:#f1f5f9; cursor:not-allowed;" />
+            </div>
+          </div>
+
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+            <div class="sp-field">
+              <label>Năm học</label>
+              <input type="text" id="edit-nam-hoc-tkb" readonly style="background:#f1f5f9; cursor:not-allowed;" />
+            </div>
+
+            <div class="sp-field">
+              <label>Học kỳ</label>
+              <select id="edit-hoc-ky-tkb">
+                <option value="1">Học kỳ 1</option>
+                <option value="2">Học kỳ 2</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="sp-field">
+            <label>Môn học</label>
+            <select id="edit-mon-hoc-tkb">
+              <option>Toán 10</option>
+              <option>Vật lý 10</option>
+              <option>Hóa học 10</option>
+              <option>Sinh học 10</option>
+              <option>Văn 10</option>
+              <option>Anh văn 10</option>
+              <option>Sử 10</option>
+              <option>Địa 10</option>
+              <option>GDCD 10</option>
+            </select>
+          </div>
+
+          <div class="sp-field">
+            <label>Giáo viên</label>
+            <select id="edit-giao-vien-tkb">
+              <option>Nguyễn Văn An</option>
+              <option>Trần Thị Bình</option>
+              <option>Lê Minh Cường</option>
+              <option>Phạm Thu Dung</option>
+              <option>Võ Quốc Dũng</option>
+            </select>
+          </div>
+
+          <div class="sp-field">
+            <label>Phòng học</label>
+            <input type="text" id="edit-phong-hoc" placeholder="VD: A101, B202..." />
+          </div>
+
+          <div class="sp-field">
+            <label>Ghi chú</label>
+            <textarea id="edit-ghi-chu-tkb" rows="2" placeholder="Ghi chú thêm (nếu có)..."></textarea>
+          </div>
+
+          <div class="sp-actions">
+            <button type="button" class="sp-btn sp-btn--ghost" onclick="closeEditTimetableModal()">
+              Đóng
+            </button>
+            <button type="submit" class="sp-btn">
+              Lưu thay đổi
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+    </main>
+  </div>
+
+  <script>
+    const RAW_TKB  = <%- typeof timetables !== 'undefined' ? JSON.stringify(timetables) : '[]' %>;
+    const CLASSES  = <%- typeof classes    !== 'undefined' ? JSON.stringify(classes)    : '[]' %>;
+    const NAM_HOCS = <%- typeof namHocs    !== 'undefined' ? JSON.stringify(namHocs)    : '[]' %>;
+
+    const ttbYearSel     = document.getElementById('ttb-year');
+    const ttbSemesterSel = document.getElementById('ttb-semester');
+    const ttbClassSel    = document.getElementById('ttb-class');
+    const ttbBody        = document.getElementById('ttb-body');
+
+    function getAllPeriods(data) {
+      const set = new Set();
+      data.forEach(row => {
+        if (row.TietHoc != null) set.add(row.TietHoc);
+      });
+      return Array.from(set).sort((a, b) => a - b);
+    }
+
+    function filterData() {
+      const lop = ttbClassSel.value || '';
+      return RAW_TKB.filter(row => !lop || row.MaLop === lop);
+    }
+
+    function cellContent(item) {
+      if (!item) {
+        return '<span class="tt-empty">—</span>';
+      }
+      const mon    = item.TenMonHoc   || item.MaMonHoc   || '';
+      const gvName = item.TenGiaoVien || item.MaGiaoVien || '';
+      return `
+        <span class="tt-sub">${mon}</span>
+        <span class="tt-teacher">${gvName}</span>
+      `;
+    }
+
+    function renderTable() {
+      const data = filterData();
+
+      if (!data.length) {
+        ttbBody.innerHTML = `
+          <tr>
+            <td colspan="7" class="text-center muted">
+              Chưa có thời khóa biểu cho lựa chọn hiện tại.
+            </td>
+          </tr>`;
+        return;
+      }
+
+      const periods = getAllPeriods(data);
+      const days = [2, 3, 4, 5, 6, 7];
+
+      const map = {};
+      data.forEach(row => {
+        const tiet = row.TietHoc;
+        const thu  = row.Thu;
+        if (!map[tiet]) map[tiet] = {};
+        map[tiet][thu] = row;
+      });
+
+      let html = '';
+      periods.forEach(tiet => {
+        html += '<tr>';
+        html += `<td class="sticky-col tt-period">${tiet}</td>`;
+        days.forEach(thu => {
+          const item = map[tiet] ? map[tiet][thu] : null;
+          html += `<td class="tt-cell">${cellContent(item)}</td>`;
+        });
+        html += '</tr>';
+      });
+
+      ttbBody.innerHTML = html;
+    }
+
+    ttbClassSel    && ttbClassSel.addEventListener('change', renderTable);
+    ttbYearSel     && ttbYearSel.addEventListener('change', renderTable);
+    ttbSemesterSel && ttbSemesterSel.addEventListener('change', renderTable);
+
+    window.addEventListener('DOMContentLoaded', renderTable);
+    function openEditTimetableModal() {
+      document.getElementById('modal-edit-timetable').style.display = 'grid';
+    }
+
+    function closeEditTimetableModal() {
+      document.getElementById('modal-edit-timetable').style.display = 'none';
+    }
+    document.getElementById('modal-edit-timetable')?.addEventListener('click', (e) => {
+      if (e.target.classList.contains('sp-overlay')) {
+        closeEditTimetableModal();
+      }
+    });
+    document.getElementById('form-edit-timetable')?.addEventListener('submit', (e) => {
+      e.preventDefault();
+      alert('Đã lưu thay đổi thời khóa biểu!');
+      closeEditTimetableModal();
+    });
+    const btnEdit = document.getElementById('btn-edit-tkb');
+    if (btnEdit) {
+      btnEdit.addEventListener('click', () => {
+        document.getElementById('edit-lop-tkb').value = ttbClassSel.value || '12A1';
+        document.getElementById('edit-nam-hoc-tkb').value = ttbYearSel.value || '2024-2025';
+        document.getElementById('edit-hoc-ky-tkb').value = ttbSemesterSel.value || '1';
+        document.getElementById('edit-thu').value = '2';
+        document.getElementById('edit-tiet').value = '1';
+        document.getElementById('edit-phong-hoc').value = 'A101';
+        
+        openEditTimetableModal();
+      });
+    }
+  </script>
+</body>
+</html>

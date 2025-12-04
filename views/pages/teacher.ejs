@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Thông tin giáo viên</title>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body class="page-student">
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="logo">🎓</div>
+        <span>Student Management – Quản lí học sinh</span>
+      </div>
+
+      <%
+        // Lấy role & quyền quản lý giáo viên từ backend
+        const role = (user && user.role) ? user.role : "";
+        const canManageTeachers = permissions && permissions.canManageTeachers;
+      %>
+
+      <nav class="nav">
+        <a class="<%= title === 'Bảng điều khiển' ? 'active' : '' %>" href="/tablecontrol">
+          Bảng điều khiển
+        </a>
+
+        <% if (role !== 'HocSinh') { %>
+          <a class="<%= title === 'Danh sách học sinh' ? 'active' : '' %>" href="/student">
+            Học sinh
+          </a>
+          <a class="<%= title === 'Danh sách lớp' ? 'active' : '' %>" href="/class">
+            Lớp học
+          </a>
+          <a class="<%= title === 'Điểm danh' ? 'active' : '' %>" href="/attendance">
+            Điểm danh
+          </a>
+          <a class="<%= title === 'Báo cáo' ? 'active' : '' %>" href="/report">
+            Báo cáo
+          </a>
+          <a class="<%= title === 'Tra cứu hồ sơ học sinh' ? 'active' : '' %>" href="/find">
+            Tra cứu
+          </a>
+        <% } %>
+        <a class="<%= title === 'Bảng điểm' ? 'active' : '' %>" href="/scoretable">
+          Điểm số
+        </a>
+
+        <a class="<%= title === 'Thời khóa biểu' ? 'active' : '' %>" href="/timetable">
+          Thời khóa biểu
+        </a>
+        <a class="<%= title === 'Danh sách giáo viên' ? 'active' : '' %>" href="/teacher">
+          Giáo viên
+        </a>
+        <a class="<%= title === 'Quy định' ? 'active' : '' %>" href="/rules">
+          Quy định
+        </a>
+        <% if (role === 'Admin') { %>
+          <a class="<%= title === 'Tạo tài khoản' ? 'active' : '' %>" href="/create-user">
+            👤 Tạo tài khoản
+          </a>
+        <% } %>
+      </nav>
+
+      <div class="spacer"></div>
+      <a class="nav logout" href="/logout">Đăng xuất</a>
+    </aside>
+
+    <main class="main">
+      <div class="page-header">
+        <h1 class="page-title">Thông tin giáo viên</h1>
+        <p class="page-desc">
+          Danh sách giáo viên toàn trường: bộ môn giảng dạy, liên hệ, chủ nhiệm lớp…
+        </p>
+      </div>
+      <section class="card" style="margin-bottom:16px;">
+        <div class="toolbar">
+          <div class="class-info-item" style="min-width:220px;">
+            <label class="class-label">Bộ môn</label>
+            <select id="filter-subject" class="select class-select">
+              <option value="">Tất cả bộ môn</option>
+              <% if (subjects && subjects.length) { %>
+                <% subjects.forEach(function(s) { %>
+                  <option value="<%= (s.TenMonHoc || '').toLowerCase() %>">
+                    <%= s.TenMonHoc %>
+                  </option>
+                <% }) %>
+              <% } %>
+            </select>
+          </div>
+
+          <input
+            id="search-teacher"
+            class="input"
+            placeholder="Tìm theo họ tên / email / địa chỉ…"
+            style="min-width:260px;"
+          >
+          <% if (canManageTeachers) { %>
+            <button class="btn" id="btn-add" title="Thêm giáo viên (demo)">➕ Thêm</button>
+          <% } %>
+
+          <button class="btn btn-export" id="btn-export" title="Xuất danh sách">⬇️ Xuất</button>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="table-wrap" style="overflow:auto; max-height:560px;">
+          <table class="table" id="tbl-teachers">
+            <thead>
+              <tr>
+                <th style="width:60px;">STT</th>
+                <th style="min-width:220px;">Họ tên</th>
+                <th style="min-width:140px;">Bộ môn</th>
+                <th style="min-width:220px;">Email</th>
+                <th style="min-width:220px;">Địa chỉ</th>
+                <th style="min-width:160px;">Hành động</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% if (teachers && teachers.length) { %>
+                <% teachers.forEach(function(t, index) { %>
+                  <tr
+                    data-name="<%= (t.HoTen || '').toLowerCase() %>"
+                    data-subject="<%= (t.TenMonHoc || t.MaMonGiangDay || '').toLowerCase() %>"
+                    data-contact="<%= (t.Email || '').toLowerCase() %>"
+                    data-address="<%= (t.DiaChi || '').toLowerCase() %>"
+                  >
+                    <td class="text-center"><%= index + 1 %></td>
+                    <td><%= t.HoTen %></td>
+                    <td><%= t.TenMonHoc || t.MaMonGiangDay || '' %></td>
+                    <td><%= t.Email || '' %></td>
+                    <td><%= t.DiaChi || '' %></td>
+                    <td>
+                      <button class="btn-action btn-view" data-view="<%= t.MaGiaoVien %>">
+                        Xem
+                      </button>
+                      <% if (canManageTeachers) { %>
+                        <button
+                          class="btn-action btn-edit-green"
+                          data-edit="<%= t.MaGiaoVien %>"
+                          data-magv="<%= t.MaGiaoVien %>"
+                          data-hoten="<%= t.HoTen || '' %>"
+                          data-gioitinh="<%= t.GioiTinh || '' %>"
+                          data-ngaysinh="<%= t.NgaySinh || '' %>"
+                          data-diachi="<%= t.DiaChi || '' %>"
+                          data-email="<%= t.Email || '' %>"
+                          data-mamon="<%= t.MaMonGiangDay || '' %>"
+                        >
+                          Sửa
+                        </button>
+                      <% } %>
+                    </td>
+                  </tr>
+                <% }) %>
+              <% } else { %>
+                <tr>
+                  <td colspan="6" style="text-align:center;">Chưa có giáo viên.</td>
+                </tr>
+              <% } %>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="pagination">
+          <button class="btn-page" disabled>‹</button>
+          <span class="page-info">Trang <strong>1</strong> / <strong>1</strong></span>
+          <button class="btn-page" disabled>›</button>
+        </div>
+      </section>
+      <div class="sp-overlay" id="modal-edit-teacher" style="display:none;">
+        <div class="sp-modal">
+          <h2 class="sp-title">Sửa thông tin giáo viên</h2>
+          
+          <form class="sp-form" id="form-edit-teacher">
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+              <div class="sp-field">
+                <label>Mã giáo viên</label>
+                <input
+                  type="text"
+                  id="edit-gv-magv"
+                  readonly
+                  style="background:#f1f5f9; cursor:not-allowed;"
+                />
+              </div>
+
+              <div class="sp-field">
+                <label>Bộ môn giảng dạy</label>
+                <select id="edit-gv-mon">
+                  <% if (subjects && subjects.length) { %>
+                    <% subjects.forEach(function(sub){ %>
+                      <option value="<%= sub.MaMonHoc %>"><%= sub.TenMonHoc %></option>
+                    <% }) %>
+                  <% } else { %>
+                    <option value="">Chưa có môn học</option>
+                  <% } %>
+                </select>
+              </div>
+            </div>
+
+            <div class="sp-field">
+              <label>Họ tên</label>
+              <input type="text" id="edit-gv-hoten" />
+            </div>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+              <div class="sp-field">
+                <label>Giới tính</label>
+                <select id="edit-gv-gioitinh">
+                  <option value="">-- Chọn --</option>
+                  <option value="Nam">Nam</option>
+                  <option value="Nữ">Nữ</option>
+                  <option value="Khác">Khác</option>
+                </select>
+              </div>
+
+              <div class="sp-field">
+                <label>Ngày sinh</label>
+                <input type="date" id="edit-gv-ngaysinh" />
+              </div>
+            </div>
+
+            <div class="sp-field">
+              <label>Email</label>
+              <input type="email" id="edit-gv-email" />
+            </div>
+
+            <div class="sp-field">
+              <label>Địa chỉ</label>
+              <input type="text" id="edit-gv-diachi" />
+            </div>
+
+            <div class="sp-actions">
+              <button
+                type="button"
+                class="sp-btn sp-btn--ghost"
+                onclick="closeEditTeacherModal()"
+              >
+                Đóng
+              </button>
+              <button type="submit" class="sp-btn">
+                Lưu thay đổi
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+      <div class="sp-overlay" id="modal-view-teacher" style="display:none;">
+        <div class="sp-modal" style="max-width:700px;">
+          <h2 class="sp-title">Thông tin chi tiết giáo viên</h2>
+          
+          <div class="sp-form">
+            <div style="display:flex; align-items:center; gap:16px; padding:20px; background:#f8fafc; border-radius:8px; margin-bottom:20px;">
+              <div style="width:80px; height:80px; border-radius:50%; background:linear-gradient(135deg, #667eea 0%, #764ba2 100%); display:flex; align-items:center; justify-content:center; color:white; font-size:36px; font-weight:bold;">
+                <span id="view-gv-initial">T</span>
+              </div>
+              <div style="flex:1;">
+                <h3 id="view-gv-name" style="margin:0 0 4px 0; font-size:20px; color:#1e293b;">Trần Thị Bình</h3>
+                <p id="view-gv-code-subject" style="margin:0; color:#64748b; font-size:14px;">Mã GV: 2 - Bộ môn: Vật lý 10</p>
+              </div>
+            </div>
+            <div style="margin-bottom:24px;">
+              <h4 style="margin:0 0 12px 0; color:#334155; font-size:16px; font-weight:600;">📋 Thông tin cơ bản</h4>
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                <div class="sp-field">
+                  <label>Giới tính</label>
+                  <input type="text" id="view-gv-gender" readonly style="background:#f1f5f9; cursor:default;" />
+                </div>
+                <div class="sp-field">
+                  <label>Ngày sinh</label>
+                  <input type="text" id="view-gv-dob" readonly style="background:#f1f5f9; cursor:default;" />
+                </div>
+              </div>
+              <div class="sp-field">
+                <label>Email</label>
+                <input type="text" id="view-gv-email" readonly style="background:#f1f5f9; cursor:default;" />
+              </div>
+              <div class="sp-field">
+                <label>Địa chỉ</label>
+                <input type="text" id="view-gv-address" readonly style="background:#f1f5f9; cursor:default;" />
+              </div>
+            </div>
+            <div style="margin-bottom:24px;">
+              <h4 style="margin:0 0 12px 0; color:#334155; font-size:16px; font-weight:600;">📚 Các lớp đang giảng dạy</h4>
+              <div id="view-gv-teaching-classes" style="display:flex; flex-wrap:wrap; gap:8px;">
+                <span style="padding:6px 12px; background:#e0e7ff; color:#4f46e5; border-radius:6px; font-size:13px;">10A1</span>
+                <span style="padding:6px 12px; background:#dbeafe; color:#2563eb; border-radius:6px; font-size:13px;">10A2</span>
+                <span style="padding:6px 12px; background:#fce7f3; color:#db2777; border-radius:6px; font-size:13px;">11A1</span>
+              </div>
+            </div>
+            <div style="margin-bottom:24px;">
+              <h4 style="margin:0 0 12px 0; color:#334155; font-size:16px; font-weight:600;">🏫 Lớp chủ nhiệm</h4>
+              <div id="view-gv-homeroom" style="padding:12px 16px; background:#dcfce7; border-left:4px solid #16a34a; border-radius:6px;">
+                <strong style="color:#166534; font-size:15px;">10A1</strong>
+                <span style="color:#15803d; font-size:13px; margin-left:8px;">(35 học sinh)</span>
+              </div>
+            </div>
+
+            <div class="sp-actions">
+              <button
+                type="button"
+                class="sp-btn sp-btn--ghost"
+                onclick="closeViewTeacherModal()"
+              >
+                Đóng
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="sp-overlay" id="modal-add-teacher" style="display:none;">
+        <div class="sp-modal">
+          <h2 class="sp-title">Thêm giáo viên mới</h2>
+          
+          <form class="sp-form" id="form-add-teacher">
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+              <div class="sp-field">
+                <label>Mã giáo viên</label>
+                <input
+                  type="text"
+                  id="add-gv-magv"
+                  placeholder="Ví dụ: GV001"
+                  required
+                />
+              </div>
+
+              <div class="sp-field">
+                <label>Bộ môn giảng dạy</label>
+                <select id="add-gv-mon" required>
+                  <option value="">-- Chọn bộ môn --</option>
+                  <% if (subjects && subjects.length) { %>
+                    <% subjects.forEach(function(sub){ %>
+                      <option value="<%= sub.MaMonHoc %>"><%= sub.TenMonHoc %></option>
+                    <% }) %>
+                  <% } %>
+                </select>
+              </div>
+            </div>
+
+            <div class="sp-field">
+              <label>Họ tên</label>
+              <input type="text" id="add-gv-hoten" placeholder="Nhập họ và tên" required />
+            </div>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+              <div class="sp-field">
+                <label>Giới tính</label>
+                <select id="add-gv-gioitinh" required>
+                  <option value="">-- Chọn --</option>
+                  <option value="Nam">Nam</option>
+                  <option value="Nữ">Nữ</option>
+                  <option value="Khác">Khác</option>
+                </select>
+              </div>
+
+              <div class="sp-field">
+                <label>Ngày sinh</label>
+                <input type="date" id="add-gv-ngaysinh" required />
+              </div>
+            </div>
+
+            <div class="sp-field">
+              <label>Email</label>
+              <input type="email" id="add-gv-email" placeholder="example@school.edu.vn" required />
+            </div>
+
+            <div class="sp-field">
+              <label>Địa chỉ</label>
+              <input type="text" id="add-gv-diachi" placeholder="Nhập địa chỉ" />
+            </div>
+
+            <div class="sp-actions">
+              <button
+                type="button"
+                class="sp-btn sp-btn--ghost"
+                onclick="closeAddTeacherModal()"
+              >
+                Hủy
+              </button>
+              <button type="submit" class="sp-btn">
+                Thêm giáo viên
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+      <div class="sp-overlay" id="modal-edit-teacher" style="display:none;">
+        <div class="sp-modal">
+          <h2 class="sp-title">Sửa thông tin giáo viên</h2>
+          
+          <form class="sp-form" id="form-edit-teacher">
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+              <div class="sp-field">
+                <label>Mã giáo viên</label>
+                <input
+                  type="text"
+                  id="edit-gv-magv"
+                  readonly
+                  style="background:#f1f5f9; cursor:not-allowed;"
+                />
+              </div>
+
+              <div class="sp-field">
+                <label>Bộ môn giảng dạy</label>
+                <select id="edit-gv-mon">
+                  <% if (subjects && subjects.length) { %>
+                    <% subjects.forEach(function(sub){ %>
+                      <option value="<%= sub.MaMonHoc %>"><%= sub.TenMonHoc %></option>
+                    <% }) %>
+                  <% } else { %>
+                    <option value="">Chưa có môn học</option>
+                  <% } %>
+                </select>
+              </div>
+            </div>
+
+            <div class="sp-field">
+              <label>Họ tên</label>
+              <input type="text" id="edit-gv-hoten" />
+            </div>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+              <div class="sp-field">
+                <label>Giới tính</label>
+                <select id="edit-gv-gioitinh">
+                  <option value="">-- Chọn --</option>
+                  <option value="Nam">Nam</option>
+                  <option value="Nữ">Nữ</option>
+                  <option value="Khác">Khác</option>
+                </select>
+              </div>
+
+              <div class="sp-field">
+                <label>Ngày sinh</label>
+                <input type="date" id="edit-gv-ngaysinh" />
+              </div>
+            </div>
+
+            <div class="sp-field">
+              <label>Email</label>
+              <input type="email" id="edit-gv-email" />
+            </div>
+
+            <div class="sp-field">
+              <label>Địa chỉ</label>
+              <input type="text" id="edit-gv-diachi" />
+            </div>
+
+            <div class="sp-actions">
+              <button
+                type="button"
+                class="sp-btn sp-btn--ghost"
+                onclick="closeEditTeacherModal()"
+              >
+                Đóng
+              </button>
+              <button type="submit" class="sp-btn">
+                Lưu thay đổi
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const subFilter = document.getElementById('filter-subject');
+    const searchBox = document.getElementById('search-teacher');
+    const tbody = document.querySelector('#tbl-teachers tbody');
+
+    function applyFilter(){
+      const s = (searchBox.value || '').toLowerCase().trim();
+      const subject = (subFilter.value || '').toLowerCase().trim();
+
+      [...tbody.rows].forEach(tr => {
+        const name     = tr.getAttribute('data-name')     || '';
+        const sub      = tr.getAttribute('data-subject')  || '';
+        const contact  = tr.getAttribute('data-contact')  || '';
+        const address  = tr.getAttribute('data-address')  || '';
+
+        const okSearch =
+          !s ||
+          name.includes(s) ||
+          contact.includes(s) ||
+          address.includes(s);
+
+        const okSub = !subject || sub === subject;
+
+        tr.style.display = (okSearch && okSub) ? '' : 'none';
+      });
+    }
+
+    subFilter.addEventListener('change', applyFilter);
+    searchBox.addEventListener('input', applyFilter);
+
+    // Bắt click Xem / Sửa
+    document.addEventListener('click', (e)=>{
+      const view = e.target.closest('[data-view]');
+      const edit = e.target.closest('[data-edit]');
+
+      if (view) {
+        const id = view.getAttribute('data-view');
+        openViewTeacherModal(id);
+      }
+
+      if (edit) {
+        openEditTeacherModal(edit);
+      }
+    });
+
+    // Nút Thêm và Xuất
+    (function(){
+      const btnAdd = document.getElementById('btn-add');
+      if (btnAdd) {
+        btnAdd.addEventListener('click', () => {
+          openAddTeacherModal();
+        });
+      }
+      const btnExport = document.getElementById('btn-export');
+      if (btnExport) {
+        btnExport.addEventListener('click', () => {
+          alert('Xuất danh sách giáo viên (demo) – chưa nối API.');
+        });
+      }
+    })();
+
+    // ========== MODAL XEM CHI TIẾT ==========
+    function openViewTeacherModal(teacherId) {
+      const modal = document.getElementById('modal-view-teacher');
+      if (!modal) return;
+
+      // Lấy thông tin từ dòng table (demo)
+      const row = document.querySelector(`[data-view="${teacherId}"]`)?.closest('tr');
+      const teacherName = row?.children[1]?.textContent || 'Giáo viên';
+      const initial = teacherName.charAt(0).toUpperCase();
+      const subject = row?.children[2]?.textContent || '';
+      const email = row?.children[3]?.textContent || '';
+      const address = row?.children[4]?.textContent || '';
+      
+      document.getElementById('view-gv-initial').textContent = initial;
+      document.getElementById('view-gv-name').textContent = teacherName;
+      document.getElementById('view-gv-code-subject').textContent = `Mã GV: ${teacherId} - Bộ môn: ${subject}`;
+      document.getElementById('view-gv-gender').value = 'Nữ'; // Demo
+      document.getElementById('view-gv-dob').value = '15/03/1985'; // Demo
+      document.getElementById('view-gv-email').value = email;
+      document.getElementById('view-gv-address').value = address;
+
+      modal.style.display = 'grid';
+    }
+
+    function closeViewTeacherModal() {
+      const modal = document.getElementById('modal-view-teacher');
+      if (modal) modal.style.display = 'none';
+    }
+
+    document.getElementById('modal-view-teacher')?.addEventListener('click', (e) => {
+      if (e.target.classList.contains('sp-overlay')) {
+        closeViewTeacherModal();
+      }
+    });
+
+    // ========== MODAL THÊM GIÁO VIÊN ==========
+    function openAddTeacherModal() {
+      const modal = document.getElementById('modal-add-teacher');
+      if (!modal) return;
+
+      // Reset form
+      document.getElementById('form-add-teacher').reset();
+      modal.style.display = 'grid';
+    }
+
+    function closeAddTeacherModal() {
+      const modal = document.getElementById('modal-add-teacher');
+      if (modal) modal.style.display = 'none';
+    }
+
+    document.getElementById('modal-add-teacher')?.addEventListener('click', (e) => {
+      if (e.target.classList.contains('sp-overlay')) {
+        closeAddTeacherModal();
+      }
+    });
+
+    document.getElementById('form-add-teacher')?.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const name = document.getElementById('add-gv-hoten').value || '';
+      alert('Đã thêm giáo viên mới: ' + name + '\n(Chưa nối API backend)');
+      closeAddTeacherModal();
+    });
+
+    // ========== MODAL SỬA GIÁO VIÊN ==========
+    function openEditTeacherModal(btn) {
+      const modal = document.getElementById('modal-edit-teacher');
+      if (!modal) return;
+
+      const maGV    = btn.getAttribute('data-magv')     || '';
+      const hoTen   = btn.getAttribute('data-hoten')    || '';
+      const gioiTinh= btn.getAttribute('data-gioitinh') || '';
+      const ngaySinhRaw = btn.getAttribute('data-ngaysinh') || '';
+      const ngaySinh = ngaySinhRaw ? ngaySinhRaw.substring(0,10) : '';
+      const diaChi  = btn.getAttribute('data-diachi')   || '';
+      const email   = btn.getAttribute('data-email')    || '';
+      const maMon   = btn.getAttribute('data-mamon')    || '';
+
+      document.getElementById('edit-gv-magv').value      = maGV;
+      document.getElementById('edit-gv-hoten').value     = hoTen;
+      document.getElementById('edit-gv-gioitinh').value  = gioiTinh;
+      document.getElementById('edit-gv-ngaysinh').value  = ngaySinh;
+      document.getElementById('edit-gv-diachi').value    = diaChi;
+      document.getElementById('edit-gv-email').value     = email;
+
+      const monSelect = document.getElementById('edit-gv-mon');
+      if (monSelect && maMon) {
+        monSelect.value = maMon;
+      }
+
+      modal.style.display = 'grid';
+    }
+
+    function closeEditTeacherModal() {
+      const modal = document.getElementById('modal-edit-teacher');
+      if (modal) modal.style.display = 'none';
+    }
+
+    document.getElementById('modal-edit-teacher')?.addEventListener('click', (e) => {
+      if (e.target.classList.contains('sp-overlay')) {
+        closeEditTeacherModal();
+      }
+    });
+
+    document.getElementById('form-edit-teacher')?.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const name = document.getElementById('edit-gv-hoten').value || '';
+      alert('Đã lưu thay đổi (demo) cho giáo viên: ' + name + '\n(Chưa nối API backend)');
+      closeEditTeacherModal();
+    });
+  </script>
+</body>
+</html>
