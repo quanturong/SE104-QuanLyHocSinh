@@ -10,6 +10,10 @@ const HoSoHocSinh = sequelize.define("HoSoHocSinh", {
   DiaChi: { type: DataTypes.STRING },
   Email: { type: DataTypes.STRING },
   MaLop: { type: DataTypes.STRING, allowNull: false }
+}, {
+  tableName: 'HoSoHocSinh', 
+  freezeTableName: true, 
+  timestamps: false
 });
 
 LopHoc.hasMany(HoSoHocSinh, { foreignKey: "MaLop" });

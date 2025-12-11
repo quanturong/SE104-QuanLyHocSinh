@@ -8,6 +8,10 @@ const DiemDanh = sequelize.define("DiemDanh", {
   MaLop: { type: DataTypes.STRING, allowNull: false },
   NgayDiemDanh: { type: DataTypes.STRING, allowNull: false },
   TrangThai: { type: DataTypes.STRING, allowNull: false }
+}, {
+  tableName: 'DiemDanh', 
+  freezeTableName: true, 
+  timestamps: false
 });
 
 HoSoHocSinh.hasMany(DiemDanh, { foreignKey: "MaHocSinh" });

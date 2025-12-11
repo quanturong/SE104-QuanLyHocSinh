@@ -1,4 +1,6 @@
 //Import các module cần thiết
+const session = require('express-session');
+const flash = require('connect-flash');
 const express = require("express");
 const path = require("path");
 const bodyParser = require("body-parser");
@@ -14,7 +16,14 @@ app.set("views", path.join(__dirname, "views"));
 app.use(express.static(path.join(__dirname, "public")));
 
 //Middleware để đọc dữ liệu từ form 
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(session({
+    secret: 'SECRET_KEY_FOR_SESSION_MANAGEMENT',
+    resave: false,
+    saveUninitialized: true 
+}));
+
+//Flash middleware
+app.use(flash());
 
 //Kết nối database
 const { sequelize } = require("./models");
@@ -53,12 +62,8 @@ app.post("/login", (req, res) => {
 
 
 //Định tuyến đến trang quản lý học sinh 
-try {
-  const pageRoutes = require("./routes/pages.route");
-  app.use("/", pageRoutes);
-} catch (err) {
-  console.warn("Chưa có routes/pages.route.js - bỏ qua phần này.");
-}
+const pageRoutes = require("./routes/pages.route");
+app.use("/", pageRoutes);
 
 //Khởi động server
 const PORT = 3000;

@@ -9,6 +9,10 @@ const BaoCaoTongKetHK = sequelize.define("BaoCaoTongKetHK", {
   SoLuongDat: { type: DataTypes.INTEGER, allowNull: false },
   TiLe: { type: DataTypes.REAL, allowNull: false },
   NamHoc: { type: DataTypes.STRING, allowNull: false }
+}, {
+  tableName: 'BaoCaoTongKetHK', 
+  freezeTableName: true, 
+  timestamps: false
 });
 
 module.exports = BaoCaoTongKetHK;

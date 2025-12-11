@@ -1,322 +1,260 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Bảng điểm</title>
-  <link rel="stylesheet" href="../css/style.css" />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title><%= title %></title>
+    <link rel="stylesheet" href="../css/style.css" />
 </head>
 <body class="page-student">
-  <div class="layout">
-    <aside class="sidebar">
-      <div class="brand">
-        <div class="logo">🎓</div>
-        <span>Student Management – Quản lí học sinh</span>
-      </div>
-      <nav class="nav">
-        <a href="/tablecontrol">Bảng điều khiển</a>
-        <a href="/student">Học sinh</a>
-        <a href="/class">Lớp học</a>
-        <a href="/attendance">Điểm danh</a>
-        <a href="/report">Báo cáo</a>
-        <a class="active" href="/scoretable">Điểm số</a>
-        <a href="/timetable">Thời khóa biểu</a>
-        <a href="/find">Tra cứu</a>
-        <a href="/teacher">Giáo viên</a>
-        <a href="/rules">Quy định</a>
-          
-      </nav>
-      <div class="spacer"></div>
-      <a class="nav logout" href="/login">Đăng xuất</a>
-    </aside>
-    <main class="main">
-      <div class="page-header">
-        <h1 class="page-title">Bảng điểm</h1>
-        <p class="page-desc">Chuyển tab để xem danh sách học sinh hoặc bảng điểm môn học theo năm/kỳ.</p>
-      </div>
-      <div class="report-buttons">
-        <button class="report-btn active" data-report="students" onclick="switchTab('students')">
-          <div class="report-btn-icon">🧑‍🎓</div>
-          <div>
-            <div class="report-btn-title">Danh sách học sinh</div>
-            <div class="report-btn-desc">Tổng quan lớp & xếp loại cả năm</div>
-          </div>
-        </button>
-        <button class="report-btn" data-report="subject" onclick="switchTab('subject')">
-          <div class="report-btn-icon">📘</div>
-          <div>
-            <div class="report-btn-title">Bảng điểm môn học</div>
-            <div class="report-btn-desc">Điểm 1p · 1 tiết · CK · TB môn</div>
-          </div>
-        </button>
-      </div>
-      <section id="tab-students" class="report-content active">
-        <section class="card" style="margin-bottom:16px;">
-          <div class="report-filter-grid">
-            <div class="class-info-item">
-              <label class="class-label">Năm học</label>
-              <select class="select class-select" id="year-students">
-              <option value="2024-2025">2039 - 2040</option>
-              <option value="2023-2024">2038 - 2039</option>
-              <option value="2022-2023">2037 - 2038</option>
-              <option value="2024-2025">2036 - 2037</option>
-              <option value="2023-2024">2035 - 2036</option>
-              <option value="2022-2023">2034 - 2035</option>
-              <option value="2024-2025">2033 - 2034</option>
-              <option value="2023-2024">2032 - 2033</option>
-              <option value="2022-2023">2031 - 2032</option>
-              <option value="2024-2025">2030 - 2031</option>
-              <option value="2023-2024">2029 - 2030</option>
-              <option value="2022-2023">2028 - 2029</option>
-              <option value="2024-2025">2027 - 2028</option>
-              <option value="2023-2024">2026 - 2027</option>
-              <option value="2022-2023">2025 - 2026</option>            
-              <option value="2024-2025">2024 - 2025</option>
-              <option value="2023-2024">2023 - 2024</option>
-              <option value="2022-2023">2022 - 2023</option>
-              </select>
+    <div class="layout">
+        <aside class="sidebar">
+            <div class="brand">
+                <div class="logo">🎓</div>
+                <span>Student Management – Quản lí học sinh</span>
             </div>
-            <div class="class-info-item">
-              <label class="class-label">Lọc lớp</label>
-              <select class="select class-select" id="class-students">
-                <option value="">Tất cả</option>
-                <option>12A1</option>
-                <option>12A2</option>
-                <option>11A1</option>
-                <option>11A2</option>
-                <option>10A1</option>
-                <option>10A2</option>
-                <option>10A3</option>
-                <option>10A4</option>
-              </select>
-            </div>
-            <div class="class-info-item">
-              <label class="class-label">Tìm kiếm</label>
-              <input class="input" id="search-students" placeholder="Họ tên hoặc lớp..."/>
-            </div>
-          </div>
-        </section>
-        <section class="card">
-          <div class="table-wrap" style="overflow:auto; max-height:520px;">
-            <table class="table" id="tbl-students">
-              <thead>
-                <tr>
-                  <th style="width:70px;">STT</th>
-                  <th style="width:220px;">Họ tên</th>
-                  <th style="width:100px;">Lớp</th>
-                  <th style="width:120px;">TB HK1</th>
-                  <th style="width:120px;">TB HK2</th>
-                  <th style="width:120px;">Cả năm</th>
-                  <th style="width:140px;">Hạnh kiểm</th>
-                  <th style="width:120px;">Xếp loại</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td class="text-center">1</td>
-                  <td>Nguyễn Diệu Anh</td>
-                  <td>12A1</td>
-                  <td class="score-cell"><span class="score score-excellent">8.7</span></td>
-                  <td class="score-cell"><span class="score score-excellent">8.9</span></td>
-                  <td class="score-cell"><span class="score score-excellent">8.8</span></td>
-                  <td><span class="badge b-success">Tốt</span></td>
-                  <td><span class="badge b-success">Giỏi</span></td>
-                </tr>
-                <tr>
-                  <td class="text-center">2</td>
-                  <td>Trần Minh Quân</td>
-                  <td>11A1</td>
-                  <td class="score-cell"><span class="score score-good">7.4</span></td>
-                  <td class="score-cell"><span class="score score-good">7.2</span></td>
-                  <td class="score-cell"><span class="score score-good">7.3</span></td>
-                  <td><span class="badge b-success">Tốt</span></td>
-                  <td><span class="badge b-info">Khá</span></td>
-                </tr>
-                <tr>
-                  <td class="text-center">3</td>
-                  <td>Phạm Hoàng Anh</td>
-                  <td>10A2</td>
-                  <td class="score-cell"><span class="score score-average">6.2</span></td>
-                  <td class="score-cell"><span class="score score-average">6.1</span></td>
-                  <td class="score-cell"><span class="score score-average">6.2</span></td>
-                  <td><span class="badge b-warn">Khá</span></td>
-                  <td><span class="badge b-secondary">TB</span></td>
-                </tr>
-                <tr>
-                  <td class="text-center">4</td>
-                  <td>Lê Thị Bích Ngọc</td>
-                  <td>12A1</td>
-                  <td class="score-cell"><span class="score score-excellent">9.0</span></td>
-                  <td class="score-cell"><span class="score score-excellent">8.8</span></td>
-                  <td class="score-cell"><span class="score score-excellent">8.9</span></td>
-                  <td><span class="badge b-success">Tốt</span></td>
-                  <td><span class="badge b-success">Giỏi</span></td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+            <nav class="nav">
+                <a href="/tablecontrol">Bảng điều khiển</a>
+                <a href="/student">Học sinh</a>
+                <a href="/class">Lớp học</a>
+                <a href="/attendance">Điểm danh</a>
+                <a href="/report">Báo cáo</a>
+                <a class="active" href="/scoretable">Điểm số</a>
+                <a href="/timetable">Thời khóa biểu</a>
+                <a href="/find">Tra cứu</a>
+                <a href="/teacher">Giáo viên</a>
+                <a href="/rules">Quy định</a>
+            </nav>
+            <div class="spacer"></div>
+            <a class="nav logout" href="/login">Đăng xuất</a>
+        </aside>
 
-          <div class="pagination">
-            <button class="btn-page" disabled>‹</button>
-            <span class="page-info">Trang <strong>1</strong> / <strong>1</strong></span>
-            <button class="btn-page" disabled>›</button>
-          </div>
-        </section>
-      </section>
-
-        <section id="tab-subject" class="report-content">
-        <section class="card" style="margin-bottom:16px;">
-            <div class="report-filter-grid-3 compact-filters">
-            <div class="class-info-item">
-                <label class="class-label">Năm học</label>
-                <select class="select class-select select-sm" id="year-subject">
-                <option value="2024-2025">2039 - 2040</option>
-                <option value="2023-2024">2038 - 2039</option>
-                <option value="2022-2023">2037 - 2038</option>
-                <option value="2024-2025">2036 - 2037</option>
-                <option value="2023-2024">2035 - 2036</option>
-                <option value="2022-2023">2034 - 2035</option>
-                <option value="2024-2025">2033 - 2034</option>
-                <option value="2023-2024">2032 - 2033</option>
-                <option value="2022-2023">2031 - 2032</option>
-                <option value="2024-2025">2030 - 2031</option>
-                <option value="2023-2024">2029 - 2030</option>
-                <option value="2022-2023">2028 - 2029</option>
-                <option value="2024-2025">2027 - 2028</option>
-                <option value="2023-2024">2026 - 2027</option>
-                <option value="2022-2023">2025 - 2026</option>            
-                <option value="2024-2025">2024 - 2025</option>
-                <option value="2023-2024">2023 - 2024</option>
-                <option value="2022-2023">2022 - 2023</option>
-                </select>
+        <main class="main">
+            <div class="page-header">
+                <h1 class="page-title">Bảng điểm</h1>
+                <p class="page-desc">Chuyển tab để xem danh sách học sinh hoặc bảng điểm môn học theo năm/kỳ.</p>
+                <% if (error) { %>
+                    <div class="alert alert-error"><%= error %></div>
+                <% } %>
+                <% if (success) { %>
+                    <div class="alert alert-success"><%= success %></div>
+                <% } %>
             </div>
-            <div class="class-info-item">
-                <label class="class-label">Kỳ học</label>
-                <select class="select class-select select-sm" id="semester-subject">
-                <option value="hk1">Học kỳ 1</option>
-                <option value="hk2">Học kỳ 2</option>
-                </select>
-            </div>
-            <div class="class-info-item">
-                <label class="class-label">Môn học</label>
-                <select class="select class-select select-sm" id="subject-subject">
-                  <option value="toan">Toán</option>
-                  <option value="vatly">Vật lý</option>
-                  <option value="hoahoc">Hóa học</option>
-                  <option value="sinhhoc">Sinh học</option>
-                  <option value="nguvan">Ngữ văn</option>
-                  <option value="lichsu">Lịch sử</option>
-                  <option value="dialy">Địa lý</option>
-                  <option value="daoduc">Đạo đức</option>
-                  <option value="educ">Thể dục</option>
-                </select>
-            </div>
-            </div>
-        </section>
-        <section class="card">
-            <div class="table-wrap" style="overflow:auto; max-height:520px;">
-            <table class="table table-scores" id="tbl-subject">
-                <thead>
-                <tr>
-                    <th style="width:70px;">STT</th>
-                    <th style="width:220px;">Họ tên</th>
-                    <th style="width:120px;">Điểm 1p</th>
-                    <th style="width:120px;">Điểm 1 tiết</th>
-                    <th style="width:120px;">Điểm CK</th>
-                    <th style="width:140px;">Điểm TB môn</th>
-                    <th style="width:120px;">Sửa điểm</th>
-                </tr>
-                </thead>
-                <tbody>
-                <tr>
-                    <td class="text-center">1</td>
-                    <td>Nguyễn Diệu Anh</td>
-                    <td class="score-cell"><span class="score score-excellent">8.5</span></td>
-                    <td class="score-cell"><span class="score score-excellent">8.8</span></td>
-                    <td class="score-cell"><span class="score score-excellent">8.7</span></td>
-                    <td class="score-cell"><span class="score score-excellent">8.7</span></td>
-                    <td class="action-cell">
-                    <button class="btn btn-sm btn-ghost" data-row="1">Sửa</button>
-                    </td>
-                </tr>
-                <tr>
-                    <td class="text-center">2</td>
-                    <td>Trần Minh Quân</td>
-                    <td class="score-cell"><span class="score score-good">7.1</span></td>
-                    <td class="score-cell"><span class="score score-good">7.4</span></td>
-                    <td class="score-cell"><span class="score score-good">7.5</span></td>
-                    <td class="score-cell"><span class="score score-good">7.3</span></td>
-                    <td class="action-cell">
-                    <button class="btn btn-sm btn-ghost" data-row="2">Sửa</button>
-                    </td>
-                </tr>
-                <tr>
-                    <td class="text-center">3</td>
-                    <td>Phạm Hoàng Anh</td>
-                    <td class="score-cell"><span class="score score-average">5.8</span></td>
-                    <td class="score-cell"><span class="score score-average">6.1</span></td>
-                    <td class="score-cell"><span class="score score-average">6.0</span></td>
-                    <td class="score-cell"><span class="score score-average">6.0</span></td>
-                    <td class="action-cell">
-                    <button class="btn btn-sm btn-ghost" data-row="3">Sửa</button>
-                    </td>
-                </tr>
-                <tr>
-                    <td class="text-center">4</td>
-                    <td>Lê Thị Bích Ngọc</td>
-                    <td class="score-cell"><span class="score score-excellent">9.0</span></td>
-                    <td class="score-cell"><span class="score score-excellent">8.8</span></td>
-                    <td class="score-cell"><span class="score score-excellent">9.1</span></td>
-                    <td class="score-cell"><span class="score score-excellent">9.0</span></td>
-                    <td class="action-cell">
-                    <button class="btn btn-sm btn-ghost" data-row="4">Sửa</button>
-                    </td>
-                </tr>
-                </tbody>
-            </table>
+            
+            <div class="report-buttons">
+                <button class="report-btn active" data-report="students" onclick="switchTab('students')">
+                    <div class="report-btn-icon">🧑‍🎓</div>
+                    <div>
+                        <div class="report-btn-title">Danh sách học sinh</div>
+                        <div class="report-btn-desc">Tổng quan lớp & xếp loại cả năm</div>
+                    </div>
+                </button>
+                <button class="report-btn" data-report="subject" onclick="switchTab('subject')">
+                    <div class="report-btn-icon">📘</div>
+                    <div>
+                        <div class="report-btn-title">Bảng điểm môn học</div>
+                        <div class="report-btn-desc">Điểm 1p · 1 tiết · CK · TB môn</div>
+                    </div>
+                </button>
             </div>
 
-            <div class="pagination">
-            <button class="btn-page" disabled>‹</button>
-            <span class="page-info">Trang <strong>1</strong> / <strong>1</strong></span>
-            <button class="btn-page" disabled>›</button>
-            </div>
-        </section>
-        </section>
-    </main>
-  </div>
+            <section id="tab-students" class="report-content active">
+                <section class="card" style="margin-bottom:16px;">
+                    <div class="report-filter-grid">
+                        <div class="class-info-item">
+                            <label class="class-label">Năm học</label>
+                            <select class="select class-select" id="year-students">
+                                <% years.forEach(year => { %>
+                                    <option value="<%= year %>" <%= (selectedYear === year) ? 'selected' : '' %>><%= year %></option>
+                                <% }); %>
+                            </select>
+                        </div>
+                        <div class="class-info-item">
+                            <label class="class-label">Lọc lớp</label>
+                            <select class="select class-select" id="class-students">
+                                <option value="">Tất cả</option>
+                                <% classes.forEach(lop => { %>
+                                    <option value="<%= lop.MaLop %>"><%= lop.TenLop %></option>
+                                <% }); %>
+                            </select>
+                        </div>
+                        <div class="class-info-item">
+                            <label class="class-label">Tìm kiếm</label>
+                            <input class="input" id="search-students" placeholder="Họ tên hoặc lớp..." />
+                        </div>
+                    </div>
+                </section>
+                <section class="card">
+                    <div class="table-wrap" style="overflow:auto; max-height:520px;">
+                        <table class="table" id="tbl-students">
+                            <thead>
+                                <tr>
+                                    <th style="width:70px;">STT</th>
+                                    <th style="width:220px;">Họ tên</th>
+                                    <th style="width:100px;">Lớp</th>
+                                    <th style="width:120px;">TB HK1</th>
+                                    <th style="width:120px;">TB HK2</th>
+                                    <th style="width:120px;">Cả năm</th>
+                                    <th style="width:140px;">Hạnh kiểm</th>
+                                    <th style="width:120px;">Xếp loại</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% // Dữ liệu D3 (Danh sách học sinh) %>
+                                <% studentsOverview.forEach((student, index) => { %>
+                                <tr>
+                                    <td class="text-center"><%= index + 1 %></td>
+                                    <td><%= student.HoTen %></td>
+                                    <td><%= student.TenLop %></td>
+                                    <td class="score-cell"><span class="score score-<%= student.TB_HK1_Style %>"><%= student.TB_HK1.toFixed(1) %></span></td>
+                                    <td class="score-cell"><span class="score score-<%= student.TB_HK2_Style %>"><%= student.TB_HK2.toFixed(1) %></span></td>
+                                    <td class="score-cell"><span class="score score-<%= student.TB_CN_Style %>"><%= student.TB_CN.toFixed(1) %></span></td>
+                                    <td><span class="badge b-<%= student.HanhKiem_Style %>"><%= student.HanhKiem %></span></td>
+                                    <td><span class="badge b-<%= student.XepLoai_Style %>"><%= student.XepLoai %></span></td>
+                                </tr>
+                                <% }); %>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="pagination">
+                        <button class="btn-page" disabled>‹</button>
+                        <span class="page-info">Trang <strong>1</strong> / <strong>1</strong></span>
+                        <button class="btn-page" disabled>›</button>
+                    </div>
+                </section>
+            </section>
 
-  <script>
-    function switchTab(target){
-      document.querySelectorAll('.report-btn').forEach(b=>b.classList.remove('active'));
-      document.querySelectorAll('.report-content').forEach(c=>c.classList.remove('active'));
-      document.querySelector('[data-report="'+target+'"]').classList.add('active');
-      document.getElementById('tab-'+target).classList.add('active');
-      history.replaceState(null, '', '#'+target);
-    }
-    window.addEventListener('DOMContentLoaded', ()=>{
-      const t = (location.hash||'#students').replace('#','');
-      switchTab(t);
-    });
-    (function(){
-      const search = document.getElementById('search-students');
-      const cls    = document.getElementById('class-students');
-      const tbody  = document.querySelector('#tbl-students tbody');
+            <section id="tab-subject" class="report-content">
+                <section class="card" style="margin-bottom:16px;">
+                    <div class="report-filter-grid-3 compact-filters">
+                        <div class="class-info-item">
+                            <label class="class-label">Năm học</label>
+                            <select class="select class-select select-sm" id="year-subject">
+                                <% years.forEach(year => { %>
+                                    <option value="<%= year %>" <%= (selectedYear === year) ? 'selected' : '' %>><%= year %></option>
+                                <% }); %>
+                            </select>
+                        </div>
+                        <div class="class-info-item">
+                            <label class="class-label">Kỳ học</label>
+                            <select class="select class-select select-sm" id="semester-subject">
+                                <option value="1" <%= (selectedSemester === '1') ? 'selected' : '' %>>Học kỳ 1</option>
+                                <option value="2" <%= (selectedSemester === '2') ? 'selected' : '' %>>Học kỳ 2</option>
+                            </select>
+                        </div>
+                        <div class="class-info-item">
+                            <label class="class-label">Môn học</label>
+                            <select class="select class-select select-sm" id="subject-subject">
+                                <% subjects.forEach(subject => { %>
+                                    <option value="<%= subject.MaMon %>" <%= (selectedSubject === subject.MaMon) ? 'selected' : '' %>><%= subject.TenMon %></option>
+                                <% }); %>
+                            </select>
+                        </div>
+                    </div>
+                </section>
+                <section class="card">
+                    <div class="table-wrap" style="overflow:auto; max-height:520px;">
+                        <table class="table table-scores" id="tbl-subject">
+                            <thead>
+                                <tr>
+                                    <th style="width:70px;">STT</th>
+                                    <th style="width:220px;">Họ tên</th>
+                                    <th style="width:120px;">Điểm 15p</th>
+                                    <th style="width:120px;">Điểm 1 tiết</th>
+                                    <th style="width:120px;">Điểm CK</th>
+                                    <th style="width:140px;">Điểm TB môn</th>
+                                    <th style="width:120px;">Sửa điểm</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% // Dữ liệu D6 (Danh sách điểm môn học chi tiết) %>
+                                <% subjectScores.forEach((score, index) => { %>
+                                <tr>
+                                    <td class="text-center"><%= index + 1 %></td>
+                                    <td><%= score.HoTen %></td>
+                                    <td class="score-cell"><span class="score score-<%= score.Diem15p_Style %>"><%= score.Diem15p.toFixed(1) %></span></td>
+                                    <td class="score-cell"><span class="score score-<%= score.Diem1Tiet_Style %>"><%= score.Diem1Tiet.toFixed(1) %></span></td>
+                                    <td class="score-cell"><span class="score score-<%= score.DiemCK_Style %>"><%= score.DiemCK.toFixed(1) %></span></td>
+                                    <td class="score-cell"><span class="score score-<%= score.DiemTB_Style %>"><%= score.DiemTB.toFixed(1) %></span></td>
+                                    <td class="action-cell">
+                                        <button class="btn btn-sm btn-ghost" onclick="openEditModal(<%= score.MaHocSinh %>)">Sửa</button>
+                                    </td>
+                                </tr>
+                                <% }); %>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="pagination">
+                        <button class="btn-page" disabled>‹</button>
+                        <span class="page-info">Trang <strong>1</strong> / <strong>1</strong></span>
+                        <button class="btn-page" disabled>›</button>
+                    </div>
+                </section>
+            </section>
+        </main>
+    </div>
 
-      function apply(){
-        const q = (search.value||'').toLowerCase();
-        const c = (cls.value||'').toLowerCase();
-        tbody.querySelectorAll('tr').forEach(tr=>{
-          const name = tr.cells[1].textContent.toLowerCase();
-          const lop  = tr.cells[2].textContent.toLowerCase();
-          const okQ  = !q || name.includes(q) || lop.includes(q);
-          const okC  = !c || lop === c;
-          tr.style.display = (okQ && okC) ? '' : 'none';
+    <script>
+        // Hàm switchTab giữ nguyên
+        function switchTab(target){
+            document.querySelectorAll('.report-btn').forEach(b=>b.classList.remove('active'));
+            document.querySelectorAll('.report-content').forEach(c=>c.classList.remove('active'));
+            document.querySelector('[data-report="'+target+'"]').classList.add('active');
+            document.getElementById('tab-'+target).classList.add('active');
+            history.replaceState(null, '', `?tab=${target}<% if (selectedYear) { %>&year=<%= selectedYear %><% } %>`);
+        }
+        window.addEventListener('DOMContentLoaded', ()=>{
+            // Đọc tab từ query param hoặc mặc định là 'students'
+            const urlParams = new URLSearchParams(window.location.search);
+            const t = urlParams.get('tab') || 'students'; 
+            switchTab(t)
         });
-      }
-      search && search.addEventListener('input', apply);
-      cls && cls.addEventListener('change', apply);
-    })();
-  </script>
+
+        // Hàm xử lý lọc dữ liệu (Giữ nguyên)
+        (function(){
+            const search = document.getElementById('search-students');
+            const cls    = document.getElementById('class-students');
+            const tbody  = document.querySelector('#tbl-students tbody');
+
+            function apply(){
+                const q = (search.value||'').toLowerCase();
+                const c = (cls.value||'').toLowerCase();
+                tbody.querySelectorAll('tr').forEach(tr=>{
+                    const name = tr.cells[1].textContent.toLowerCase();
+                    const lop  = tr.cells[2].textContent.toLowerCase();
+                    const okQ  = !q || name.includes(q) || lop.includes(q);
+                    const okC  = !c || lop === c;
+                    tr.style.display = (okQ && okC) ? '' : 'none';
+                });
+            }
+            search && search.addEventListener('input', apply);
+            cls && cls.addEventListener('change', apply);
+
+            // Tự động gửi lại request khi filter Bảng điểm môn học thay đổi
+            const yearStudentFilter = document.getElementById('year-students');
+            if (yearStudentFilter) {
+                yearStudentFilter.addEventListener('change', () => {
+                    const year = yearStudentFilter.value;
+                    // Chuyển hướng để Controller nhận request GET mới với params
+                    window.location.href = `/scoretable?tab=students&year=${year}`;
+                });
+            }
+
+            const subjectFilters = document.querySelectorAll('#year-subject, #semester-subject, #subject-subject');
+            subjectFilters.forEach(filter => {
+                filter.addEventListener('change', () => {
+                    const year = document.getElementById('year-subject').value;
+                    const semester = document.getElementById('semester-subject').value;
+                    const subject = document.getElementById('subject-subject').value;
+                    window.location.href = `/scoretable?tab=subject&year=${year}&semester=${semester}&subject=${subject}`;
+                });
+            });
+        })();
+
+        // Thêm hàm mở modal Sửa điểm (Giả lập)
+        function openEditModal(studentId) {
+            alert(`Mở modal sửa điểm cho Học sinh ID: ${studentId}. Sau này sẽ dùng AJAX POST để gửi D1 về server.`);
+        }
+    </script>
 </body>
 </html>

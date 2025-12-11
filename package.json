@@ -20,9 +20,12 @@
   },
   "homepage": "https://github.com/quanturong/SE104-QuanLyHocSinh#readme",
   "dependencies": {
-    "body-parser": "^2.2.0",
+    "body-parser": "^2.2.1",
+    "connect-flash": "^0.1.1",
     "ejs": "^3.1.10",
-    "express": "^5.1.0",
+    "express": "^5.2.1",
+    "express-session": "^1.18.2",
+    "path": "^0.12.7",
     "sequelize": "^6.37.7",
     "sqlite3": "^5.1.7"
   }

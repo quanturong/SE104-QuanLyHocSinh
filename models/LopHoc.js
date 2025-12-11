@@ -5,6 +5,11 @@ const LopHoc = sequelize.define("LopHoc", {
   MaLop: { type: DataTypes.STRING, primaryKey: true },
   KhoiLop: { type: DataTypes.INTEGER, allowNull: false },
   SiSoLop: { type: DataTypes.INTEGER, defaultValue: 40 }
+}
+, {
+  tableName: 'LopHoc', 
+  freezeTableName: true, 
+  timestamps: false
 });
 
 module.exports = LopHoc;

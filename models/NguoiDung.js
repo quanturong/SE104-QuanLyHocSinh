@@ -6,6 +6,10 @@ const NguoiDung = sequelize.define("NguoiDung", {
   TenDangNhap: { type: DataTypes.STRING, allowNull: false },
   MatKhau: { type: DataTypes.STRING, allowNull: false },
   VaiTro: {  type: DataTypes.ENUM('Admin', 'GiaoVien', 'HocSinh', 'BGH', 'GiaoVu'), allowNull: false }
+}, {
+  tableName: 'NguoiDung', 
+  freezeTableName: true, 
+  timestamps: false
 });
 
 module.exports = NguoiDung;

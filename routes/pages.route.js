@@ -1,5 +1,6 @@
 const express = require("express");
 const router = express.Router();
+const scoreController = require('../controllers/score.controller');
 
 // Middleware kiểm tra login tạm thời (sau này bạn có thể thay bằng session)
 const requireLogin = (req, res, next) => {
@@ -30,9 +31,7 @@ router.get("/report", requireLogin, (req, res) => {
     res.render("pages/report", { title: "Báo cáo" });
 });
 
-router.get("/scoretable", requireLogin, (req, res) => {
-    res.render("pages/scoretable", { title: "Điểm số" });
-});
+router.get("/scoretable", requireLogin, scoreController.showScoreTable);
 
 router.get("/timetable", requireLogin, (req, res) => {
      res.render("pages/timetable", { title: "Thời khóa biểu" });

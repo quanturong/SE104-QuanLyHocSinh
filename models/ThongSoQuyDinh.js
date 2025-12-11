@@ -4,6 +4,10 @@ const sequelize = require("../config/db");
 const ThongSoQuyDinh = sequelize.define("ThongSoQuyDinh", {
   TenQuyDinh: { type: DataTypes.STRING, primaryKey: true },
   GiaTri: { type: DataTypes.REAL, allowNull: false }
+}, {
+  tableName: 'ThongSoQuyDinh', 
+  freezeTableName: true, 
+  timestamps: false
 });
 
 module.exports = ThongSoQuyDinh;
