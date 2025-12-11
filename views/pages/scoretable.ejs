@@ -146,7 +146,7 @@
                             <label class="class-label">Môn học</label>
                             <select class="select class-select select-sm" id="subject-subject">
                                 <% subjects.forEach(subject => { %>
-                                    <option value="<%= subject.MaMon %>" <%= (selectedSubject === subject.MaMon) ? 'selected' : '' %>><%= subject.TenMon %></option>
+                                    <option value="<%= subject.MaMonHoc %>" <%= (selectedSubject === subject.MaMonHoc) ? 'selected' : '' %>><%= subject.TenMonHoc %></option>
                                 <% }); %>
                             </select>
                         </div>
