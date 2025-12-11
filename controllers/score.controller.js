@@ -2,6 +2,7 @@
 
 const scoreService = require('../services/score.service');
 const lookupService = require('../services/lookup.service');
+const classService = require('../services/class.service');
 
 class ScoreController {
     async showScoreTable(req, res) {

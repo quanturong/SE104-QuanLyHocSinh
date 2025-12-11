@@ -74,7 +74,7 @@
                             <select class="select class-select" id="class-students">
                                 <option value="">Tất cả</option>
                                 <% classes.forEach(lop => { %>
-                                    <option value="<%= lop.MaLop %>"><%= lop.TenLop %></option>
+                                    <option value="<%= lop.MaLop %>"><%= lop.MaLop %></option>
                                 <% }); %>
                             </select>
                         </div>
@@ -105,7 +105,7 @@
                                 <tr>
                                     <td class="text-center"><%= index + 1 %></td>
                                     <td><%= student.HoTen %></td>
-                                    <td><%= student.TenLop %></td>
+                                    <td><%= student.MaLop %></td>
                                     <td class="score-cell"><span class="score score-<%= student.TB_HK1_Style %>"><%= student.TB_HK1.toFixed(1) %></span></td>
                                     <td class="score-cell"><span class="score score-<%= student.TB_HK2_Style %>"><%= student.TB_HK2.toFixed(1) %></span></td>
                                     <td class="score-cell"><span class="score score-<%= student.TB_CN_Style %>"><%= student.TB_CN.toFixed(1) %></span></td>

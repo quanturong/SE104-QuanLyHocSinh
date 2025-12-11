@@ -50,10 +50,11 @@ exports.getStudentsOverview = async (year) => {
         // 1. Lấy tất cả học sinh và lớp của họ
         const students = await HoSoHocSinh.findAll({
             // Giả định HocSinh có MaLop và LopHoc có MaLop
-            include: [{ 
-                model: LopHoc, 
-                attributes: ['MaLop'], 
-            }], 
+            attributes: [
+                'MaHocSinh', 
+                'HoTen',
+                'MaLop',
+            ],
             raw: true,
             nest: true,
             order: [['HoTen', 'ASC']],
@@ -75,7 +76,7 @@ exports.getStudentsOverview = async (year) => {
             if (studentSubjectAverages.length === 0) {
                  return {
                     HoTen: student.HoTen,
-                    MaLop: student['LopHoc.MaLop'] || 'N/A', 
+                    MaLop: student.MaLop || 'N/A', 
                     TB_HK1: 0.0, TB_HK2: 0.0, TB_CN: 0.0,
                     HanhKiem: 'Chưa xếp loại', XepLoai: 'Chưa xếp loại',
                     TB_HK1_Style: 'none', TB_HK2_Style: 'none', TB_CN_Style: 'none',
