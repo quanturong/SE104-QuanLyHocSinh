@@ -395,35 +395,104 @@
         });
       });
     }
-    if (CAN_EDIT) {
-      const btnMarkAll = document.getElementById('btn-mark-all-present');
-      const btnSave    = document.getElementById('btn-save');
-      const btnExport  = document.getElementById('btn-export');
+// Thay thế phần xử lý nút Save và Export trong attendance.ejs
 
-      if (btnMarkAll) {
-        btnMarkAll.addEventListener('click', () => {
-          const cells = document.querySelectorAll('#tbl-attendance .att-cell');
-          cells.forEach(c => {
-            c.textContent = 'P';
-            c.setAttribute('data-status', 'P');
+if (CAN_EDIT) {
+  const btnMarkAll = document.getElementById('btn-mark-all-present');
+  const btnSave    = document.getElementById('btn-save');
+  const btnExport  = document.getElementById('btn-export');
+
+  if (btnMarkAll) {
+    btnMarkAll.addEventListener('click', () => {
+      const cells = document.querySelectorAll('#tbl-attendance .att-cell');
+      cells.forEach(c => {
+        c.textContent = 'P';
+        c.setAttribute('data-status', 'P');
+      });
+      recalcStatsAndRowSummary();
+      alert('Đã điểm danh tất cả có mặt! Nhấn "Lưu điểm danh" để ghi vào database.');
+    });
+  }
+
+    if (btnSave) {
+      btnSave.addEventListener('click', async () => {
+        const year  = parseInt(yearSelect.value, 10);
+        const month = parseInt(monthSelect.value, 10);
+        const cls   = classSelect.value;
+
+        if (!cls) {
+          alert('Vui lòng chọn lớp!');
+          return;
+        }
+
+        btnSave.disabled = true;
+        btnSave.textContent = '⏳ Đang lưu...';
+
+        try {
+          const rows = document.querySelectorAll('#att-body tr[data-student]');
+          const data = [];
+
+          rows.forEach(row => {
+            const maHS = row.getAttribute('data-student');
+            const cells = row.querySelectorAll('td.att-cell');
+            
+            cells.forEach((cell, dayIdx) => {
+              const day = dayIdx + 1;
+              const status = cell.getAttribute('data-status') || '';
+              
+              if (status) {
+                const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                data.push({
+                  MaHocSinh: maHS,
+                  NgayDiemDanh: dateStr,
+                  TrangThai: status
+                });
+              }
+            });
           });
-          recalcStatsAndRowSummary();
-          alert('Đã điểm danh tất cả có mặt (chỉ thay đổi trên giao diện, chưa ghi DB).');
-        });
-      }
 
-      if (btnSave) {
-        btnSave.addEventListener('click', () => {
-          alert('Đây là bản demo: nút Lưu mới ghi thay đổi trên giao diện, chưa có API lưu vào DB.');
-        });
-      }
+          const response = await fetch('/attendance/save', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ data })
+          });
 
-      if (btnExport) {
-        btnExport.addEventListener('click', () => {
-          alert('Chức năng xuất Excel chưa được hiện thực (demo UI).');
-        });
-      }
+          const result = await response.json();
+
+          if (result.success) {
+            alert(`${result.message}`);
+            window.location.reload();
+          } else {
+            alert('Lỗi: ' + result.message);
+          }
+
+        } catch (err) {
+          console.error('Lỗi khi lưu:', err);
+          alert('Không thể lưu điểm danh: ' + err.message);
+        } finally {
+          btnSave.disabled = false;
+          btnSave.textContent = '💾 Lưu điểm danh';
+        }
+      });
     }
+
+    if (btnExport) {
+      btnExport.addEventListener('click', () => {
+        const year  = yearSelect.value;
+        const month = monthSelect.value;
+        const cls   = classSelect.value;
+
+        if (!cls) {
+          alert('Vui lòng chọn lớp!');
+          return;
+        }
+
+        window.location.href = `/attendance/export?year=${year}&month=${month}&class=${cls}`;
+      });
+    }
+  }
 
     yearSelect.addEventListener('change', buildGrid);
     classSelect.addEventListener('change', buildGrid);

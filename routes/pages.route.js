@@ -5,6 +5,49 @@ const path = require("path");
 const { sequelize } = require("../models");
 const pageController = require("../controllers/page.controller");
 const userController = require("../controllers/user.controller");
+const userService = require("../services/user.service");
+
+router.get("/change-password", (req, res) => {
+  res.render("pages/change-password", {
+    error: null,
+    success: null
+  });
+});
+
+router.post("/change-password", async (req, res) => {
+  const { username, newPassword, confirmPassword } = req.body;
+
+  if (!username || !newPassword || !confirmPassword) {
+    return res.render("pages/change-password", {
+      error: "Vui lòng nhập đầy đủ thông tin!",
+      success: null
+    });
+  }
+
+  if (newPassword !== confirmPassword) {
+    return res.render("pages/change-password", {
+      error: "Mật khẩu xác nhận không khớp!",
+      success: null
+    });
+  }
+
+  const bcrypt = require("bcrypt");
+  const newHash = await bcrypt.hash(newPassword, 10);
+
+  const ok = await userService.updatePasswordByUsername(username, newHash);
+
+  if (!ok) {
+    return res.render("pages/change-password", {
+      error: "Tên đăng nhập không tồn tại!",
+      success: null
+    });
+  }
+
+  return res.render("pages/change-password", {
+    error: null,
+    success: "Đặt lại mật khẩu thành công!"
+  });
+});
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -311,6 +354,216 @@ router.get(
   }
 );
 
+// Thêm học sinh - CẬP NHẬT SiSoLop
+router.post(
+  "/student",
+  requireLogin,
+  allowRoles(staffRoles),
+  async (req, res) => {
+    try {
+      const { MaHocSinh, HoTen, GioiTinh, NgaySinh, DiaChi, Email, MaLop } = req.body;
+      const birth = new Date(NgaySinh);
+      const now   = new Date();
+      let age = now.getFullYear() - birth.getFullYear();
+      const m = now.getMonth() - birth.getMonth();
+      if (m < 0 || (m === 0 && now.getDate() < birth.getDate())) {
+        age--;
+      }
+      if (age < 15 || age > 20) {
+        return res.status(400).send("Tuổi học sinh phải từ 15 đến 20.");
+      }
+
+      const [[{ SoHS }]] = await sequelize.query(
+        "SELECT COUNT(*) AS SoHS FROM HoSoHocSinh WHERE MaLop = ?",
+        { replacements: [MaLop] }
+      );
+      if (SoHS >= 40) {
+        return res
+          .status(400)
+          .send("Lớp này đã đủ sĩ số tối đa 40 học sinh. Vui lòng chọn lớp khác.");
+      }
+
+      // INSERT học sinh
+      await sequelize.query(
+        `
+        INSERT INTO HoSoHocSinh
+          (MaHocSinh, HoTen, GioiTinh, NgaySinh, DiaChi, Email, MaLop)
+        VALUES (?, ?, ?, ?, ?, ?, ?);
+        `,
+        {
+          replacements: [
+            MaHocSinh,
+            HoTen,
+            GioiTinh,
+            NgaySinh,
+            DiaChi,
+            Email,
+            MaLop,
+          ],
+        }
+      );
+
+      // CẬP NHẬT SiSoLop
+      await sequelize.query(
+        `
+        UPDATE LopHoc 
+        SET SiSoLop = (SELECT COUNT(*) FROM HoSoHocSinh WHERE MaLop = ?)
+        WHERE MaLop = ?;
+        `,
+        { replacements: [MaLop, MaLop] }
+      );
+
+      return res.redirect("/student");
+    } catch (err) {
+      console.error("Lỗi POST /student:", err);
+      return res.status(500).send("Không thêm được học sinh mới.");
+    }
+  }
+);
+
+router.post(
+  "/student/delete",
+  requireLogin,
+  allowRoles(staffRoles),
+  async (req, res) => {
+    try {
+      const { MaHocSinh } = req.body;
+    
+      const [[student]] = await sequelize.query(
+        "SELECT MaLop FROM HoSoHocSinh WHERE MaHocSinh = ?;",
+        { replacements: [MaHocSinh] }
+      );
+      
+      const maLop = student?.MaLop;
+      await sequelize.query(
+        "DELETE FROM DiemDanh WHERE MaHocSinh = ?;",
+        { replacements: [MaHocSinh] }
+      );
+
+      await sequelize.query(
+        "DELETE FROM BangDiemMonHoc WHERE MaHocSinh = ?;",
+        { replacements: [MaHocSinh] }
+      );
+      await sequelize.query(
+        "DELETE FROM HoSoHocSinh WHERE MaHocSinh = ?;",
+        { replacements: [MaHocSinh] }
+      );
+      if (maLop) {
+        await sequelize.query(
+          `
+          UPDATE LopHoc 
+          SET SiSoLop = (SELECT COUNT(*) FROM HoSoHocSinh WHERE MaLop = ?)
+          WHERE MaLop = ?;
+          `,
+          { replacements: [maLop, maLop] }
+        );
+      }
+
+      return res.redirect("/student");
+    } catch (err) {
+      console.error("Lỗi POST /student/delete:", err);
+      return res.status(500).send("Không xoá được học sinh: " + err.message);
+    }
+  }
+);
+router.post(
+  "/student/edit",
+  requireLogin,
+  allowRoles(staffRoles),
+  async (req, res) => {
+    try {
+      const { OldMaHocSinh, MaHocSinh, HoTen, GioiTinh, NgaySinh, DiaChi, Email, MaLop } = req.body;
+      const [[oldStudent]] = await sequelize.query(
+        "SELECT MaLop FROM HoSoHocSinh WHERE MaHocSinh = ?;",
+        { replacements: [OldMaHocSinh] }
+      );
+      const oldMaLop = oldStudent?.MaLop;
+
+      const birth = new Date(NgaySinh);
+      const now   = new Date();
+      let age = now.getFullYear() - birth.getFullYear();
+      const m = now.getMonth() - birth.getMonth();
+      if (m < 0 || (m === 0 && now.getDate() < birth.getDate())) {
+        age--;
+      }
+      if (age < 15 || age > 20) {
+        return res.status(400).send("Tuổi học sinh phải từ 15 đến 20.");
+      }
+      if (OldMaHocSinh !== MaHocSinh) {
+        const [[existing]] = await sequelize.query(
+          "SELECT COUNT(*) AS cnt FROM HoSoHocSinh WHERE MaHocSinh = ?",
+          { replacements: [MaHocSinh] }
+        );
+        
+        if (existing.cnt > 0) {
+          return res.status(400).send(`Mã học sinh "${MaHocSinh}" đã tồn tại. Vui lòng chọn mã khác.`);
+        }
+      }
+
+      await sequelize.query('BEGIN TRANSACTION;');
+
+      try {
+        await sequelize.query(
+          "UPDATE DiemDanh SET MaHocSinh = ? WHERE MaHocSinh = ?;",
+          { replacements: [MaHocSinh, OldMaHocSinh] }
+        );
+        await sequelize.query(
+          "UPDATE BangDiemMonHoc SET MaHocSinh = ? WHERE MaHocSinh = ?;",
+          { replacements: [MaHocSinh, OldMaHocSinh] }
+        );
+        await sequelize.query(
+          `
+          UPDATE HoSoHocSinh
+          SET MaHocSinh = ?,
+              HoTen     = ?,
+              GioiTinh  = ?,
+              NgaySinh  = ?,
+              DiaChi    = ?,
+              Email     = ?,
+              MaLop     = ?
+          WHERE MaHocSinh = ?;
+          `,
+          {
+            replacements: [MaHocSinh, HoTen, GioiTinh, NgaySinh, DiaChi, Email, MaLop, OldMaHocSinh],
+          }
+        );
+        if (oldMaLop) {
+          await sequelize.query(
+            `
+            UPDATE LopHoc 
+            SET SiSoLop = (SELECT COUNT(*) FROM HoSoHocSinh WHERE MaLop = ?)
+            WHERE MaLop = ?;
+            `,
+            { replacements: [oldMaLop, oldMaLop] }
+          );
+        }
+        if (MaLop !== oldMaLop) {
+          await sequelize.query(
+            `
+            UPDATE LopHoc 
+            SET SiSoLop = (SELECT COUNT(*) FROM HoSoHocSinh WHERE MaLop = ?)
+            WHERE MaLop = ?;
+            `,
+            { replacements: [MaLop, MaLop] }
+          );
+        }
+
+        await sequelize.query('COMMIT;');
+        
+        console.log('Sửa học sinh và cập nhật sĩ số thành công!');
+        return res.redirect("/student");
+        
+      } catch (err) {
+        await sequelize.query('ROLLBACK;');
+        throw err;
+      }
+
+    } catch (err) {
+      console.error("Lỗi POST /student/edit:", err);
+      return res.status(500).send("Không sửa được học sinh: " + err.message);
+    }
+  }
+);
 
 router.get(
   "/class",
@@ -320,12 +573,14 @@ router.get(
     try {
       const [classes] = await sequelize.query(`
         SELECT 
-          MaLop,
-          KhoiLop,
-          SiSoLop,
-          MaGVChuNhiem AS MaGVCN
-        FROM LopHoc
-        ORDER BY KhoiLop ASC, MaLop ASC;
+          l.MaLop,
+          l.KhoiLop,
+          l.MaGVChuNhiem AS MaGVCN,
+          COUNT(hs.MaHocSinh) AS SiSoLop
+        FROM LopHoc l
+        LEFT JOIN HoSoHocSinh hs ON l.MaLop = hs.MaLop
+        GROUP BY l.MaLop, l.KhoiLop, l.MaGVChuNhiem
+        ORDER BY l.KhoiLop ASC, l.MaLop ASC;
       `);
 
       const [namHocs] = await sequelize.query(`
@@ -345,6 +600,8 @@ router.get(
         permissions: {
           canManageClasses,
         },
+        selectedClass: null,   
+        studentsInClass: [],
       });
     } catch (err) {
       console.error("Lỗi /class:", err);
@@ -352,7 +609,12 @@ router.get(
     }
   }
 );
-
+router.get(
+  "/class/view",
+  requireLogin,
+  allowRoles(staffRoles),
+  pageController.viewClassStudents
+);
 router.get(
   "/teacher",
   requireLogin,
@@ -538,7 +800,64 @@ router.get(
 
   }
 );
+router.post(
+  "/attendance/save",
+  requireLogin,
+  allowRoles(staffRoles),
+  async (req, res) => {
+    try {
+      const { data } = req.body; 
 
+      if (!Array.isArray(data) || data.length === 0) {
+        return res.status(400).json({ 
+          success: false, 
+          message: "Dữ liệu không hợp lệ" 
+        });
+      }
+
+      let updated = 0;
+      let inserted = 0;
+
+      for (const item of data) {
+        const { MaHocSinh, NgayDiemDanh, TrangThai } = item;
+
+        if (!MaHocSinh || !NgayDiemDanh || !TrangThai) continue;
+
+        const [[existing]] = await sequelize.query(
+          `SELECT MaDiemDanh FROM DiemDanh WHERE MaHocSinh = ? AND date(NgayDiemDanh) = date(?)`,
+          { replacements: [MaHocSinh, NgayDiemDanh] }
+        );
+
+        if (existing) {
+          await sequelize.query(
+            `UPDATE DiemDanh SET TrangThai = ? WHERE MaDiemDanh = ?`,
+            { replacements: [TrangThai, existing.MaDiemDanh] }
+          );
+          updated++;
+        } else {
+          await sequelize.query(
+            `INSERT INTO DiemDanh (MaHocSinh, NgayDiemDanh, TrangThai) VALUES (?, ?, ?)`,
+            { replacements: [MaHocSinh, NgayDiemDanh, TrangThai] }
+          );
+          inserted++;
+        }
+      }
+
+      return res.json({
+        success: true,
+        message: `Đã lưu điểm danh: ${inserted} mới, ${updated} cập nhật`,
+        stats: { inserted, updated }
+      });
+
+    } catch (err) {
+      console.error("Lỗi POST /attendance/save:", err);
+      return res.status(500).json({
+        success: false,
+        message: "Lỗi khi lưu điểm danh: " + err.message
+      });
+    }
+  }
+);
 router.get(
   "/scoretable",
   requireLogin,

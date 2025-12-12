@@ -1,0 +1,31 @@
+-- BƯỚC 1: Tắt foreign key
+PRAGMA foreign_keys = OFF;
+
+-- BƯỚC 2: Backup bảng DiemDanh
+CREATE TABLE DiemDanh_backup AS SELECT * FROM DiemDanh;
+
+-- BƯỚC 3: Xóa bảng DiemDanh cũ
+DROP TABLE DiemDanh;
+
+-- BƯỚC 4: Tạo lại bảng DiemDanh với MaHocSinh là TEXT
+CREATE TABLE DiemDanh (
+    MaDiemDanh INTEGER PRIMARY KEY AUTOINCREMENT,
+    MaHocSinh TEXT NOT NULL,
+    NgayDiemDanh TEXT NOT NULL,
+    TrangThai TEXT NOT NULL,
+    FOREIGN KEY (MaHocSinh) REFERENCES HoSoHocSinh(MaHocSinh)
+);
+
+-- BƯỚC 5: Khôi phục dữ liệu (chuyển INTEGER -> TEXT)
+INSERT INTO DiemDanh (MaDiemDanh, MaHocSinh, NgayDiemDanh, TrangThai)
+SELECT MaDiemDanh, CAST(MaHocSinh AS TEXT), NgayDiemDanh, TrangThai
+FROM DiemDanh_backup;
+
+-- BƯỚC 6: Xóa backup
+DROP TABLE DiemDanh_backup;
+
+-- BƯỚC 7: Bật lại foreign key
+PRAGMA foreign_keys = ON;
+
+-- BƯỚC 8: Kiểm tra
+SELECT typeof(MaHocSinh), MaHocSinh FROM DiemDanh LIMIT 5;

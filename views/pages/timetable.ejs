@@ -6,83 +6,6 @@
   <title>Thời khóa biểu – Quản lí học sinh</title>
   <link rel="stylesheet" href="/css/style.css" />
 
-  <style>
-    .ttb-note {
-      font-size: 13px;
-      color: #64748b;
-    }
-
-    .ttb-filter-inline {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 16px;
-    }
-
-    .tt-table thead th.sticky-col,
-    .tt-table tbody td.sticky-col {
-      position: sticky;
-      left: 0;
-      background: #ffffff;
-      z-index: 5;
-    }
-
-    .tt-table thead th.sticky-col {
-      background: #e0f2fe;
-      z-index: 6;
-    }
-
-    .tt-cell {
-      min-width: 170px;
-    }
-
-    .tt-period {
-      width: 70px;
-      text-align: center;
-      font-weight: 700;
-      color: #0f172a;
-    }
-
-    .tt-sub {
-      display: block;
-      font-weight: 700;
-      color: #0f172a;
-    }
-
-    .tt-teacher {
-      display: block;
-      font-size: 12px;
-      color: #64748b;
-      margin-top: 2px;
-    }
-
-    .tt-empty {
-      font-size: 12px;
-      color: #cbd5e1;
-      font-style: italic;
-    }
-
-    @media (max-width: 900px) {
-      .tt-cell {
-        min-width: 140px;
-      }
-    }
-
-    .btn-edit-tkb {
-      background: #2563eb;
-      color: #fff;
-      font-weight: 700;
-      border: none;
-      border-radius: 10px;
-      padding: 10px 16px;
-      cursor: pointer;
-      transition: background .2s, transform .1s;
-    }
-
-    .btn-edit-tkb:hover {
-      background: #1d4ed8;
-      transform: translateY(-1px);
-    }
-  </style>
 </head>
 <body class="page-student">
   <div class="layout">
@@ -90,8 +13,6 @@
       const role = (user && user.role) ? user.role : "";
       const canEditTimetable = permissions && permissions.canEditTimetable; 
     %>
-
-    <!-- Sidebar -->
     <aside class="sidebar">
       <div class="brand">
         <div class="logo">🎓</div>
@@ -226,6 +147,106 @@
           </div>
         <% } %>
       </section>
+    <div class="sp-overlay" id="modal-edit-timetable" style="display:none;">
+      <div class="sp-modal">
+        <h2 class="sp-title">Sửa thời khóa biểu</h2>
+        
+        <form class="sp-form" id="form-edit-timetable">
+          <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px;">
+            <div class="sp-field">
+              <label>Thứ</label>
+              <select id="edit-thu">
+                <option value="2">Thứ 2</option>
+                <option value="3">Thứ 3</option>
+                <option value="4">Thứ 4</option>
+                <option value="5">Thứ 5</option>
+                <option value="6">Thứ 6</option>
+                <option value="7">Thứ 7</option>
+              </select>
+            </div>
+
+            <div class="sp-field">
+              <label>Tiết học</label>
+              <select id="edit-tiet">
+                <option value="1">Tiết 1</option>
+                <option value="2">Tiết 2</option>
+                <option value="3">Tiết 3</option>
+                <option value="4">Tiết 4</option>
+                <option value="5">Tiết 5</option>
+                <option value="6">Tiết 6</option>
+                <option value="7">Tiết 7</option>
+                <option value="8">Tiết 8</option>
+              </select>
+            </div>
+
+            <div class="sp-field">
+              <label>Lớp</label>
+              <input type="text" id="edit-lop-tkb" readonly style="background:#f1f5f9; cursor:not-allowed;" />
+            </div>
+          </div>
+
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+            <div class="sp-field">
+              <label>Năm học</label>
+              <input type="text" id="edit-nam-hoc-tkb" readonly style="background:#f1f5f9; cursor:not-allowed;" />
+            </div>
+
+            <div class="sp-field">
+              <label>Học kỳ</label>
+              <select id="edit-hoc-ky-tkb">
+                <option value="1">Học kỳ 1</option>
+                <option value="2">Học kỳ 2</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="sp-field">
+            <label>Môn học</label>
+            <select id="edit-mon-hoc-tkb">
+              <option>Toán 10</option>
+              <option>Vật lý 10</option>
+              <option>Hóa học 10</option>
+              <option>Sinh học 10</option>
+              <option>Văn 10</option>
+              <option>Anh văn 10</option>
+              <option>Sử 10</option>
+              <option>Địa 10</option>
+              <option>GDCD 10</option>
+            </select>
+          </div>
+
+          <div class="sp-field">
+            <label>Giáo viên</label>
+            <select id="edit-giao-vien-tkb">
+              <option>Nguyễn Văn An</option>
+              <option>Trần Thị Bình</option>
+              <option>Lê Minh Cường</option>
+              <option>Phạm Thu Dung</option>
+              <option>Võ Quốc Dũng</option>
+            </select>
+          </div>
+
+          <div class="sp-field">
+            <label>Phòng học</label>
+            <input type="text" id="edit-phong-hoc" placeholder="VD: A101, B202..." />
+          </div>
+
+          <div class="sp-field">
+            <label>Ghi chú</label>
+            <textarea id="edit-ghi-chu-tkb" rows="2" placeholder="Ghi chú thêm (nếu có)..."></textarea>
+          </div>
+
+          <div class="sp-actions">
+            <button type="button" class="sp-btn sp-btn--ghost" onclick="closeEditTimetableModal()">
+              Đóng
+            </button>
+            <button type="submit" class="sp-btn">
+              Lưu thay đổi
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
     </main>
   </div>
 
@@ -306,14 +327,37 @@
     ttbYearSel     && ttbYearSel.addEventListener('change', renderTable);
     ttbSemesterSel && ttbSemesterSel.addEventListener('change', renderTable);
 
+    window.addEventListener('DOMContentLoaded', renderTable);
+    function openEditTimetableModal() {
+      document.getElementById('modal-edit-timetable').style.display = 'grid';
+    }
+
+    function closeEditTimetableModal() {
+      document.getElementById('modal-edit-timetable').style.display = 'none';
+    }
+    document.getElementById('modal-edit-timetable')?.addEventListener('click', (e) => {
+      if (e.target.classList.contains('sp-overlay')) {
+        closeEditTimetableModal();
+      }
+    });
+    document.getElementById('form-edit-timetable')?.addEventListener('submit', (e) => {
+      e.preventDefault();
+      alert('Đã lưu thay đổi thời khóa biểu!');
+      closeEditTimetableModal();
+    });
     const btnEdit = document.getElementById('btn-edit-tkb');
     if (btnEdit) {
       btnEdit.addEventListener('click', () => {
-        alert('Chuyển đến trang chỉnh sửa thời khóa biểu (demo).');
+        document.getElementById('edit-lop-tkb').value = ttbClassSel.value || '12A1';
+        document.getElementById('edit-nam-hoc-tkb').value = ttbYearSel.value || '2024-2025';
+        document.getElementById('edit-hoc-ky-tkb').value = ttbSemesterSel.value || '1';
+        document.getElementById('edit-thu').value = '2';
+        document.getElementById('edit-tiet').value = '1';
+        document.getElementById('edit-phong-hoc').value = 'A101';
+        
+        openEditTimetableModal();
       });
     }
-
-    window.addEventListener('DOMContentLoaded', renderTable);
   </script>
 </body>
 </html>

@@ -232,8 +232,60 @@ class PageController {
       res.status(500).send("Không tải được thông số quy định.");
     }
   }
+  async viewClassStudents(req, res) {
+    try {
+      const { lop } = req.query;
 
+      if (!lop) {
+        return res.redirect("/class");
+      }
+      const [classes] = await sequelize.query(`
+        SELECT 
+          l.MaLop,
+          l.KhoiLop,
+          l.MaGVChuNhiem AS MaGVCN,
+          COUNT(hs.MaHocSinh) AS SiSoLop
+        FROM LopHoc l
+        LEFT JOIN HoSoHocSinh hs ON l.MaLop = hs.MaLop
+        GROUP BY l.MaLop, l.KhoiLop, l.MaGVChuNhiem
+        ORDER BY l.KhoiLop ASC, l.MaLop ASC;
+      `);
+
+      const [studentsInClass] = await sequelize.query(
+        `
+        SELECT MaHocSinh, HoTen, GioiTinh, NgaySinh, DiaChi, Email
+        FROM HoSoHocSinh
+        WHERE MaLop = ?
+        ORDER BY HoTen ASC;
+        `,
+        { replacements: [lop] }
+      );
+
+      const [namHocs] = await sequelize.query(`
+        SELECT MaNamHoc
+        FROM NamHoc
+        ORDER BY MaNamHoc DESC;
+      `);
+
+      const role = (req.session?.user?.role || "").trim();
+      const canManageClasses = role === "Admin" || role === "GiaoVu";
+
+      res.render("pages/class", {
+        title: "Danh sách lớp",
+        user: req.session.user,
+        classes,
+        namHocs,
+        permissions: {
+          canManageClasses,
+        },
+        selectedClass: lop,
+        studentsInClass,
+      });
+    } catch (err) {
+      console.error("Lỗi viewClassStudents:", err);
+      res.status(500).send("Không tải được danh sách học sinh của lớp: " + err.message);
+    }
+  }
 }
 
 module.exports = new PageController();
-

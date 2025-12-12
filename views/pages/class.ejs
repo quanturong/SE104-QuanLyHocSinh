@@ -91,31 +91,23 @@
 
           <div class="class-info-item">
             <label class="class-label">Lớp</label>
-            <select class="select class-select" id="select-class">
-              <option value="">-- Chọn lớp --</option>
-              <% if (classes && classes.length) { %>
-                <% classes.forEach(function(cls){ %>
-                  <option
-                    value="<%= cls.MaLop %>"
-                    data-siso="<%= cls.SiSoLop || 0 %>"
-                  >
+
+            <div style="display:flex; align-items:center; gap:10px;">
+              <select class="select class-select" id="select-class">
+                <option value="">-- Chọn lớp --</option>
+                <% classes.forEach(cls => { %>
+                  <option value="<%= cls.MaLop %>" data-siso="<%= cls.SiSoLop %>">
                     <%= cls.KhoiLop %> - <%= cls.MaLop %>
                   </option>
                 <% }) %>
-              <% } %>
-            </select>
-          </div>
+              </select>
 
-          <div class="class-info-item">
-            <label class="class-label">Sĩ số</label>
-            <div class="class-count" id="class-count">
-              <span class="count-number" id="count-number">
-                <%= (classes && classes.length) ? (classes[0].SiSoLop || 0) : 0 %>
-              </span>
-              <span class="count-label">học sinh</span>
+              <button id="btn-view" class="btn btn-view-small">
+                Xem
+              </button>
             </div>
           </div>
-        </div>
+
       </section>
 
       <section class="card">
@@ -161,6 +153,46 @@
           <button class="btn-page" disabled>›</button>
         </div>
       </section>
+      <% if (typeof studentsInClass !== 'undefined' && studentsInClass) { %>
+
+      <section class="card" style="margin-top:16px;">
+        <h3>Danh sách học sinh – Lớp <%= selectedClass %></h3>
+
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>STT</th>
+                <th>MÃ HS</th>
+                <th>HỌ TÊN</th>
+                <th>GIỚI TÍNH</th>
+                <th>NGÀY SINH</th>
+                <th>ĐỊA CHỈ</th>
+                <th>EMAIL</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% if (studentsInClass.length === 0) { %>
+                <tr><td colspan="7" class="text-center">Không có học sinh.</td></tr>
+              <% } else { %>
+                <% studentsInClass.forEach(function(st, idx){ %>
+                  <tr>
+                    <td><%= idx + 1 %></td>
+                    <td><%= st.MaHocSinh %></td>
+                    <td><%= st.HoTen %></td>
+                    <td><%= st.GioiTinh %></td>
+                    <td><%= st.NgaySinh %></td>
+                    <td><%= st.DiaChi %></td>
+                    <td><%= st.Email %></td>
+                  </tr>
+                <% }) %>
+              <% } %>
+            </tbody>
+          </table>
+        </div>
+      </section>
+      <% } %>
+
     </main>
   </div>
 
@@ -179,5 +211,18 @@
       selectClass && selectClass.addEventListener('change', updateCount);
     })();
   </script>
+  <script>
+  document.getElementById("btn-view").addEventListener("click", function () {
+    const lop = document.getElementById("select-class").value;
+
+    if (!lop) {
+      alert("Vui lòng chọn lớp!");
+      return;
+    }
+
+    window.location.href = `/class/view?lop=${lop}`;
+  });
+  </script>
+
 </body>
 </html>

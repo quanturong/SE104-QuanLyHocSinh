@@ -354,6 +354,72 @@
           </div>
         </section>
       </section>
+      <!-- Modal Sửa Điểm -->
+      <div class="sp-overlay" id="modal-edit-score" style="display:none;">
+        <div class="sp-modal">
+          <h2 class="sp-title">Sửa điểm môn học</h2>
+          
+          <form class="sp-form" id="form-edit-score">
+            <div class="sp-field">
+              <label>Mã điểm</label>
+              <input type="text" id="edit-ma-diem" readonly style="background:#f1f5f9; cursor:not-allowed;" />
+            </div>
+
+            <div class="sp-field">
+              <label>Mã học sinh</label>
+              <input type="text" id="edit-ma-hs" readonly style="background:#f1f5f9; cursor:not-allowed;" />
+            </div>
+
+            <div class="sp-field">
+              <label>Họ tên</label>
+              <input type="text" id="edit-ho-ten" readonly style="background:#f1f5f9; cursor:not-allowed;" />
+            </div>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+              <div class="sp-field">
+                <label>Lớp</label>
+                <input type="text" id="edit-lop" readonly style="background:#f1f5f9; cursor:not-allowed;" />
+              </div>
+
+              <div class="sp-field">
+                <label>Môn học</label>
+                <input type="text" id="edit-mon-hoc" readonly style="background:#f1f5f9; cursor:not-allowed;" />
+              </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px;">
+              <div class="sp-field">
+                <label>Điểm 15 phút</label>
+                <input type="number" id="edit-diem-15p" step="0.1" min="0" max="10" placeholder="0 - 10" />
+              </div>
+
+              <div class="sp-field">
+                <label>Điểm 1 tiết</label>
+                <input type="number" id="edit-diem-1t" step="0.1" min="0" max="10" placeholder="0 - 10" />
+              </div>
+
+              <div class="sp-field">
+                <label>Điểm TB môn</label>
+                <input type="number" id="edit-diem-tb" step="0.1" min="0" max="10" placeholder="0 - 10" />
+              </div>
+            </div>
+
+            <div class="sp-field">
+              <label>Đánh giá</label>
+              <textarea id="edit-danh-gia" rows="3" placeholder="Nhập đánh giá..."></textarea>
+            </div>
+
+            <div class="sp-actions">
+              <button type="button" class="sp-btn sp-btn--ghost" onclick="closeEditScoreModal()">
+                Đóng
+              </button>
+              <button type="submit" class="sp-btn">
+                Lưu thay đổi
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
     </main>
   </div>
 
@@ -443,8 +509,32 @@
       apply();
     })();
     function editScore(maDiem) {
-      alert('Chức năng sửa điểm cho MaDiem: ' + maDiem + '\n(Cần implement form sửa điểm)');
+      document.getElementById('edit-ma-diem').value = maDiem;
+      document.getElementById('edit-ma-hs').value = 'HS001';
+      document.getElementById('edit-ho-ten').value = 'Nguyễn Văn A';
+      document.getElementById('edit-lop').value = '12A1';
+      document.getElementById('edit-mon-hoc').value = 'Toán 10';
+      document.getElementById('edit-diem-15p').value = '8.5';
+      document.getElementById('edit-diem-1t').value = '7.0';
+      document.getElementById('edit-diem-tb').value = '7.8';
+      
+      document.getElementById('modal-edit-score').style.display = 'grid';
     }
+
+    function closeEditScoreModal() {
+      document.getElementById('modal-edit-score').style.display = 'none';
+    }
+    document.getElementById('modal-edit-score')?.addEventListener('click', (e) => {
+      if (e.target.classList.contains('sp-overlay')) {
+        closeEditScoreModal();
+      }
+    });
+    document.getElementById('form-edit-score')?.addEventListener('submit', (e) => {
+      e.preventDefault();
+      alert('Đã lưu thay đổi!');
+      closeEditScoreModal();
+    });
   </script>
+  
 </body>
 </html>

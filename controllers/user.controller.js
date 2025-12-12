@@ -204,6 +204,88 @@ class UserController {
       res.status(500).json({ error: "Lỗi khi lấy danh sách người dùng" });
     }
   }
+    async changePassword(req, res) {
+    try {
+      const user = req.session.user;
+      if (!user) {
+        return res.redirect("/login");
+      }
+
+      const { oldPassword, newPassword, confirmPassword } = req.body;
+
+      if (!oldPassword || !newPassword || !confirmPassword) {
+        return res.render("pages/change-password", {
+          title: "Đổi mật khẩu",
+          user: user,
+          error: "Vui lòng nhập đầy đủ thông tin!",
+          success: null
+        });
+      }
+
+      if (newPassword.length < 6) {
+        return res.render("pages/change-password", {
+          title: "Đổi mật khẩu",
+          user: user,
+          error: "Mật khẩu mới phải có ít nhất 6 ký tự!",
+          success: null
+        });
+      }
+
+      if (newPassword !== confirmPassword) {
+        return res.render("pages/change-password", {
+          title: "Đổi mật khẩu",
+          user: user,
+          error: "Mật khẩu mới và xác nhận mật khẩu không trùng khớp!",
+          success: null
+        });
+      }
+
+      const dbUser = await userService.getUserByUsername(user.TenDangNhap);
+
+      if (!dbUser) {
+        return res.render("pages/change-password", {
+          title: "Đổi mật khẩu",
+          user: user,
+          error: "Không tìm thấy tài khoản!",
+          success: null
+        });
+      }
+
+      const bcrypt = require("bcrypt");
+
+      const match = await bcrypt.compare(oldPassword, dbUser.MatKhau);
+
+      if (!match) {
+        return res.render("pages/change-password", {
+          title: "Đổi mật khẩu",
+          user: user,
+          error: "Mật khẩu hiện tại không đúng!",
+          success: null
+        });
+      }
+
+      const hashed = await bcrypt.hash(newPassword, 10);
+
+      await userService.updatePassword(dbUser.id, hashed);
+
+      return res.render("pages/change-password", {
+        title: "Đổi mật khẩu",
+        user: user,
+        error: null,
+        success: "Đổi mật khẩu thành công!"
+      });
+
+    } catch (error) {
+      console.error("Lỗi đổi mật khẩu:", error);
+
+      return res.render("pages/change-password", {
+        title: "Đổi mật khẩu",
+        user: req.session.user,
+        error: "Có lỗi xảy ra! Vui lòng thử lại.",
+        success: null
+      });
+    }
+  }
 }
 
 module.exports = new UserController();

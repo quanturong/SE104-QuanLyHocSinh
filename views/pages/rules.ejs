@@ -5,6 +5,41 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Quy định</title>
   <link rel="stylesheet" href="../css/style.css" />
+  <style>
+    /* Nút floating ở góc phải dưới */
+    .floating-actions {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      z-index: 999;
+    }
+    .floating-btn {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      transition: all 0.2s;
+    }
+    .floating-btn:hover {
+      transform: scale(1.1);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+    }
+    .floating-btn.add {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    .floating-btn.edit {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    }
+  </style>
 </head>
 <body class="page-student">
   <div class="layout">
@@ -18,12 +53,10 @@
           const role = (user && user.role) ? user.role : ""; 
         %>
 
-        <!-- Ai cũng vào được dashboard -->
         <a class="<%= title === 'Bảng điều khiển' ? 'active' : '' %>" href="/tablecontrol">
           Bảng điều khiển
         </a>
 
-        <!-- Chỉ staff (không phải HocSinh) mới thấy các menu quản lý -->
         <% if (role !== 'HocSinh') { %>
           <a class="<%= title === 'Danh sách học sinh' ? 'active' : '' %>" href="/student">
             Học sinh
@@ -47,7 +80,6 @@
           </a>
         <% } %>
 
-        <!-- Các mục Học sinh được phép xem (và staff cũng xem được) -->
         <a class="<%= title === 'Thời khóa biểu' ? 'active' : '' %>" href="/timetable">
           Thời khóa biểu
         </a>
@@ -64,15 +96,16 @@
         <% } %>
       </nav>
 
-
       <div class="spacer"></div>
       <a class="nav logout" href="/login">Đăng xuất</a>
     </aside>
+
     <main class="main">
       <div class="page-header">
         <h1 class="page-title">Quy định dành cho giáo viên</h1>
         <p class="page-desc">Áp dụng trong toàn trường. Mọi giáo viên cần đọc kỹ, tuân thủ và ký cam kết.</p>
       </div>
+
       <section class="card toc">
         <h2>Mục lục</h2>
         <ul>
@@ -102,6 +135,7 @@
             <li>Trang phục gọn gàng, phù hợp môi trường sư phạm.</li>
           </ol>
         </section>
+
         <section id="chuyen-mon" class="card">
           <h2>2. Chuyên môn & Hồ sơ giảng dạy</h2>
           <ol>
@@ -111,6 +145,7 @@
             <li>Hoàn thành hồ sơ chuyên môn: giáo án, đề kiểm tra, ma trận, đáp án, biên bản coi/chấm… đúng hạn.</li>
           </ol>
         </section>
+
         <section id="thoi-khoa-bieu" class="card">
           <h2>3. Thời khóa biểu, giờ giấc, thay tiết</h2>
           <ol>
@@ -119,6 +154,7 @@
             <li>Không tự ý đổi tiết/ghép lớp khi chưa có sự đồng ý của BGH.</li>
           </ol>
         </section>
+
         <section id="kiem-tra-danh-gia" class="card">
           <h2>4. Kiểm tra — Đánh giá — Điểm số</h2>
           <ol>
@@ -128,6 +164,7 @@
             <li>Thực hiện phúc khảo, điều chỉnh sai sót (nếu có) theo quy định.</li>
           </ol>
         </section>
+
         <section id="hanh-kiem-ky-luat" class="card">
           <h2>5. Hành vi sư phạm & Kỷ luật lớp học</h2>
           <ol>
@@ -136,6 +173,7 @@
             <li>Phối hợp GVCN, đoàn/đội để hỗ trợ học sinh cá biệt.</li>
           </ol>
         </section>
+
         <section id="giao-tiep-phu-huynh" class="card">
           <h2>6. Giao tiếp với phụ huynh & Học sinh</h2>
           <ol>
@@ -144,6 +182,7 @@
             <li>Không nhận quà/tiền từ phụ huynh/học sinh trái quy định.</li>
           </ol>
         </section>
+
         <section id="cntt-du-lieu" class="card">
           <h2>7. CNTT, bảo mật & dữ liệu</h2>
           <ol>
@@ -152,6 +191,7 @@
             <li>Không cài phần mềm lậu; không tải/đăng nội dung vi phạm bản quyền.</li>
           </ol>
         </section>
+
         <section id="antoan" class="card">
           <h2>8. An toàn, y tế & hoạt động ngoại khóa</h2>
           <ol>
@@ -159,6 +199,7 @@
             <li>Khi tổ chức hoạt động ngoại khóa/tham quan: lập kế hoạch, danh sách HS, phương án an toàn & xin phê duyệt.</li>
           </ol>
         </section>
+
         <section id="nghiphep" class="card">
           <h2>9. Nghỉ phép, công tác & bồi dưỡng</h2>
           <ol>
@@ -166,6 +207,7 @@
             <li>Tham gia đầy đủ các lớp bồi dưỡng chuyên môn, tập huấn theo kế hoạch.</li>
           </ol>
         </section>
+
         <section id="khen-thuong-ky-luat" class="card">
           <h2>10. Khen thưởng & Kỷ luật</h2>
           <p>Nhà trường áp dụng cơ chế khen thưởng — kỷ luật công bằng, minh bạch dựa trên kết quả công tác.</p>
@@ -201,6 +243,7 @@
             </tbody>
           </table>
         </section>
+
         <section id="khieu-nai" class="card">
           <h2>11. Khiếu nại — Phản ánh — Báo cáo</h2>
           <ol>
@@ -208,9 +251,10 @@
             <li>Tuân thủ quy trình tiếp nhận & xử lý, tránh phát tán thông tin chưa kiểm chứng.</li>
           </ol>
         </section>
+
         <section id="xac-nhan" class="card">
           <h2>12. Xác nhận cam kết</h2>
-          <p>Tôi đã đọc, hiểu và cam kết thực hiện nghiêm túc “Quy định dành cho giáo viên”.</p>
+          <p>Tôi đã đọc, hiểu và cam kết thực hiện nghiêm túc "Quy định dành cho giáo viên".</p>
           <div class="ack">
             <input id="ack-check" type="checkbox" />
             <label for="ack-check">Tôi đồng ý và cam kết thực hiện</label>
@@ -225,7 +269,133 @@
     </main>
   </div>
 
+  <div class="floating-actions">
+    <button class="floating-btn edit" id="btn-edit-rule" title="Sửa quy định">✏️</button>
+    <button class="floating-btn add" id="btn-add-rule" title="Thêm quy định mới">➕</button>
+  </div>
+
+  <div class="sp-overlay" id="modal-add-rule" style="display:none;">
+    <div class="sp-modal" style="max-width:800px;">
+      <h2 class="sp-title">➕ Thêm quy định mới</h2>
+      
+      <form class="sp-form" id="form-add-rule">
+        <div class="sp-field">
+          <label>Tiêu đề quy định</label>
+          <input 
+            type="text" 
+            id="add-rule-title" 
+            placeholder="Ví dụ: 13. Quy định về trang phục" 
+            required 
+          />
+        </div>
+
+        <div class="sp-field">
+          <label>Mã anchor (ID) - dùng cho liên kết nội bộ</label>
+          <input 
+            type="text" 
+            id="add-rule-anchor" 
+            placeholder="Ví dụ: trang-phuc (không dấu, không khoảng trắng)" 
+            required 
+          />
+        </div>
+
+        <div class="sp-field">
+          <label>Nội dung quy định</label>
+          <textarea 
+            id="add-rule-content" 
+            rows="8" 
+            placeholder="Nhập nội dung chi tiết, mỗi điều khoản xuống dòng..."
+            required
+            style="resize:vertical; font-family:inherit;"
+          ></textarea>
+        </div>
+
+        <div class="sp-field">
+          <label>Loại định dạng</label>
+          <select id="add-rule-format">
+            <option value="ol">Danh sách có số thứ tự (1, 2, 3...)</option>
+            <option value="ul">Danh sách không số (bullet points)</option>
+            <option value="p">Đoạn văn tự do</option>
+          </select>
+        </div>
+
+        <div class="sp-actions">
+          <button
+            type="button"
+            class="sp-btn sp-btn--ghost"
+            onclick="closeAddRuleModal()"
+          >
+            Hủy
+          </button>
+          <button type="submit" class="sp-btn">
+            Thêm vào danh sách
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Sửa quy định -->
+  <div class="sp-overlay" id="modal-edit-rule" style="display:none;">
+    <div class="sp-modal" style="max-width:800px;">
+      <h2 class="sp-title">✏️ Sửa quy định</h2>
+      
+      <form class="sp-form" id="form-edit-rule">
+        <div class="sp-field">
+          <label>Chọn quy định cần sửa</label>
+          <select id="edit-rule-select" required>
+            <option value="">-- Chọn quy định --</option>
+            <option value="quy-dinh-chung">1. Quy định chung & Đạo đức nghề nghiệp</option>
+            <option value="chuyen-mon">2. Chuyên môn & Hồ sơ giảng dạy</option>
+            <option value="thoi-khoa-bieu">3. Thời khóa biểu, giờ giấc, thay tiết</option>
+            <option value="kiem-tra-danh-gia">4. Kiểm tra — Đánh giá — Điểm số</option>
+            <option value="hanh-kiem-ky-luat">5. Hành vi sư phạm & Kỷ luật lớp học</option>
+            <option value="giao-tiep-phu-huynh">6. Giao tiếp với phụ huynh & Học sinh</option>
+            <option value="cntt-du-lieu">7. CNTT, bảo mật & dữ liệu</option>
+            <option value="antoan">8. An toàn, y tế & hoạt động ngoại khóa</option>
+            <option value="nghiphep">9. Nghỉ phép, công tác & bồi dưỡng</option>
+            <option value="khen-thuong-ky-luat">10. Khen thưởng & Kỷ luật</option>
+            <option value="khieu-nai">11. Khiếu nại — Phản ánh — Báo cáo</option>
+          </select>
+        </div>
+
+        <div class="sp-field">
+          <label>Tiêu đề quy định</label>
+          <input 
+            type="text" 
+            id="edit-rule-title" 
+            required 
+          />
+        </div>
+
+        <div class="sp-field">
+          <label>Nội dung quy định</label>
+          <textarea 
+            id="edit-rule-content" 
+            rows="10" 
+            required
+            style="resize:vertical; font-family:inherit;"
+          ></textarea>
+        </div>
+
+        <div class="sp-actions">
+          <button
+            type="button"
+            class="sp-btn sp-btn--ghost"
+            onclick="closeEditRuleModal()"
+          >
+            Hủy
+          </button>
+          <button type="submit" class="sp-btn">
+            Lưu thay đổi
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <script>
+    // ========== PHẦN CŨ ==========
     document.getElementById('btn-print').addEventListener('click', () => window.print());
     document.getElementById('btn-save').addEventListener('click', () => {
       const ok = document.getElementById('ack-check').checked;
@@ -242,10 +412,11 @@
         status.textContent = 'Đã lưu xác nhận (local).';
         status.style.color = '#065f46';
       }catch(e){
-        status.textContent = 'Không thể lưu cục bộ. Hãy chụp/inh để xác nhận.';
+        status.textContent = 'Không thể lưu cục bộ. Hãy chụp/in để xác nhận.';
         status.style.color = '#92400e';
       }
     });
+
     (function(){
       try{
         const raw = localStorage.getItem('rules_ack_teacher');
@@ -258,6 +429,87 @@
         }
       }catch(_){}
     })();
+
+    document.getElementById('btn-add-rule').addEventListener('click', openAddRuleModal);
+
+    function openAddRuleModal() {
+      const modal = document.getElementById('modal-add-rule');
+      if (!modal) return;
+      document.getElementById('form-add-rule').reset();
+      modal.style.display = 'grid';
+    }
+
+    function closeAddRuleModal() {
+      const modal = document.getElementById('modal-add-rule');
+      if (modal) modal.style.display = 'none';
+    }
+
+    document.getElementById('modal-add-rule')?.addEventListener('click', (e) => {
+      if (e.target.classList.contains('sp-overlay')) {
+        closeAddRuleModal();
+      }
+    });
+
+    document.getElementById('form-add-rule')?.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const title = document.getElementById('add-rule-title').value;
+      const anchor = document.getElementById('add-rule-anchor').value;
+      const content = document.getElementById('add-rule-content').value;
+      const format = document.getElementById('add-rule-format').value;
+      
+      alert(`Thêm quy định mới thành công!\n\nTiêu đề: ${title}\nAnchor: #${anchor}\nĐịnh dạng: ${format}\n\n(Demo - chưa nối API)`);
+      closeAddRuleModal();
+    });
+
+    // ========== MODAL SỬA QUY ĐỊNH ==========
+    document.getElementById('btn-edit-rule').addEventListener('click', openEditRuleModal);
+
+    function openEditRuleModal() {
+      const modal = document.getElementById('modal-edit-rule');
+      if (!modal) return;
+      document.getElementById('form-edit-rule').reset();
+      modal.style.display = 'grid';
+    }
+
+    function closeEditRuleModal() {
+      const modal = document.getElementById('modal-edit-rule');
+      if (modal) modal.style.display = 'none';
+    }
+
+    document.getElementById('modal-edit-rule')?.addEventListener('click', (e) => {
+      if (e.target.classList.contains('sp-overlay')) {
+        closeEditRuleModal();
+      }
+    });
+
+    document.getElementById('edit-rule-select')?.addEventListener('change', (e) => {
+      const sectionId = e.target.value;
+      if (!sectionId) return;
+
+      const section = document.getElementById(sectionId);
+      if (!section) return;
+
+      const h2 = section.querySelector('h2');
+      const ol = section.querySelector('ol, ul, p');
+
+      if (h2) {
+        document.getElementById('edit-rule-title').value = h2.textContent;
+      }
+
+      if (ol) {
+        const items = [...ol.querySelectorAll('li')].map(li => li.textContent);
+        document.getElementById('edit-rule-content').value = items.join('\n');
+      }
+    });
+
+    document.getElementById('form-edit-rule')?.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const section = document.getElementById('edit-rule-select').value;
+      const title = document.getElementById('edit-rule-title').value;
+      
+      alert(`Đã lưu thay đổi cho quy định: ${title}\n(Demo - chưa nối API)`);
+      closeEditRuleModal();
+    });
   </script>
 </body>
 </html>

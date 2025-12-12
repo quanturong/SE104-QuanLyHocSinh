@@ -14,10 +14,8 @@
         <span>Student Management – Quản lí học sinh</span>
       </div>
 
-      <% 
-        // Lấy role từ user
+      <%
         const role = (user && user.role) ? user.role : "";
-        // Quyền quản lý HS (Admin + GiaoVu) do backend truyền sang
         const canManageStudents = permissions && permissions.canManageStudents;
       %>
 
@@ -65,12 +63,123 @@
     </aside>
 
     <main class="main">
+      <!-- Overlay thêm học sinh -->
+      <div id="student-overlay" class="sp-overlay" style="display:none;">
+        <div class="sp-modal">
+          <h2 class="sp-title">Thêm học sinh</h2>
+
+          <form class="sp-form" method="POST" action="/student">
+            <div class="sp-field">
+              <label>Mã học sinh</label>
+              <input name="MaHocSinh" id="editMaHocSinh" required />
+            </div>
+            <div class="sp-field">
+              <label>Họ tên</label>
+              <input name="HoTen" placeholder="VD: Nguyễn Văn A" required />
+            </div>
+
+            <div class="sp-field">
+              <label>Giới tính</label>
+              <select name="GioiTinh" required>
+                <option value="Nam">Nam</option>
+                <option value="Nữ">Nữ</option>
+              </select>
+            </div>
+
+            <div class="sp-field">
+              <label>Ngày sinh</label>
+              <input type="date" name="NgaySinh" required />
+            </div>
+
+            <div class="sp-field">
+              <label>Địa chỉ</label>
+              <input name="DiaChi" placeholder="VD: Quận 1, TP.HCM" required />
+            </div>
+
+            <div class="sp-field">
+              <label>Email</label>
+              <input type="email" name="Email" placeholder="VD: hs001@school.com" required />
+            </div>
+
+            <div class="sp-field">
+              <label>Mã lớp</label>
+              <input name="MaLop" placeholder="VD: 12A1" required />
+            </div>
+
+            <div class="sp-actions">
+              <button type="button" class="sp-btn sp-btn--ghost" id="btn-cancel-student">
+                Đóng
+              </button>
+              <button type="submit" class="sp-btn">
+                Lưu
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+      <div id="student-edit-overlay" class="sp-overlay" style="display:none;">
+        <div class="sp-modal">
+          <h2 class="sp-title">Sửa học sinh</h2>
+
+          <form class="sp-form" method="POST" action="/student/edit">
+            <div class="sp-field">
+              <label>Mã học sinh</label>
+              <input name="MaHocSinh" id="editMaHocSinh" required />
+
+            </div>
+
+            <div class="sp-field">
+              <label>Họ tên</label>
+              <input name="HoTen" id="editHoTen" required />
+            </div>
+
+            <div class="sp-field">
+              <label>Giới tính</label>
+              <select name="GioiTinh" id="editGioiTinh" required>
+                <option value="Nam">Nam</option>
+                <option value="Nữ">Nữ</option>
+              </select>
+            </div>
+
+            <div class="sp-field">
+              <label>Ngày sinh</label>
+              <input type="date" name="NgaySinh" id="editNgaySinh" required />
+            </div>
+
+            <div class="sp-field">
+              <label>Địa chỉ</label>
+              <input name="DiaChi" id="editDiaChi" required />
+            </div>
+
+            <div class="sp-field">
+              <label>Email</label>
+              <input type="email" name="Email" id="editEmail" required />
+            </div>
+
+            <div class="sp-field">
+              <label>Mã lớp</label>
+              <input name="MaLop" id="editMaLop" required />
+            </div>
+
+            <div class="sp-actions">
+              <button type="button" class="sp-btn sp-btn--ghost" id="btn-cancel-edit">
+                Đóng
+              </button>
+              <button type="submit" class="sp-btn">
+                Lưu thay đổi
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
       <div class="page-header">
         <h1 class="page-title">Danh sách học sinh</h1>
         <p class="page-desc">
           Dữ liệu hiển thị trực tiếp từ bảng <strong>HoSoHocSinh</strong> (MaHocSinh, HoTen, GioiTinh, NgaySinh, DiaChi, Email, MaLop).
         </p>
       </div>
+
       <section class="card" style="margin-bottom: 16px;">
         <div class="toolbar" style="justify-content: space-between;">
           <div>
@@ -96,7 +205,7 @@
             </select>
             <select class="select" id="filter-class">
               <option value="">Tất cả lớp</option>
-              <% if (students && students.length) { 
+              <% if (students && students.length) {
                    const set = new Set();
                    students.forEach(s => { if (s.MaLop) set.add(s.MaLop); });
                    Array.from(set).sort().forEach(function(lop){ %>
@@ -112,6 +221,7 @@
           </div>
         </div>
       </section>
+
       <section class="card">
         <div class="table-wrap" style="overflow:auto; max-height:560px;">
           <table class="table" id="tbl-students">
@@ -137,6 +247,13 @@
                     data-name="<%= ((st.HoTen || '') + ' ' + (st.MaHocSinh || '')).toLowerCase() %>"
                     data-gender="<%= (st.GioiTinh || '').toLowerCase() %>"
                     data-class="<%= (st.MaLop || '').toLowerCase() %>"
+                    data-mahs="<%= st.MaHocSinh %>"
+                    data-hoten="<%= st.HoTen %>"
+                    data-gioitinh="<%= st.GioiTinh || '' %>"
+                    data-ngaysinh="<%= st.NgaySinh || '' %>"
+                    data-diachi="<%= st.DiaChi || '' %>"
+                    data-email="<%= st.Email || '' %>"
+                    data-malop="<%= st.MaLop || '' %>"
                   >
                     <td class="text-center"><%= index + 1 %></td>
                     <td><%= st.MaHocSinh %></td>
@@ -149,7 +266,8 @@
 
                     <% if (canManageStudents) { %>
                       <td class="text-center">
-                        <button class="btn btn-sm">Sửa</button>
+                        <button class="btn btn-sm btn-edit" type="button">Sửa</button>
+                        <button class="btn btn-sm btn-delete" type="button">Xóa</button>
                       </td>
                     <% } %>
                   </tr>
@@ -175,49 +293,229 @@
   </div>
 
   <script>
-    (function() {
-      const searchInput  = document.getElementById('search-name');
-      const filterGender = document.getElementById('filter-gender');
-      const filterClass  = document.getElementById('filter-class');
-      const rows         = document.querySelectorAll('#tbl-students tbody tr');
+(function() {
+  const searchInput  = document.getElementById('search-name');
+  const filterGender = document.getElementById('filter-gender');
+  const filterClass  = document.getElementById('filter-class');
+  const rows         = document.querySelectorAll('#tbl-students tbody tr[data-mahs]');
 
-      function applyFilter(){
-        const q  = (searchInput.value || '').toLowerCase();
-        const g  = (filterGender.value || '').toLowerCase();
-        const cl = (filterClass.value  || '').toLowerCase();
+  function applyFilter(){
+    const q  = (searchInput.value || '').toLowerCase();
+    const g  = (filterGender.value || '').toLowerCase();
+    const cl = (filterClass.value  || '').toLowerCase();
 
-        rows.forEach(tr => {
-          const name   = tr.getAttribute('data-name')   || '';
-          const gender = tr.getAttribute('data-gender') || '';
-          const clazz  = tr.getAttribute('data-class')  || '';
+    let visibleCount = 0;
+    rows.forEach(tr => {
+      const name   = tr.getAttribute('data-name')   || '';
+      const gender = tr.getAttribute('data-gender') || '';
+      const clazz  = tr.getAttribute('data-class')  || '';
 
-          const okQ  = !q  || name.includes(q);
-          const okG  = !g  || gender === g;
-          const okCl = !cl || clazz === cl;
+      const okQ  = !q  || name.includes(q);
+      const okG  = !g  || gender === g;
+      const okCl = !cl || clazz === cl;
 
-          tr.style.display = (okQ && okG && okCl) ? '' : 'none';
-        });
+      if (okQ && okG && okCl) {
+        tr.style.display = '';
+        visibleCount++;
+      } else {
+        tr.style.display = 'none';
+      }
+    });
+  }
+
+  searchInput && searchInput.addEventListener('input', applyFilter);
+  filterGender && filterGender.addEventListener('change', applyFilter);
+  filterClass && filterClass.addEventListener('change', applyFilter);
+})();
+
+// PHẦN 2: THÊM HỌC SINH
+(function () {
+  const overlayAdd   = document.getElementById('student-overlay');
+  const btnAdd       = document.getElementById('btn-add');
+  const btnCancelAdd = document.getElementById('btn-cancel-student');
+
+  function openAdd()  { 
+    if (overlayAdd) {
+      overlayAdd.style.display = 'grid';
+      const form = overlayAdd.querySelector('form');
+      if (form) form.reset();
+    }
+  }
+  
+  function closeAdd() { 
+    if (overlayAdd) overlayAdd.style.display = 'none';
+  }
+
+  btnAdd       && btnAdd.addEventListener('click', openAdd);
+  btnCancelAdd && btnCancelAdd.addEventListener('click', closeAdd);
+  overlayAdd   && overlayAdd.addEventListener('click', e => {
+    if (e.target === overlayAdd) closeAdd();
+  });
+})();
+
+(function() {
+  const overlayEdit   = document.getElementById('student-edit-overlay');
+  const btnCancelEdit = document.getElementById('btn-cancel-edit');
+
+  const inputEditMaHS     = document.getElementById('editMaHocSinh');
+  const inputEditHoTen    = document.getElementById('editHoTen');
+  const selectEditGT      = document.getElementById('editGioiTinh');
+  const inputEditNgaySinh = document.getElementById('editNgaySinh');
+  const inputEditDiaChi   = document.getElementById('editDiaChi');
+  const inputEditEmail    = document.getElementById('editEmail');
+  const inputEditMaLop    = document.getElementById('editMaLop');
+  
+  let inputOldMaHS = document.getElementById('oldMaHocSinh');
+  if (!inputOldMaHS && overlayEdit) {
+    const form = overlayEdit.querySelector('form');
+    if (form) {
+      inputOldMaHS = document.createElement('input');
+      inputOldMaHS.type = 'hidden';
+      inputOldMaHS.name = 'OldMaHocSinh';
+      inputOldMaHS.id = 'oldMaHocSinh';
+      form.appendChild(inputOldMaHS);
+    }
+  }
+
+  function openEdit()  { 
+    if (overlayEdit) overlayEdit.style.display = 'grid';
+  }
+  
+  function closeEdit() { 
+    if (overlayEdit) overlayEdit.style.display = 'none';
+  }
+
+  btnCancelEdit && btnCancelEdit.addEventListener('click', closeEdit);
+  overlayEdit   && overlayEdit.addEventListener('click', e => {
+    if (e.target === overlayEdit) closeEdit();
+  });
+
+  document.querySelectorAll('.btn-edit').forEach(btn => {
+    btn.addEventListener('click', function () {
+      const tr = this.closest('tr');
+      if (!tr) return;
+
+      const mahs = tr.getAttribute('data-mahs') || '';
+      const hoten = tr.getAttribute('data-hoten') || '';
+      const gioitinh = tr.getAttribute('data-gioitinh') || '';
+      const ngaysinh = tr.getAttribute('data-ngaysinh') || '';
+      const diachi = tr.getAttribute('data-diachi') || '';
+      const email = tr.getAttribute('data-email') || '';
+      const malop = tr.getAttribute('data-malop') || '';
+
+      if (inputEditMaHS) {
+        inputEditMaHS.value = mahs;
+        inputEditMaHS.removeAttribute('readonly');
+      }
+      
+      if (inputOldMaHS) {
+        inputOldMaHS.value = mahs;
+      }
+      
+      if (inputEditHoTen) inputEditHoTen.value = hoten;
+      if (selectEditGT) selectEditGT.value = gioitinh;
+      if (inputEditNgaySinh) {
+        const dateMatch = ngaysinh.match(/(\d{4})-(\d{2})-(\d{2})/);
+        inputEditNgaySinh.value = dateMatch ? `${dateMatch[1]}-${dateMatch[2]}-${dateMatch[3]}` : ngaysinh.substring(0,10);
+      }
+      if (inputEditDiaChi) inputEditDiaChi.value = diachi;
+      if (inputEditEmail) inputEditEmail.value = email;
+      if (inputEditMaLop) inputEditMaLop.value = malop;
+
+      console.log('📝 Sửa học sinh - Mã cũ:', mahs);
+      openEdit();
+    });
+  });
+})();
+
+(function() {
+  document.querySelectorAll('.btn-delete').forEach(btn => {
+    btn.addEventListener('click', function (e) {
+      e.preventDefault();
+      
+      const tr = this.closest('tr');
+      if (!tr) return;
+      
+      const mahs = tr.getAttribute('data-mahs');
+      const hoten = tr.getAttribute('data-hoten') || 'học sinh này';
+
+      if (!mahs) {
+        alert('Không tìm thấy mã học sinh!');
+        return;
       }
 
-      searchInput && searchInput.addEventListener('input', applyFilter);
-      filterGender && filterGender.addEventListener('change', applyFilter);
-      filterClass && filterClass.addEventListener('change', applyFilter);
-    })();
-    (function() {
-      const btnAdd = document.getElementById('btn-add');
-      if (btnAdd) {
-        btnAdd.addEventListener('click', function () {
-          alert('Thêm học sinh: hiện mới là giao diện demo, chưa nối API.');
-        });
+      if (confirm(`Bạn có chắc chắn muốn xóa học sinh "${hoten}" (${mahs}) không?\n\nLưu ý: Tất cả điểm số và điểm danh sẽ bị xóa.`)) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/student/delete';
+        
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'MaHocSinh';
+        input.value = mahs;
+        
+        form.appendChild(input);
+        document.body.appendChild(form);
+        
+        console.log('🗑️ Xóa học sinh:', mahs);
+        form.submit();
       }
+    });
+  });
+})();
 
-      const btnExport = document.getElementById('btn-export');
-      if (btnExport) {
-        btnExport.addEventListener('click', function () {
-          alert('Xuất Excel: hiện mới là giao diện demo, chưa nối API.');
-        });
+(function() {
+  const btnExport = document.getElementById('btn-export');
+  
+  if (btnExport) {
+    btnExport.addEventListener('click', function () {
+      const rows = document.querySelectorAll('#tbl-students tbody tr[data-mahs]');
+      
+      if (rows.length === 0) {
+        alert('Không có dữ liệu để xuất!');
+        return;
       }
-    })();
+      
+      let csvContent = 'STT,Mã HS,Họ Tên,Giới Tính,Ngày Sinh,Địa Chỉ,Email,Lớp\n';
+      
+      let count = 0;
+      rows.forEach((tr) => {
+        if (tr.style.display !== 'none') {
+          count++;
+          const mahs = tr.getAttribute('data-mahs') || '';
+          const hoten = tr.getAttribute('data-hoten') || '';
+          const gioitinh = tr.getAttribute('data-gioitinh') || '';
+          const ngaysinh = tr.getAttribute('data-ngaysinh') || '';
+          const diachi = tr.getAttribute('data-diachi') || '';
+          const email = tr.getAttribute('data-email') || '';
+          const malop = tr.getAttribute('data-malop') || '';
+          
+          csvContent += `${count},"${mahs}","${hoten}","${gioitinh}","${ngaysinh}","${diachi}","${email}","${malop}"\n`;
+        }
+      });
+      
+      const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      
+      link.setAttribute('href', url);
+      link.setAttribute('download', `danh_sach_hoc_sinh_${new Date().getTime()}.csv`);
+      link.style.visibility = 'hidden';
+      
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      alert(`Đã xuất ${count} học sinh ra file Excel!`);
+    });
+  }
+})();
+
+console.log('Student Management - Thêm/Sửa/Xóa hoạt động!');
   </script>
+
+  <form id="form-delete-student" method="POST" action="/student/delete" style="display:none;">
+    <input type="hidden" name="MaHocSinh" id="deleteMaHocSinh" />
+  </form>
 </body>
 </html>

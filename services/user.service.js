@@ -1,5 +1,6 @@
 const bcrypt = require("bcrypt");
 const nguoiDungRepository = require("../repository/nguoidung.repository");
+  const { sequelize } = require("../models");
 
 class UserService {
   async createUser(userData) {
@@ -42,7 +43,33 @@ class UserService {
   async getUserById(id) {
     return await nguoiDungRepository.findById(id);
   }
+  async getUserByUsername(username) {
+  return new Promise((resolve, reject) => {
+    db.query("SELECT * FROM taikhoan WHERE TenDangNhap = ?", [username], (err, rows) => {
+      if (err) return reject(err);
+      resolve(rows[0]);
+    });
+  });
+}
+  async updatePasswordByUsername(username, newHash) {
+    // Tìm user theo TenDangNhap bằng repository có sẵn
+    const user = await nguoiDungRepository.findByUsername(username);
+
+    if (!user) {
+      // Không tồn tại user -> trả false cho controller xử lý
+      return false;
+    }
+
+    // Cập nhật mật khẩu mới (đã hash sẵn)
+    user.MatKhau = newHash;
+
+    // Lưu lại vào DB (Sequelize Model.save())
+    await user.save();
+
+    return true;
+  }
+
+
 }
 
 module.exports = new UserService();
-
