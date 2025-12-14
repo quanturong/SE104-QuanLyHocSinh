@@ -1,0 +1,64 @@
+<!-- Notification Modal -->
+<div id="notification-modal" class="sp-overlay" style="display:none; backdrop-filter:blur(4px);">
+  <div class="sp-modal notification-modal-content" style="max-width:480px; padding:32px; animation:modalSlideIn 0.3s ease-out;">
+    <div id="notification-icon" style="width:64px; height:64px; border-radius:50%; margin:0 auto 20px; background:linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); flex-shrink:0; position:relative; display:flex; align-items:center; justify-content:center;">
+      <svg id="notification-icon-svg" width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:block;">
+        <!-- Default info icon -->
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" fill="currentColor"/>
+      </svg>
+    </div>
+    <h2 class="sp-title" id="notification-title" style="margin-bottom:12px; text-align:center; font-size:20px; font-weight:700;">Thông báo</h2>
+    <p id="notification-message" style="margin-bottom:28px; font-size:15px; line-height:1.7; color:#334155; text-align:center; padding:0 8px;"></p>
+    <div class="sp-actions" style="justify-content:center;">
+      <button type="button" class="sp-btn" id="notification-ok" onclick="closeNotification()" style="min-width:120px; padding:12px 24px; font-size:15px; font-weight:600;">OK</button>
+    </div>
+  </div>
+</div>
+
+<style>
+  @keyframes modalSlideIn {
+    from {
+      opacity: 0;
+      transform: translateY(-20px) scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  .notification-modal-content {
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05);
+  }
+
+  #notification-modal.error .notification-modal-content #notification-icon {
+    background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+  }
+
+  #notification-modal.success .notification-modal-content #notification-icon {
+    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  }
+
+  #notification-modal.info .notification-modal-content #notification-icon {
+    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  }
+</style>
+
+<script src="/js/notification.js"></script>
+
+<% if (typeof error !== 'undefined' && error) { %>
+  <script>
+    window.addEventListener('DOMContentLoaded', function() {
+      showNotification('<%= error %>', 'error');
+    });
+  </script>
+<% } %>
+
+<% if (typeof success !== 'undefined' && success) { %>
+  <script>
+    window.addEventListener('DOMContentLoaded', function() {
+      showNotification('<%= success %>', 'success');
+    });
+  </script>
+<% } %>
+

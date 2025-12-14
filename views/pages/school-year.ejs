@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Quản lý năm học – Quản lí học sinh</title>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body class="page-student">
+  <div class="layout">
+    <main class="main">
+      <% 
+        const role = (user && user.role) ? user.role : ""; 
+        const canManage = permissions && permissions.canManageSchoolYear;
+      %>
+
+      <!-- Overlay thêm năm học -->
+      <div id="school-year-overlay" class="sp-overlay" style="display:none;">
+        <div class="sp-modal">
+          <h2 class="sp-title">Thêm năm học mới</h2>
+          <form class="sp-form" method="POST" action="/school-year">
+            <div class="sp-field">
+              <label>Mã năm học</label>
+              <input name="MaNamHoc" placeholder="VD: 2024-2025" required />
+            </div>
+            <div class="sp-field">
+              <label>Ngày bắt đầu</label>
+              <input type="date" name="NgayBatDau" required />
+            </div>
+            <div class="sp-field">
+              <label>Ngày kết thúc</label>
+              <input type="date" name="NgayKetThuc" required />
+            </div>
+            <div class="sp-actions">
+              <button type="button" class="sp-btn sp-btn--ghost" id="btn-cancel-add">Đóng</button>
+              <button type="submit" class="sp-btn">Lưu</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Overlay sửa năm học -->
+      <div id="school-year-edit-overlay" class="sp-overlay" style="display:none;">
+        <div class="sp-modal">
+          <h2 class="sp-title">Sửa năm học</h2>
+          <form class="sp-form" method="POST" action="/school-year/edit">
+            <input type="hidden" name="OldMaNamHoc" id="editOldMaNamHoc" />
+            <div class="sp-field">
+              <label>Mã năm học</label>
+              <input name="MaNamHoc" id="editMaNamHoc" required />
+            </div>
+            <div class="sp-field">
+              <label>Ngày bắt đầu</label>
+              <input type="date" name="NgayBatDau" id="editNgayBatDau" required />
+            </div>
+            <div class="sp-field">
+              <label>Ngày kết thúc</label>
+              <input type="date" name="NgayKetThuc" id="editNgayKetThuc" required />
+            </div>
+            <div class="sp-actions">
+              <button type="button" class="sp-btn sp-btn--ghost" id="btn-cancel-edit">Đóng</button>
+              <button type="submit" class="sp-btn">Lưu thay đổi</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <div class="page-header">
+        <h1 class="page-title">Quản lý năm học</h1>
+        <p class="page-desc">Khai báo và quản lý các năm học trong hệ thống.</p>
+      </div>
+
+      <section class="card" style="margin-bottom: 16px;">
+        <div class="toolbar" style="justify-content: space-between;">
+          <div>
+            <div style="font-weight: 600; font-size: 16px;">
+              <%= (schoolYears && schoolYears.length) ? schoolYears.length : 0 %> năm học
+            </div>
+          </div>
+          <div style="display:flex; gap:8px; align-items:center;">
+            <% if (canManage) { %>
+              <button class="btn" id="btn-add">+ Thêm năm học</button>
+            <% } %>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="table-wrap" style="overflow:auto; max-height:560px;">
+          <table class="table" id="tbl-school-years">
+            <thead>
+              <tr>
+                <th style="width:60px;">STT</th>
+                <th style="width:200px;">MÃ NĂM HỌC</th>
+                <th style="width:180px;">NGÀY BẮT ĐẦU</th>
+                <th style="width:180px;">NGÀY KẾT THÚC</th>
+                <% if (canManage) { %>
+                  <th style="width:150px;">THAO TÁC</th>
+                <% } %>
+              </tr>
+            </thead>
+            <tbody>
+              <% if (schoolYears && schoolYears.length) { %>
+                <% schoolYears.forEach(function(sy, index) { %>
+                  <tr data-manamhoc="<%= sy.MaNamHoc %>" data-ngaybatdau="<%= sy.NgayBatDau %>" data-ngayketthuc="<%= sy.NgayKetThuc %>">
+                    <td class="text-center"><%= index + 1 %></td>
+                    <td><strong><%= sy.MaNamHoc %></strong></td>
+                    <td><%= sy.NgayBatDau %></td>
+                    <td><%= sy.NgayKetThuc %></td>
+                    <% if (canManage) { %>
+                      <td class="text-center">
+                        <button class="btn btn-sm btn-edit" type="button">Sửa</button>
+                        <button class="btn btn-sm btn-delete" type="button">Xóa</button>
+                      </td>
+                    <% } %>
+                  </tr>
+                <% }) %>
+              <% } else { %>
+                <tr>
+                  <td colspan="<%= canManage ? 5 : 4 %>" class="text-center muted">Chưa có năm học trong hệ thống.</td>
+                </tr>
+              <% } %>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    (function () {
+      const overlayAdd = document.getElementById('school-year-overlay');
+      const btnAdd = document.getElementById('btn-add');
+      const btnCancelAdd = document.getElementById('btn-cancel-add');
+
+      function openAdd() {
+        if (overlayAdd) {
+          overlayAdd.style.display = 'grid';
+          const form = overlayAdd.querySelector('form');
+          if (form) form.reset();
+        }
+      }
+      function closeAdd() {
+        if (overlayAdd) overlayAdd.style.display = 'none';
+      }
+      btnAdd && btnAdd.addEventListener('click', openAdd);
+      btnCancelAdd && btnCancelAdd.addEventListener('click', closeAdd);
+      overlayAdd && overlayAdd.addEventListener('click', e => {
+        if (e.target === overlayAdd) closeAdd();
+      });
+    })();
+
+    (function () {
+      const overlayEdit = document.getElementById('school-year-edit-overlay');
+      const btnCancelEdit = document.getElementById('btn-cancel-edit');
+
+      function openEdit() {
+        if (overlayEdit) overlayEdit.style.display = 'grid';
+      }
+      function closeEdit() {
+        if (overlayEdit) overlayEdit.style.display = 'none';
+      }
+      btnCancelEdit && btnCancelEdit.addEventListener('click', closeEdit);
+      overlayEdit && overlayEdit.addEventListener('click', e => {
+        if (e.target === overlayEdit) closeEdit();
+      });
+
+      document.querySelectorAll('.btn-edit').forEach(btn => {
+        btn.addEventListener('click', function () {
+          const tr = this.closest('tr');
+          if (!tr) return;
+          const maNamHoc = tr.getAttribute('data-manamhoc') || '';
+          const ngayBatDau = tr.getAttribute('data-ngaybatdau') || '';
+          const ngayKetThuc = tr.getAttribute('data-ngayketthuc') || '';
+          document.getElementById('editOldMaNamHoc').value = maNamHoc;
+          document.getElementById('editMaNamHoc').value = maNamHoc;
+          document.getElementById('editNgayBatDau').value = ngayBatDau;
+          document.getElementById('editNgayKetThuc').value = ngayKetThuc;
+          openEdit();
+        });
+      });
+    })();
+
+    (function () {
+      document.querySelectorAll('.btn-delete').forEach(btn => {
+        btn.addEventListener('click', function () {
+          const tr = this.closest('tr');
+          if (!tr) return;
+          const maNamHoc = tr.getAttribute('data-manamhoc') || '';
+          if (confirm(`Bạn có chắc muốn xóa năm học "${maNamHoc}"?`)) {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '/school-year/delete';
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'MaNamHoc';
+            input.value = maNamHoc;
+            form.appendChild(input);
+            document.body.appendChild(form);
+            form.submit();
+          }
+        });
+      });
+    })();
+  </script>
+</body>
+</html>
+

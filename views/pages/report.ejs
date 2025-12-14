@@ -38,7 +38,7 @@
           <a class="<%= title === 'Bảng điểm' ? 'active' : '' %>" href="/scoretable">
             Điểm số
           </a>
-          <a class="<%= title === 'Tra cứu hồ sơ học sinh' ? 'active' : '' %>" href="/find">
+          <a class="<%= title === 'Tra cứu' ? 'active' : '' %>" href="/find">
             Tra cứu
           </a>
         <% } %>
@@ -48,6 +48,11 @@
         <a class="<%= title === 'Danh sách giáo viên' ? 'active' : '' %>" href="/teacher">
           Giáo viên
         </a>
+        <% if (role === 'Admin' || role === 'BGH' || role === 'GiaoVu') { %>
+          <a class="<%= title === 'Quản lý môn học' ? 'active' : '' %>" href="/subject">
+            📚 Môn học
+          </a>
+        <% } %>
         <a class="<%= title === 'Quy định' ? 'active' : '' %>" href="/rules">
           Quy định
         </a>

@@ -38,20 +38,26 @@
           <a class="<%= title === 'Báo cáo' ? 'active' : '' %>" href="/report">
             Báo cáo
           </a>
-          <a class="<%= title === 'Tra cứu hồ sơ học sinh' ? 'active' : '' %>" href="/find">
-            Tra cứu
-          </a>
         <% } %>
         <a class="<%= title === 'Bảng điểm' ? 'active' : '' %>" href="/scoretable">
           Điểm số
         </a>
-
+        <% if (role !== 'HocSinh') { %>
+          <a class="<%= title === 'Tra cứu' ? 'active' : '' %>" href="/find">
+            Tra cứu
+          </a>
+        <% } %>
         <a class="<%= title === 'Thời khóa biểu' ? 'active' : '' %>" href="/timetable">
           Thời khóa biểu
         </a>
         <a class="<%= title === 'Danh sách giáo viên' ? 'active' : '' %>" href="/teacher">
           Giáo viên
         </a>
+        <% if (role === 'Admin' || role === 'BGH' || role === 'GiaoVu') { %>
+          <a class="<%= title === 'Quản lý môn học' ? 'active' : '' %>" href="/subject">
+            📚 Môn học
+          </a>
+        <% } %>
         <a class="<%= title === 'Quy định' ? 'active' : '' %>" href="/rules">
           Quy định
         </a>
@@ -73,11 +79,14 @@
           Danh sách giáo viên toàn trường: bộ môn giảng dạy, liên hệ, chủ nhiệm lớp…
         </p>
       </div>
+
+      <!-- Include notification modal -->
+      <%- include('../partials/notification-modal') %>
       <section class="card" style="margin-bottom:16px;">
-        <div class="toolbar">
-          <div class="class-info-item" style="min-width:220px;">
-            <label class="class-label">Bộ môn</label>
-            <select id="filter-subject" class="select class-select">
+        <div class="toolbar" style="display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap;">
+          <div style="min-width:200px; flex:0 0 auto; display:flex; flex-direction:column;">
+            <label class="class-label" style="display:block; font-weight:600; font-size:13px; color:#334155; margin-bottom:6px; line-height:1.2;">BỘ MÔN</label>
+            <select id="filter-subject" class="select class-select" style="width:100%; height:44px; padding:0 14px;">
               <option value="">Tất cả bộ môn</option>
               <% if (subjects && subjects.length) { %>
                 <% subjects.forEach(function(s) { %>
@@ -89,31 +98,41 @@
             </select>
           </div>
 
-          <input
-            id="search-teacher"
-            class="input"
-            placeholder="Tìm theo họ tên / email / địa chỉ…"
-            style="min-width:260px;"
-          >
+          <div style="flex:1; min-width:260px; display:flex; flex-direction:column;">
+            <label style="display:block; font-weight:600; font-size:13px; color:#334155; margin-bottom:6px; line-height:1.2; visibility:hidden;">Tìm kiếm</label>
+            <input
+              id="search-teacher"
+              class="input"
+              placeholder="Tìm theo họ tên / email / địa chỉ…"
+              style="width:100%; height:44px; padding:0 14px;"
+            >
+          </div>
+
           <% if (canManageTeachers) { %>
-            <button class="btn" id="btn-add" title="Thêm giáo viên (demo)">➕ Thêm</button>
+            <div style="display:flex; flex-direction:column;">
+              <label style="display:block; font-weight:600; font-size:13px; color:#334155; margin-bottom:6px; line-height:1.2; visibility:hidden;">Thêm</label>
+              <button class="btn" id="btn-add" title="Thêm giáo viên" style="height:44px; padding:0 20px; white-space:nowrap; min-width:100px;">➕ Thêm</button>
+            </div>
           <% } %>
 
-          <button class="btn btn-export" id="btn-export" title="Xuất danh sách">⬇️ Xuất</button>
+          <div style="display:flex; flex-direction:column;">
+            <label style="display:block; font-weight:600; font-size:13px; color:#334155; margin-bottom:6px; line-height:1.2; visibility:hidden;">Xuất</label>
+            <button class="btn btn-export" id="btn-export" title="Xuất danh sách" style="height:44px; padding:0 20px; white-space:nowrap; min-width:100px;">⬇️ Xuất</button>
+          </div>
         </div>
       </section>
 
       <section class="card">
-        <div class="table-wrap" style="overflow:auto; max-height:560px;">
-          <table class="table" id="tbl-teachers">
+        <div class="table-wrap" style="overflow:auto; max-height:560px; border-radius:12px;">
+          <table class="table" id="tbl-teachers" style="width:100%; table-layout:auto;">
             <thead>
               <tr>
-                <th style="width:60px;">STT</th>
-                <th style="min-width:220px;">Họ tên</th>
-                <th style="min-width:140px;">Bộ môn</th>
-                <th style="min-width:220px;">Email</th>
-                <th style="min-width:220px;">Địa chỉ</th>
-                <th style="min-width:160px;">Hành động</th>
+                <th style="width:60px; text-align:center;">STT</th>
+                <th style="width:200px;">Họ tên</th>
+                <th style="width:150px;">Bộ môn</th>
+                <th style="width:200px;">Email</th>
+                <th style="width:220px;">Địa chỉ</th>
+                <th style="width:180px; text-align:center;">Hành động</th>
               </tr>
             </thead>
             <tbody>
@@ -126,42 +145,55 @@
                     data-address="<%= (t.DiaChi || '').toLowerCase() %>"
                   >
                     <td class="text-center"><%= index + 1 %></td>
-                    <td><%= t.HoTen %></td>
+                    <td><strong><%= t.HoTen || '' %></strong></td>
                     <td><%= t.TenMonHoc || t.MaMonGiangDay || '' %></td>
                     <td><%= t.Email || '' %></td>
                     <td><%= t.DiaChi || '' %></td>
-                    <td>
-                      <button class="btn-action btn-view" data-view="<%= t.MaGiaoVien %>">
-                        Xem
-                      </button>
-                      <% if (canManageTeachers) { %>
-                        <button
-                          class="btn-action btn-edit-green"
-                          data-edit="<%= t.MaGiaoVien %>"
-                          data-magv="<%= t.MaGiaoVien %>"
-                          data-hoten="<%= t.HoTen || '' %>"
-                          data-gioitinh="<%= t.GioiTinh || '' %>"
-                          data-ngaysinh="<%= t.NgaySinh || '' %>"
-                          data-diachi="<%= t.DiaChi || '' %>"
-                          data-email="<%= t.Email || '' %>"
-                          data-mamon="<%= t.MaMonGiangDay || '' %>"
-                        >
-                          Sửa
+                    <td style="text-align:center; white-space:nowrap;">
+                      <div style="display:flex; gap:6px; justify-content:center; align-items:center;">
+                        <button class="btn-action btn-view" data-view="<%= t.MaGiaoVien %>" style="padding:6px 12px; font-size:13px;">
+                          Xem
                         </button>
-                      <% } %>
+                        <% if (canManageTeachers) { %>
+                          <button
+                            class="btn-action btn-edit-green"
+                            data-edit="<%= t.MaGiaoVien %>"
+                            data-magv="<%= t.MaGiaoVien %>"
+                            data-hoten="<%= t.HoTen || '' %>"
+                            data-gioitinh="<%= t.GioiTinh || '' %>"
+                            data-ngaysinh="<%= t.NgaySinh || '' %>"
+                            data-diachi="<%= t.DiaChi || '' %>"
+                            data-email="<%= t.Email || '' %>"
+                            data-mamon="<%= t.MaMonGiangDay || '' %>"
+                            style="padding:6px 12px; font-size:13px;"
+                          >
+                            Sửa
+                          </button>
+                          <button
+                            class="btn-action btn-delete"
+                            data-delete="<%= t.MaGiaoVien %>"
+                            data-hoten="<%= t.HoTen || '' %>"
+                            style="padding:6px 12px; font-size:13px;"
+                          >
+                            Xóa
+                          </button>
+                        <% } %>
+                      </div>
                     </td>
                   </tr>
                 <% }) %>
               <% } else { %>
                 <tr>
-                  <td colspan="6" style="text-align:center;">Chưa có giáo viên.</td>
+                  <td colspan="6" style="text-align:center; padding:40px 20px; color:#64748b;">
+                    <div style="font-size:15px;">Chưa có giáo viên trong hệ thống.</div>
+                  </td>
                 </tr>
               <% } %>
             </tbody>
           </table>
         </div>
 
-        <div class="pagination">
+        <div class="pagination" style="margin-top:16px; display:flex; justify-content:center; align-items:center; gap:12px;">
           <button class="btn-page" disabled>‹</button>
           <span class="page-info">Trang <strong>1</strong> / <strong>1</strong></span>
           <button class="btn-page" disabled>›</button>
@@ -311,21 +343,22 @@
         <div class="sp-modal">
           <h2 class="sp-title">Thêm giáo viên mới</h2>
           
-          <form class="sp-form" id="form-add-teacher">
+          <form class="sp-form" id="form-add-teacher" method="POST" action="/teacher">
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
               <div class="sp-field">
                 <label>Mã giáo viên</label>
                 <input
                   type="text"
+                  name="MaGiaoVien"
                   id="add-gv-magv"
-                  placeholder="Ví dụ: GV001"
+                  placeholder="Ví dụ: 1"
                   required
                 />
               </div>
 
               <div class="sp-field">
                 <label>Bộ môn giảng dạy</label>
-                <select id="add-gv-mon" required>
+                <select name="MaMonGiangDay" id="add-gv-mon" required>
                   <option value="">-- Chọn bộ môn --</option>
                   <% if (subjects && subjects.length) { %>
                     <% subjects.forEach(function(sub){ %>
@@ -338,13 +371,13 @@
 
             <div class="sp-field">
               <label>Họ tên</label>
-              <input type="text" id="add-gv-hoten" placeholder="Nhập họ và tên" required />
+              <input type="text" name="HoTen" id="add-gv-hoten" placeholder="Nhập họ và tên" required />
             </div>
 
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
               <div class="sp-field">
                 <label>Giới tính</label>
-                <select id="add-gv-gioitinh" required>
+                <select name="GioiTinh" id="add-gv-gioitinh" required>
                   <option value="">-- Chọn --</option>
                   <option value="Nam">Nam</option>
                   <option value="Nữ">Nữ</option>
@@ -354,18 +387,18 @@
 
               <div class="sp-field">
                 <label>Ngày sinh</label>
-                <input type="date" id="add-gv-ngaysinh" required />
+                <input type="date" name="NgaySinh" id="add-gv-ngaysinh" required />
               </div>
             </div>
 
             <div class="sp-field">
               <label>Email</label>
-              <input type="email" id="add-gv-email" placeholder="example@school.edu.vn" required />
+              <input type="email" name="Email" id="add-gv-email" placeholder="example@school.edu.vn" required />
             </div>
 
             <div class="sp-field">
               <label>Địa chỉ</label>
-              <input type="text" id="add-gv-diachi" placeholder="Nhập địa chỉ" />
+              <input type="text" name="DiaChi" id="add-gv-diachi" placeholder="Nhập địa chỉ" />
             </div>
 
             <div class="sp-actions">
@@ -495,16 +528,26 @@
 
     // Bắt click Xem / Sửa
     document.addEventListener('click', (e)=>{
-      const view = e.target.closest('[data-view]');
-      const edit = e.target.closest('[data-edit]');
+      // Kiểm tra nếu click vào button hoặc text bên trong button
+      const viewBtn = e.target.closest('[data-view]');
+      const editBtn = e.target.closest('[data-edit]');
 
-      if (view) {
-        const id = view.getAttribute('data-view');
-        openViewTeacherModal(id);
+      if (viewBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        const id = viewBtn.getAttribute('data-view');
+        if (id) {
+          openViewTeacherModal(id);
+        }
+        return false;
       }
 
-      if (edit) {
-        openEditTeacherModal(edit);
+      if (editBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log('Edit button clicked:', editBtn);
+        openEditTeacherModal(editBtn);
+        return false;
       }
     });
 
@@ -580,33 +623,48 @@
       }
     });
 
-    document.getElementById('form-add-teacher')?.addEventListener('submit', (e) => {
-      e.preventDefault();
-      const name = document.getElementById('add-gv-hoten').value || '';
-      alert('Đã thêm giáo viên mới: ' + name + '\n(Chưa nối API backend)');
-      closeAddTeacherModal();
-    });
+    // Form sẽ submit bình thường đến /teacher
 
     // ========== MODAL SỬA GIÁO VIÊN ==========
     function openEditTeacherModal(btn) {
+      console.log('openEditTeacherModal called with:', btn);
       const modal = document.getElementById('modal-edit-teacher');
-      if (!modal) return;
+      if (!modal) {
+        console.error('Modal edit teacher không tìm thấy');
+        alert('Không tìm thấy modal sửa giáo viên. Vui lòng reload trang.');
+        return;
+      }
 
-      const maGV    = btn.getAttribute('data-magv')     || '';
-      const hoTen   = btn.getAttribute('data-hoten')    || '';
+      const maGV    = btn.getAttribute('data-magv') || btn.getAttribute('data-edit') || '';
+      const hoTen   = btn.getAttribute('data-hoten') || '';
       const gioiTinh= btn.getAttribute('data-gioitinh') || '';
       const ngaySinhRaw = btn.getAttribute('data-ngaysinh') || '';
       const ngaySinh = ngaySinhRaw ? ngaySinhRaw.substring(0,10) : '';
-      const diaChi  = btn.getAttribute('data-diachi')   || '';
-      const email   = btn.getAttribute('data-email')    || '';
-      const maMon   = btn.getAttribute('data-mamon')    || '';
+      const diaChi  = btn.getAttribute('data-diachi') || '';
+      const email   = btn.getAttribute('data-email') || '';
+      const maMon   = btn.getAttribute('data-mamon') || '';
 
-      document.getElementById('edit-gv-magv').value      = maGV;
-      document.getElementById('edit-gv-hoten').value     = hoTen;
-      document.getElementById('edit-gv-gioitinh').value  = gioiTinh;
-      document.getElementById('edit-gv-ngaysinh').value  = ngaySinh;
-      document.getElementById('edit-gv-diachi').value    = diaChi;
-      document.getElementById('edit-gv-email').value     = email;
+      console.log('Teacher data:', { maGV, hoTen, email, maMon });
+
+      const magvInput = document.getElementById('edit-gv-magv');
+      const magvHidden = document.getElementById('edit-gv-magv-hidden');
+      if (magvInput) magvInput.value = maGV;
+      if (magvHidden) magvHidden.value = maGV;
+      
+      const hoTenInput = document.getElementById('edit-gv-hoten');
+      if (hoTenInput) hoTenInput.value = hoTen;
+      
+      const gioiTinhSelect = document.getElementById('edit-gv-gioitinh');
+      if (gioiTinhSelect) gioiTinhSelect.value = gioiTinh;
+      
+      const ngaySinhInput = document.getElementById('edit-gv-ngaysinh');
+      if (ngaySinhInput) ngaySinhInput.value = ngaySinh;
+      
+      const diaChiInput = document.getElementById('edit-gv-diachi');
+      if (diaChiInput) diaChiInput.value = diaChi;
+      
+      const emailInput = document.getElementById('edit-gv-email');
+      if (emailInput) emailInput.value = email;
 
       const monSelect = document.getElementById('edit-gv-mon');
       if (monSelect && maMon) {
@@ -614,6 +672,7 @@
       }
 
       modal.style.display = 'grid';
+      console.log('Modal displayed');
     }
 
     function closeEditTeacherModal() {
@@ -627,11 +686,27 @@
       }
     });
 
-    document.getElementById('form-edit-teacher')?.addEventListener('submit', (e) => {
-      e.preventDefault();
-      const name = document.getElementById('edit-gv-hoten').value || '';
-      alert('Đã lưu thay đổi (demo) cho giáo viên: ' + name + '\n(Chưa nối API backend)');
-      closeEditTeacherModal();
+    // Form sẽ submit bình thường đến /teacher/edit
+
+    // Xóa giáo viên
+    document.addEventListener('click', (e) => {
+      const deleteBtn = e.target.closest('[data-delete]');
+      if (deleteBtn) {
+        const maGV = deleteBtn.getAttribute('data-delete');
+        const hoTen = deleteBtn.getAttribute('data-hoten') || '';
+        if (confirm(`Bạn có chắc muốn xóa giáo viên "${hoTen}" (Mã: ${maGV})?`)) {
+          const form = document.createElement('form');
+          form.method = 'POST';
+          form.action = '/teacher/delete';
+          const input = document.createElement('input');
+          input.type = 'hidden';
+          input.name = 'MaGiaoVien';
+          input.value = maGV;
+          form.appendChild(input);
+          document.body.appendChild(form);
+          form.submit();
+        }
+      }
     });
   </script>
 </body>

@@ -38,7 +38,7 @@
           <a class="<%= title === 'Bảng điểm' ? 'active' : '' %>" href="/scoretable">
             Điểm số
           </a>
-          <a class="<%= title === 'Tra cứu hồ sơ học sinh' ? 'active' : '' %>" href="/find">
+          <a class="<%= title === 'Tra cứu' ? 'active' : '' %>" href="/find">
             Tra cứu
           </a>
         <% } %>
@@ -48,6 +48,11 @@
         <a class="<%= title === 'Danh sách giáo viên' ? 'active' : '' %>" href="/teacher">
           Giáo viên
         </a>
+        <% if (role === 'Admin' || role === 'BGH' || role === 'GiaoVu') { %>
+          <a class="<%= title === 'Quản lý môn học' ? 'active' : '' %>" href="/subject">
+            📚 Môn học
+          </a>
+        <% } %>
         <a class="<%= title === 'Quy định' ? 'active' : '' %>" href="/rules">
           Quy định
         </a>
@@ -64,24 +69,44 @@
 
     <main class="main">
       <div class="page-header">
-        <h1 class="page-title">Tra cứu hồ sơ học sinh</h1>
-        <p class="page-desc">Nhập Mã học sinh (MSHS) hoặc Họ tên để xem toàn bộ hồ sơ từ database.</p>
+        <h1 class="page-title">Tra cứu</h1>
+        <p class="page-desc">Tra cứu thông tin học sinh hoặc giáo viên trong hệ thống.</p>
       </div>
+
+      <!-- Tabs -->
       <section class="card" style="margin-bottom:16px;">
-        <div class="toolbar">
-          <input
-            class="input"
-            id="q"
-            placeholder="Nhập MSHS hoặc họ tên..."
-            style="min-width:280px;"
-          />
-          <button class="btn" id="btn-search">🔎 Tra cứu</button>
-          <button class="btn btn-export" id="btn-print">🖨️ In hồ sơ</button>
-          <span class="muted" id="hint"></span>
+        <div style="display:flex; gap:8px; border-bottom:2px solid #e2e8f0; margin-bottom:16px;">
+          <button class="tab-btn active" data-tab="student" style="padding:10px 20px; border:none; background:transparent; cursor:pointer; border-bottom:2px solid transparent; font-size:14px; font-weight:500; color:#64748b; transition:all 0.2s;">👨‍🎓 Học sinh</button>
+          <button class="tab-btn" data-tab="teacher" style="padding:10px 20px; border:none; background:transparent; cursor:pointer; border-bottom:2px solid transparent; font-size:14px; font-weight:500; color:#64748b; transition:all 0.2s;">👨‍🏫 Giáo viên</button>
+        </div>
+        <style>
+          .tab-btn.active { color: #0ea5e9; border-bottom-color: #0ea5e9; }
+          .tab-btn:hover { color: #0ea5e9; }
+        </style>
+
+        <!-- Tab Học sinh -->
+        <div id="tab-student" class="tab-content">
+          <div class="toolbar">
+            <input class="input" id="q-student" placeholder="Nhập MSHS hoặc họ tên học sinh..." style="min-width:280px;" />
+            <button class="btn" id="btn-search-student">🔎 Tra cứu</button>
+            <button class="btn btn-export" id="btn-print-student">🖨️ In hồ sơ</button>
+            <span class="muted" id="hint-student"></span>
+          </div>
+        </div>
+
+        <!-- Tab Giáo viên -->
+        <div id="tab-teacher" class="tab-content" style="display:none;">
+          <div class="toolbar">
+            <input class="input" id="q-teacher" placeholder="Nhập mã giáo viên hoặc họ tên..." style="min-width:280px;" />
+            <button class="btn" id="btn-search-teacher">🔎 Tra cứu</button>
+            <button class="btn btn-export" id="btn-print-teacher">🖨️ In hồ sơ</button>
+            <span class="muted" id="hint-teacher"></span>
+          </div>
         </div>
       </section>
 
-      <div id="result" style="display:none;">
+      <!-- Kết quả tra cứu học sinh -->
+      <div id="result-student" style="display:none;">
         <section class="card" style="margin-bottom:16px;">
           <div class="profile">
             <div class="avatar" id="pf-avatar">HS</div>
@@ -174,10 +199,55 @@
         </section>
       </div>
 
-      <section class="card" id="no-data" style="display:none;">
-        <p class="muted">
-          Không tìm thấy học sinh phù hợp. Hãy kiểm tra lại MSHS/Họ tên.
-        </p>
+      <section class="card" id="no-data-student" style="display:none;">
+        <p class="muted">Không tìm thấy học sinh phù hợp. Hãy kiểm tra lại MSHS/Họ tên.</p>
+      </section>
+
+      <!-- Kết quả tra cứu giáo viên -->
+      <div id="result-teacher" style="display:none;">
+        <section class="card" style="margin-bottom:16px;">
+          <div class="profile">
+            <div class="avatar" id="pf-teacher-avatar">GV</div>
+            <div>
+              <h2 class="p-name" id="pf-teacher-name">—</h2>
+              <p class="p-sub" id="pf-teacher-sub">Mã GV: — · Bộ môn: —</p>
+              <div style="margin-top:6px;">
+                <span class="pill" id="pf-teacher-dob">Ngày sinh: —</span>
+                <span class="pill" id="pf-teacher-gender">Giới tính: —</span>
+                <span class="pill" id="pf-teacher-email">Email: —</span>
+                <span class="pill" id="pf-teacher-address">Địa chỉ: —</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="card" style="margin-bottom:16px;">
+          <div class="page-header" style="margin-bottom:12px;">
+            <h2 class="page-title" style="font-size:18px;">Lớp đang giảng dạy</h2>
+          </div>
+          <div class="table-wrap" style="overflow:auto; max-height:320px;">
+            <table class="table" id="tbl-teacher-classes">
+              <thead>
+                <tr>
+                  <th style="width:60px;">STT</th>
+                  <th style="width:120px;">Lớp</th>
+                  <th style="width:220px;">Môn học</th>
+                  <th style="width:140px;">Thứ</th>
+                  <th style="width:100px;">Tiết</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td colspan="5" class="text-center muted">Chưa có dữ liệu.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+
+      <section class="card" id="no-data-teacher" style="display:none;">
+        <p class="muted">Không tìm thấy giáo viên phù hợp. Hãy kiểm tra lại mã hoặc họ tên.</p>
       </section>
     </main>
   </div>
@@ -186,6 +256,25 @@
     const STUDENTS = <%- JSON.stringify(typeof students !== "undefined" ? students : []) %>;
     const SCORES = <%- JSON.stringify(typeof scores !== "undefined" ? scores : []) %>;
     const ATTENDANCES = <%- JSON.stringify(typeof attendances !== "undefined" ? attendances : []) %>;
+    const TEACHERS = <%- JSON.stringify(typeof teachers !== "undefined" ? teachers : []) %>;
+    const TIMETABLES = <%- JSON.stringify(typeof timetables !== "undefined" ? timetables : []) %>;
+
+    // Tab switching
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const tab = this.getAttribute('data-tab');
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
+        document.getElementById(`tab-${tab}`).style.display = 'block';
+        
+        // Reset results
+        document.getElementById('result-student').style.display = 'none';
+        document.getElementById('result-teacher').style.display = 'none';
+        document.getElementById('no-data-student').style.display = 'none';
+        document.getElementById('no-data-teacher').style.display = 'none';
+      });
+    });
 
 
     function round1(x){ return Math.round(x * 10) / 10; }
@@ -330,15 +419,16 @@
       tbody.innerHTML = rows;
     }
 
-    function doSearch(){
-      const qInput = document.getElementById('q');
-      const hint   = document.getElementById('hint');
+    // Tra cứu học sinh
+    function doSearchStudent(){
+      const qInput = document.getElementById('q-student');
+      const hint   = document.getElementById('hint-student');
       const query  = (qInput.value || '').trim().toLowerCase();
 
       if (!query) {
         hint.textContent = "Vui lòng nhập MSHS hoặc một phần họ tên.";
-        document.getElementById('no-data').style.display = 'block';
-        document.getElementById('result').style.display  = 'none';
+        document.getElementById('no-data-student').style.display = 'block';
+        document.getElementById('result-student').style.display  = 'none';
         return;
       }
 
@@ -349,14 +439,14 @@
 
       if (!stu) {
         hint.textContent = "Không tìm thấy học sinh.";
-        document.getElementById('no-data').style.display = 'block';
-        document.getElementById('result').style.display  = 'none';
+        document.getElementById('no-data-student').style.display = 'block';
+        document.getElementById('result-student').style.display  = 'none';
         return;
       }
 
       hint.textContent = "";
-      document.getElementById('no-data').style.display = 'none';
-      document.getElementById('result').style.display  = 'block';
+      document.getElementById('no-data-student').style.display = 'none';
+      document.getElementById('result-student').style.display  = 'block';
 
       fillProfile(stu);
       fillStats(stu);
@@ -364,12 +454,107 @@
       renderAttendance(stu);
     }
 
-    document.getElementById('btn-search').addEventListener('click', doSearch);
-    document.getElementById('q').addEventListener('keydown', e => {
-      if (e.key === 'Enter') doSearch();
+    // Tra cứu giáo viên
+    function fillTeacherProfile(teacher){
+      const parts = (teacher.HoTen || '').trim().split(/\s+/);
+      const initials = parts.slice(-2).map(p => p[0]).join('').toUpperCase() || 'GV';
+      document.getElementById('pf-teacher-avatar').textContent = initials;
+
+      document.getElementById('pf-teacher-name').textContent = teacher.HoTen || '—';
+      document.getElementById('pf-teacher-sub').textContent = `Mã GV: ${teacher.MaGiaoVien} · Bộ môn: ${teacher.TenMonHoc || teacher.MaMonGiangDay || '—'}`;
+
+      let dobText = '—';
+      if (teacher.NgaySinh) {
+        const d = new Date(teacher.NgaySinh);
+        if (!isNaN(d.getTime())) {
+          dobText = d.toLocaleDateString('vi-VN');
+        } else {
+          dobText = teacher.NgaySinh;
+        }
+      }
+
+      document.getElementById('pf-teacher-dob').textContent = `Ngày sinh: ${dobText}`;
+      document.getElementById('pf-teacher-gender').textContent = `Giới tính: ${teacher.GioiTinh || '—'}`;
+      document.getElementById('pf-teacher-email').textContent = `Email: ${teacher.Email || '—'}`;
+      document.getElementById('pf-teacher-address').textContent = `Địa chỉ: ${teacher.DiaChi || '—'}`;
+    }
+
+    function renderTeacherClasses(teacher){
+      const tbody = document.querySelector('#tbl-teacher-classes tbody');
+      const teacherId = teacher.MaGiaoVien;
+      const classes = TIMETABLES.filter(t => t.MaGiaoVien == teacherId);
+
+      if (!classes.length) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="5" class="text-center muted">
+              Giáo viên này chưa được phân công giảng dạy lớp nào.
+            </td>
+          </tr>`;
+        return;
+      }
+
+      const rows = classes.map((c, index) => {
+        return `
+          <tr>
+            <td class="text-center">${index + 1}</td>
+            <td>${c.MaLop || ''}</td>
+            <td>${c.TenMonHoc || c.MaMonHoc || ''}</td>
+            <td>Thứ ${c.Thu || ''}</td>
+            <td class="text-center">${c.TietHoc || ''}</td>
+          </tr>
+        `;
+      }).join("");
+
+      tbody.innerHTML = rows;
+    }
+
+    function doSearchTeacher(){
+      const qInput = document.getElementById('q-teacher');
+      const hint   = document.getElementById('hint-teacher');
+      const query  = (qInput.value || '').trim().toLowerCase();
+
+      if (!query) {
+        hint.textContent = "Vui lòng nhập mã giáo viên hoặc một phần họ tên.";
+        document.getElementById('no-data-teacher').style.display = 'block';
+        document.getElementById('result-teacher').style.display  = 'none';
+        return;
+      }
+
+      const teacher = TEACHERS.find(t =>
+        String(t.MaGiaoVien).toLowerCase() === query ||
+        (t.HoTen || '').toLowerCase().includes(query) ||
+        (t.Email || '').toLowerCase().includes(query)
+      );
+
+      if (!teacher) {
+        hint.textContent = "Không tìm thấy giáo viên.";
+        document.getElementById('no-data-teacher').style.display = 'block';
+        document.getElementById('result-teacher').style.display  = 'none';
+        return;
+      }
+
+      hint.textContent = "";
+      document.getElementById('no-data-teacher').style.display = 'none';
+      document.getElementById('result-teacher').style.display  = 'block';
+
+      fillTeacherProfile(teacher);
+      renderTeacherClasses(teacher);
+    }
+
+    document.getElementById('btn-search-student').addEventListener('click', doSearchStudent);
+    document.getElementById('q-student').addEventListener('keydown', e => {
+      if (e.key === 'Enter') doSearchStudent();
+    });
+    document.getElementById('btn-print-student').addEventListener('click', () => {
+      window.print();
     });
 
-    document.getElementById('btn-print').addEventListener('click', () => {
+    document.getElementById('btn-search-teacher').addEventListener('click', doSearchTeacher);
+    document.getElementById('q-teacher').addEventListener('keydown', e => {
+      if (e.key === 'Enter') doSearchTeacher();
+    });
+    document.getElementById('btn-print-teacher').addEventListener('click', () => {
       window.print();
     });
   </script>
