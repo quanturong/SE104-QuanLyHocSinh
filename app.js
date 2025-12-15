@@ -1,3 +1,5 @@
+//Import các module cần thiết
+const flash = require('connect-flash');
 const express = require("express");
 const path = require("path");
 const bodyParser = require("body-parser");
@@ -15,6 +17,8 @@ app.use(express.static(path.join(__dirname, "public")));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
+//Middleware để đọc dữ liệu từ form 
+// Session middleware (single instance)
 app.use(
   session({
     secret: "secret-qlhs",
@@ -22,6 +26,9 @@ app.use(
     saveUninitialized: false,
   })
 );
+
+// Flash middleware (requires sessions)
+app.use(flash());
 
 sequelize
   .authenticate()
@@ -127,8 +134,8 @@ app.get("/logout", (req, res) => {
   });
 });
 
+//Định tuyến đến trang quản lý học sinh 
 const pageRoutes = require("./routes/pages.route");
-
 app.use("/", pageRoutes);
 
 const PORT = 3000;

@@ -10,7 +10,8 @@ const GiaoVien = sequelize.define("GiaoVien", {
   Email: { type: DataTypes.STRING },
   MaMonGiangDay: { type: DataTypes.STRING, allowNull: false }
 }, {
-  freezeTableName: true,
+  tableName: 'GiaoVien', 
+  freezeTableName: true, 
   timestamps: false
 });
 

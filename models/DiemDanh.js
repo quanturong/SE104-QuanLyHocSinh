@@ -9,7 +9,8 @@ const DiemDanh = sequelize.define("DiemDanh", {
   NgayDiemDanh: { type: DataTypes.STRING, allowNull: false },
   TrangThai: { type: DataTypes.STRING, allowNull: false }
 }, {
-  freezeTableName: true,
+  tableName: 'DiemDanh', 
+  freezeTableName: true, 
   timestamps: false
 });
 

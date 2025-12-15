@@ -11,7 +11,8 @@ const BaoCaoTongKetMon = sequelize.define("BaoCaoTongKetMon", {
   TiLe: { type: DataTypes.REAL, allowNull: false },
   NamHoc: { type: DataTypes.STRING, allowNull: false }
 }, {
-  freezeTableName: true,
+  tableName: 'BaoCaoTongKetMon', 
+  freezeTableName: true, 
   timestamps: false
 });
 

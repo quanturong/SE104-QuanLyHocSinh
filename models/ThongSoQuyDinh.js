@@ -5,7 +5,8 @@ const ThongSoQuyDinh = sequelize.define("ThongSoQuyDinh", {
   TenQuyDinh: { type: DataTypes.STRING, primaryKey: true },
   GiaTri: { type: DataTypes.REAL, allowNull: false }
 }, {
-  freezeTableName: true,
+  tableName: 'ThongSoQuyDinh', 
+  freezeTableName: true, 
   timestamps: false
 });
 

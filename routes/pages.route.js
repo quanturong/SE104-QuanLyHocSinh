@@ -6,6 +6,7 @@ const { sequelize } = require("../models");
 const pageController = require("../controllers/page.controller");
 const userController = require("../controllers/user.controller");
 const userService = require("../services/user.service");
+const scoreController = require('../controllers/score.controller');
 
 router.get("/change-password", (req, res) => {
   res.render("pages/change-password", {
@@ -49,28 +50,10 @@ router.post("/change-password", async (req, res) => {
   });
 });
 
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, path.join(__dirname, "../uploads/"));
-  },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    cb(null, "csv-" + uniqueSuffix + path.extname(file.originalname));
-  },
-});
-
+// Multer setup: use memory storage so we can parse file buffer directly
 const upload = multer({
-  storage: storage,
-  fileFilter: function (req, file, cb) {
-    if (path.extname(file.originalname).toLowerCase() === ".csv") {
-      cb(null, true);
-    } else {
-      cb(new Error("Chỉ chấp nhận file CSV"));
-    }
-  },
-  limits: {
-    fileSize: 5 * 1024 * 1024,
-  },
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB limit
 });
 
 const requireLogin = (req, res, next) => {
@@ -97,16 +80,13 @@ const normalizeRole = (rawRole) => {
     "ban giám hiệu": "BGH",
     "ban giam hieu": "BGH",
 
-    // Giáo vụ
-    "giaovu": "GiaoVu",
-    "giáo vụ": "GiaoVu",
-    "giao vu": "GiaoVu",
-
     // Giáo viên
     "giaovien": "GiaoVien",
     "giáo viên": "GiaoVien",
     "giao vien": "GiaoVien",
     "teacher": "GiaoVien",
+
+    
 
     // Học sinh
     "hocsinh": "HocSinh",
@@ -117,6 +97,10 @@ const normalizeRole = (rawRole) => {
 
   return mapping[r] || rawRole.toString().trim();
 };
+
+// Score routes (must be registered after helpers are defined)
+router.get("/scoretable", requireLogin, scoreController.showScoreTable);
+router.post('/scoretable/import', requireLogin, upload.single('scoreFile'), scoreController.importScores);
 
 const allowRoles = (roles) => {
   return (req, res, next) => {
@@ -853,218 +837,7 @@ router.post(
     }
   }
 );
-router.get(
-  "/scoretable",
-  requireLogin,
-  allowRoles(allRoles),  
-  async (req, res) => {
-    try {
-      const role = getRole(req);
-      const username = req.session.user.username;
 
-      const canEditScore = role === "GiaoVu" || role === "GiaoVien";
-      const canEditAll   = role === "GiaoVu"; 
-
-      let teacherSubject = null;
-      let teacherClasses = [];
-
-      if (role === "GiaoVien") {
-        const [gvRows] = await sequelize.query(
-          `
-          SELECT MaGiaoVien, MaMonGiangDay
-          FROM GiaoVien
-          WHERE MaGiaoVien = ? OR Email = ?
-          LIMIT 1;
-          `,
-          { replacements: [username, username] }
-        );
-
-        const gvInfo = gvRows[0] || {};
-        const teacherId = gvInfo.MaGiaoVien || username;  
-        teacherSubject = gvInfo.MaMonGiangDay || null;
-
-        const [classRows] = await sequelize.query(
-          `
-          SELECT DISTINCT MaLop
-          FROM ThoiKhoaBieu
-          WHERE MaGiaoVien = ?;
-          `,
-          { replacements: [teacherId] }
-        );
-        teacherClasses = classRows.map(r => r.MaLop);
-      }
-
-      const [namHocs] = await sequelize.query(
-        "SELECT MaNamHoc FROM NamHoc ORDER BY MaNamHoc DESC;"
-      );
-
-      const [subjects] = await sequelize.query(
-        "SELECT MaMonHoc, TenMonHoc FROM MonHoc ORDER BY TenMonHoc ASC;"
-      );
-
-      let scoresRaw = [];
-
-      if (role === "HocSinh") {
-        const [rows] = await sequelize.query(
-          `
-          SELECT
-            b.MaDiem,
-            hs.MaHocSinh,
-            hs.HoTen,
-            hs.MaLop,
-            tkb.MaMonHoc,
-            m.TenMonHoc,
-            b.HocKy,
-            b.NamHoc,
-            b.Diem15Phut AS Diem15Phut,
-            b.Diem1Tiet,
-            b.DiemTBMon  AS DiemTBMon,
-            b.DanhGia
-          FROM ThoiKhoaBieu tkb
-          JOIN HoSoHocSinh hs ON hs.MaLop = tkb.MaLop
-          JOIN MonHoc m       ON m.MaMonHoc = tkb.MaMonHoc
-          LEFT JOIN BangDiemMonHoc b
-                ON b.MaHocSinh = hs.MaHocSinh
-                AND b.MaMonHoc  = tkb.MaMonHoc
-          WHERE hs.MaHocSinh = ?
-          GROUP BY hs.MaHocSinh, hs.HoTen, hs.MaLop, tkb.MaMonHoc, m.TenMonHoc,
-                  b.MaDiem, b.HocKy, b.NamHoc, b.Diem15Phut, b.Diem1Tiet, b.DiemTBMon, b.DanhGia
-          ORDER BY hs.MaLop, hs.HoTen, tkb.MaMonHoc;
-          `,
-          { replacements: [username] }
-        );
-        scoresRaw = rows;
-      } else {
-        const [rows] = await sequelize.query(`
-          SELECT
-            b.MaDiem,
-            hs.MaHocSinh,
-            hs.HoTen,
-            hs.MaLop,
-            tkb.MaMonHoc,
-            m.TenMonHoc,
-            b.HocKy,
-            b.NamHoc,
-            b.Diem15Phut AS Diem15Phut,
-            b.Diem1Tiet,
-            b.DiemTBMon  AS DiemTBMon,
-            b.DanhGia
-          FROM ThoiKhoaBieu tkb
-          JOIN HoSoHocSinh hs ON hs.MaLop = tkb.MaLop
-          JOIN MonHoc m       ON m.MaMonHoc = tkb.MaMonHoc
-          LEFT JOIN BangDiemMonHoc b
-                ON b.MaHocSinh = hs.MaHocSinh
-                AND b.MaMonHoc  = tkb.MaMonHoc
-          GROUP BY hs.MaHocSinh, hs.HoTen, hs.MaLop, tkb.MaMonHoc, m.TenMonHoc,
-                  b.MaDiem, b.HocKy, b.NamHoc, b.Diem15Phut, b.Diem1Tiet, b.DiemTBMon, b.DanhGia
-          ORDER BY hs.MaLop, hs.HoTen, tkb.MaMonHoc;
-        `);
-        scoresRaw = rows;
-      }
-
-
-      let scores = scoresRaw;
-      if (role === "HocSinh") {
-        scores = scoresRaw.filter(r => r.MaHocSinh === username);
-      }
-
-
-      const summaryMap = new Map();
-
-      for (const row of scoresRaw) {
-        if (!row.MaHocSinh) continue;
-
-        const namHocKey = row.NamHoc || ""; 
-        const key = `${row.MaHocSinh}__${namHocKey}`;
-
-        if (!summaryMap.has(key)) {
-          summaryMap.set(key, {
-            MaHocSinh: row.MaHocSinh,
-            HoTen    : row.HoTen,
-            MaLop    : row.MaLop,
-            NamHoc   : row.NamHoc || "", 
-            _hk1: { sum: 0, count: 0 },
-            _hk2: { sum: 0, count: 0 },
-          });
-        }
-        const rec = summaryMap.get(key);
-
-        if (row.DiemTBMon != null) {
-          if (row.HocKy === 1 || row.HocKy === "1") {
-            rec._hk1.sum   += row.DiemTBMon;
-            rec._hk1.count += 1;
-          } else if (row.HocKy === 2 || row.HocKy === "2") {
-            rec._hk2.sum   += row.DiemTBMon;
-            rec._hk2.count += 1;
-          }
-        }
-      }
-
-      let studentAveragesAll = [];
-      for (const rec of summaryMap.values()) {
-        const tb1 = rec._hk1.count ? rec._hk1.sum / rec._hk1.count : null;
-        const tb2 = rec._hk2.count ? rec._hk2.sum / rec._hk2.count : null;
-
-        let caNam = null;
-        if (tb1 != null && tb2 != null) {
-          caNam = (tb1 + tb2 * 2) / 3;
-        } else if (tb1 != null) {
-          caNam = tb1;
-        } else if (tb2 != null) {
-          caNam = tb2;
-        }
-
-        let xepLoai = null;
-        if (caNam != null) {
-          if (caNam >= 8) xepLoai = "Giỏi";
-          else if (caNam >= 6.5) xepLoai = "Khá";
-          else if (caNam >= 5) xepLoai = "Trung bình";
-          else xepLoai = "Yếu";
-        }
-
-        studentAveragesAll.push({
-          MaHocSinh: rec.MaHocSinh,
-          HoTen    : rec.HoTen,
-          MaLop    : rec.MaLop,
-          NamHoc   : rec.NamHoc,
-          TBHK1    : tb1,
-          TBHK2    : tb2,
-          CaNam    : caNam,
-          XepLoai  : xepLoai,
-          HanhKiem : null, 
-        });
-      }
-      let studentAverages = studentAveragesAll;
-      if (role === "HocSinh") {
-        studentAverages = studentAveragesAll.filter(
-          s => s.MaHocSinh === username
-        );
-      }
-
-      console.log("DEBUG /scoretable -> role =", role, "username =", username);
-      console.log("DEBUG /scoretable -> scores length =", scores.length);
-      console.log("DEBUG /scoretable -> studentAverages length =", studentAverages.length);
-
-      res.render("pages/scoretable", {
-        title: "Bảng điểm",
-        user: req.session.user,
-        scores,
-        namHocs,
-        subjects,
-        studentAverages,
-        permissions: {
-          canEditScore,
-          canEditAll,
-          teacherSubject,
-          teacherClasses,
-        },
-      });
-    } catch (err) {
-      console.error("Lỗi /scoretable:", err);
-      res.status(500).send("Không tải được bảng điểm.");
-    }
-  }
-);
 
 router.get(
   "/report",

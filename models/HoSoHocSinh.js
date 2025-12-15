@@ -1,6 +1,7 @@
 const { DataTypes } = require("sequelize");
 const sequelize = require("../config/db");
 const LopHoc = require("./LopHoc");
+const BangDiemMonHoc = require('./BangDiemMonHoc');
 
 const HoSoHocSinh = sequelize.define("HoSoHocSinh", {
   MaHocSinh: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
@@ -11,11 +12,13 @@ const HoSoHocSinh = sequelize.define("HoSoHocSinh", {
   Email: { type: DataTypes.STRING },
   MaLop: { type: DataTypes.STRING, allowNull: false }
 }, {
-  freezeTableName: true,
+  tableName: 'HoSoHocSinh', 
+  freezeTableName: true, 
   timestamps: false
 });
 
 LopHoc.hasMany(HoSoHocSinh, { foreignKey: "MaLop" });
 HoSoHocSinh.belongsTo(LopHoc, { foreignKey: "MaLop" });
+BangDiemMonHoc.belongsTo(HoSoHocSinh, { foreignKey: 'MaHocSinh' });
 
 module.exports = HoSoHocSinh;

@@ -9,7 +9,8 @@ const ThoiKhoaBieu = sequelize.define("ThoiKhoaBieu", {
   MaMonHoc: { type: DataTypes.STRING, allowNull: false },
   MaGiaoVien: { type: DataTypes.INTEGER, allowNull: false }
 }, {
-  freezeTableName: true,
+  tableName: 'ThoiKhoaBieu', 
+  freezeTableName: true, 
   timestamps: false
 });
 
