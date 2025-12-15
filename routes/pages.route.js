@@ -1,6 +1,13 @@
 const express = require("express");
 const router = express.Router();
 const scoreController = require('../controllers/score.controller');
+const multer = require('multer');
+
+// Multer setup: use memory storage so we can parse file buffer directly
+const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB limit
+});
 
 // Middleware kiểm tra login tạm thời (sau này bạn có thể thay bằng session)
 const requireLogin = (req, res, next) => {
@@ -32,6 +39,9 @@ router.get("/report", requireLogin, (req, res) => {
 });
 
 router.get("/scoretable", requireLogin, scoreController.showScoreTable);
+
+// Import scores from Excel (sheet with required 9 columns)
+router.post('/scoretable/import', requireLogin, upload.single('scoreFile'), scoreController.importScores);
 
 router.get("/timetable", requireLogin, (req, res) => {
      res.render("pages/timetable", { title: "Thời khóa biểu" });

@@ -150,6 +150,13 @@
                                 <% }); %>
                             </select>
                         </div>
+                        <div class="class-info-item" style="display:flex; align-items:center; gap:8px;">
+                            <button class="btn btn-sm" id="btn-import-excel">Import Excel</button>
+                            <small style="font-size:12px; color:#666;">(File Excel 9 cột: HoTen, HocKy, Namhoc, MonHoc, Diem15p, Diem1Tiet, DiemCK, DiemTBM, DanhGia)</small>
+                            <form id="frm-import" action="/scoretable/import" method="post" enctype="multipart/form-data" style="display:none;">
+                                <input type="file" name="scoreFile" id="scoreFile" accept=".xls,.xlsx" />
+                            </form>
+                        </div>
                     </div>
                 </section>
                 <section class="card">
@@ -168,19 +175,25 @@
                             </thead>
                             <tbody>
                                 <% // Dữ liệu D6 (Danh sách điểm môn học chi tiết) %>
-                                <% subjectScores.forEach((score, index) => { %>
-                                <tr>
-                                    <td class="text-center"><%= index + 1 %></td>
-                                    <td><%= score.HoTen %></td>
-                                    <td class="score-cell"><span class="score score-<%= score.Diem15p_Style %>"><%= score.Diem15p.toFixed(1) %></span></td>
-                                    <td class="score-cell"><span class="score score-<%= score.Diem1Tiet_Style %>"><%= score.Diem1Tiet.toFixed(1) %></span></td>
-                                    <td class="score-cell"><span class="score score-<%= score.DiemCK_Style %>"><%= score.DiemCK.toFixed(1) %></span></td>
-                                    <td class="score-cell"><span class="score score-<%= score.DiemTB_Style %>"><%= score.DiemTB.toFixed(1) %></span></td>
-                                    <td class="action-cell">
-                                        <button class="btn btn-sm btn-ghost" onclick="openEditModal(<%= score.MaHocSinh %>)">Sửa</button>
-                                    </td>
-                                </tr>
-                                <% }); %>
+                                <% if (subjectScores && subjectScores.length > 0) { %>
+                                    <% subjectScores.forEach((score, index) => { %>
+                                    <tr>
+                                        <td class="text-center"><%= index + 1 %></td>
+                                        <td><%= score.HoTen %></td>
+                                        <td class="score-cell"><span class="score score-<%= score.Diem15p_Style %>"><%= (typeof score.Diem15p === 'number') ? score.Diem15p.toFixed(1) : '0.0' %></span></td>
+                                        <td class="score-cell"><span class="score score-<%= score.Diem1Tiet_Style %>"><%= (typeof score.Diem1Tiet === 'number') ? score.Diem1Tiet.toFixed(1) : '0.0' %></span></td>
+                                        <td class="score-cell"><span class="score score-<%= score.DiemCK_Style %>"><%= (typeof score.DiemCK === 'number') ? score.DiemCK.toFixed(1) : '0.0' %></span></td>
+                                        <td class="score-cell"><span class="score score-<%= score.DiemTB_Style %>"><%= (typeof score.DiemTB === 'number') ? score.DiemTB.toFixed(1) : '0.0' %></span></td>
+                                        <td class="action-cell">
+                                            <button class="btn btn-sm btn-ghost" onclick="openEditModal(<%= score.MaHocSinh %>)">Sửa</button>
+                                        </td>
+                                    </tr>
+                                    <% }); %>
+                                <% } else { %>
+                                    <tr>
+                                        <td colspan="7" class="text-center">Không có học sinh cho Năm học / Học kỳ này hoặc chưa có dữ liệu môn học.</td>
+                                    </tr>
+                                <% } %>
                             </tbody>
                         </table>
                     </div>
@@ -255,6 +268,21 @@
         function openEditModal(studentId) {
             alert(`Mở modal sửa điểm cho Học sinh ID: ${studentId}. Sau này sẽ dùng AJAX POST để gửi D1 về server.`);
         }
+
+        // Import Excel button logic
+        document.getElementById('btn-import-excel') && document.getElementById('btn-import-excel').addEventListener('click', (e) => {
+            e.preventDefault();
+            document.getElementById('scoreFile').click();
+        });
+        document.getElementById('scoreFile') && document.getElementById('scoreFile').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            if (!confirm(`Bạn có chắc muốn import tệp '${file.name}' không?`)) {
+                e.target.value = '';
+                return;
+            }
+            document.getElementById('frm-import').submit();
+        });
     </script>
 </body>
 </html>

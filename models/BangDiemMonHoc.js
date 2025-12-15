@@ -9,6 +9,7 @@ const BangDiemMonHoc = sequelize.define("BangDiemMonHoc", {
   NamHoc: { type: DataTypes.STRING, allowNull: false },
   Diem15Phut: { type: DataTypes.REAL },
   Diem1Tiet: { type: DataTypes.REAL },
+  DiemCK: { type: DataTypes.REAL },
   DiemTBMon: { type: DataTypes.REAL },
   DanhGia: { type: DataTypes.STRING }
 }

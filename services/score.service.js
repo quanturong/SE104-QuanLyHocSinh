@@ -143,49 +143,62 @@ exports.getStudentsOverview = async (year) => {
  * Lấy danh sách điểm chi tiết theo môn học, năm học và kỳ học từ bảng BangDiemMonHoc
  */
 exports.getSubjectScores = async (year, semester, subjectId) => {
-    if (!year || !semester || !subjectId) return []; 
+    // Nếu thiếu tham số thì trả về mảng rỗng
+    if (!year || !semester || !subjectId) return [];
 
     try {
-        // 1. Truy vấn trực tiếp bảng BangDiemMonHoc
-        const rawScores = await BangDiemMonHoc.findAll({ 
-            attributes: ['MaHocSinh', 'Diem15Phut', 'Diem1Tiet', 'DiemTBMon'],
-            where: {
-                NamHoc: year,       
-                HocKy: semester,    
-                MaMonHoc: subjectId, // Sử dụng MaMonHoc
-            },
-            include: [
-                { 
-                    model: HoSoHocSinh, 
-                    attributes: ['MaHocSinh', 'HoTen'] 
-                }
-            ],
+        // 1. Lấy danh sách MaHocSinh xuất hiện trong năm & kỳ (những học sinh có ít nhất 1 bản ghi trong năm/kỳ)
+        const studentsInTerm = await BangDiemMonHoc.findAll({
+            attributes: ['MaHocSinh'],
+            where: { NamHoc: year, HocKy: semester },
+            group: ['MaHocSinh'],
             raw: true,
-            nest: true, 
-            order: [[HoSoHocSinh, 'HoTen', 'ASC']],
         });
 
-        // 2. Định dạng lại dữ liệu
-        const finalScores = rawScores.map(record => {
-            
-            // Xử lý Diem15Phut và Diem1Tiet (nếu null thì coi là 0)
-            const Diem15p = record.Diem15Phut !== null ? record.Diem15Phut : 0;
-            const Diem1Tiet = record.Diem1Tiet !== null ? record.Diem1Tiet : 0;
-            const DiemTB = record.DiemTBMon !== null ? record.DiemTBMon : 0;
-            
+        const studentIds = studentsInTerm.map(r => r.MaHocSinh);
+
+        // Nếu không có học sinh cho năm/kỳ này thì trả về mảng rỗng
+        if (studentIds.length === 0) return [];
+
+        // 2. Lấy thông tin học sinh (tên, id) và sắp xếp theo họ tên
+        const students = await HoSoHocSinh.findAll({
+            where: { MaHocSinh: studentIds },
+            attributes: ['MaHocSinh', 'HoTen', 'MaLop'],
+            raw: true,
+            order: [['HoTen', 'ASC']],
+        });
+
+        // 3. Lấy các bản ghi điểm thực tế cho môn được chọn (nếu có)
+        const records = await BangDiemMonHoc.findAll({
+            where: { NamHoc: year, HocKy: semester, MaMonHoc: subjectId },
+            attributes: ['MaHocSinh', 'Diem15Phut', 'Diem1Tiet', 'DiemCK', 'DiemTBMon'],
+            raw: true,
+        });
+
+        const recMap = {};
+        records.forEach(r => { recMap[r.MaHocSinh] = r; });
+
+        // 4. Tạo bảng kết quả đảm bảo mỗi học sinh đều có một dòng (nếu thiếu điểm -> 0)
+        const finalScores = students.map(s => {
+            const rec = recMap[s.MaHocSinh];
+
+            const Diem15p = rec && rec.Diem15Phut !== null ? rec.Diem15Phut : 0;
+            const Diem1Tiet = rec && rec.Diem1Tiet !== null ? rec.Diem1Tiet : 0;
+            const DiemTB = rec && rec.DiemTBMon !== null ? rec.DiemTBMon : 0;
+            const DiemCK = rec && rec.DiemCK !== null ? rec.DiemCK : 0; 
+
             return {
-                MaHocSinh: record.HocSinh.MaHocSinh,
-                HoTen: record.HoSoHocSinh.HoTen,
-                
+                MaHocSinh: s.MaHocSinh,
+                HoTen: s.HoTen,
+
                 Diem15p: parseFloat(Diem15p.toFixed(1)),
                 Diem1Tiet: parseFloat(Diem1Tiet.toFixed(1)),
-                DiemCK: null, // Không có DiemCK trong Model mới
+                DiemCK: parseFloat(DiemCK.toFixed(1)),
                 DiemTB: parseFloat(DiemTB.toFixed(1)),
-                
-                // Styles
+
                 Diem15p_Style: getScoreStyle(Diem15p),
                 Diem1Tiet_Style: getScoreStyle(Diem1Tiet),
-                DiemCK_Style: getScoreStyle(null), // Mặc định không có style
+                DiemCK_Style: getScoreStyle(DiemCK),
                 DiemTB_Style: getScoreStyle(DiemTB),
             };
         });
