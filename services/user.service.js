@@ -69,7 +69,19 @@ class UserService {
     return true;
   }
 
+  async updateUserRole(username, vaiTro) {
+    const validRoles = ["Admin", "BGH", "GiaoVu", "GiaoVien", "HocSinh"];
+    if (!validRoles.includes(vaiTro)) {
+      throw new Error("Vai trò không hợp lệ");
+    }
 
+    const user = await nguoiDungRepository.findByUsername(username);
+    if (!user) {
+      throw new Error("Không tìm thấy người dùng");
+    }
+
+    return await nguoiDungRepository.update(user.MaNguoiDung, { VaiTro: vaiTro });
+  }
 }
 
 module.exports = new UserService();

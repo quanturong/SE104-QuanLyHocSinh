@@ -36,10 +36,12 @@
           <a class="<%= title === 'Báo cáo' ? 'active' : '' %>" href="/report">
             Báo cáo
           </a>
-          <a class="<%= title === 'Bảng điểm' ? 'active' : '' %>" href="/scoretable">
-            Điểm số
-          </a>
-          <a class="<%= title === 'Tra cứu hồ sơ học sinh' ? 'active' : '' %>" href="/find">
+        <% } %>
+        <a class="<%= title === 'Bảng điểm' ? 'active' : '' %>" href="/scoretable">
+          Điểm số
+        </a>
+        <% if (role !== 'HocSinh') { %>
+          <a class="<%= title === 'Tra cứu' ? 'active' : '' %>" href="/find">
             Tra cứu
           </a>
         <% } %>
@@ -49,6 +51,11 @@
         <a class="<%= title === 'Danh sách giáo viên' ? 'active' : '' %>" href="/teacher">
           Giáo viên
         </a>
+        <% if (role === 'Admin' || role === 'BGH' || role === 'GiaoVu') { %>
+          <a class="<%= title === 'Quản lý môn học' ? 'active' : '' %>" href="/subject">
+            📚 Môn học
+          </a>
+        <% } %>
         <a class="<%= title === 'Quy định' ? 'active' : '' %>" href="/rules">
           Quy định
         </a>
@@ -63,16 +70,15 @@
     </aside>
 
     <main class="main">
+      <!-- Include notification modal -->
+      <%- include('../partials/notification-modal') %>
+
       <!-- Overlay thêm học sinh -->
       <div id="student-overlay" class="sp-overlay" style="display:none;">
         <div class="sp-modal">
           <h2 class="sp-title">Thêm học sinh</h2>
 
           <form class="sp-form" method="POST" action="/student">
-            <div class="sp-field">
-              <label>Mã học sinh</label>
-              <input name="MaHocSinh" id="editMaHocSinh" required />
-            </div>
             <div class="sp-field">
               <label>Họ tên</label>
               <input name="HoTen" placeholder="VD: Nguyễn Văn A" required />
@@ -122,11 +128,8 @@
           <h2 class="sp-title">Sửa học sinh</h2>
 
           <form class="sp-form" method="POST" action="/student/edit">
-            <div class="sp-field">
-              <label>Mã học sinh</label>
-              <input name="MaHocSinh" id="editMaHocSinh" required />
-
-            </div>
+            <input type="hidden" name="OldMaHocSinh" id="oldMaHocSinh" />
+            <input type="hidden" name="MaHocSinh" id="editMaHocSinh" />
 
             <div class="sp-field">
               <label>Họ tên</label>

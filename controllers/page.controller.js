@@ -195,12 +195,31 @@ class PageController {
         LEFT JOIN HoSoHocSinh hs ON d.MaHocSinh = hs.MaHocSinh;
       `);
 
+      const [teachers] = await sequelize.query(`
+        SELECT gv.MaGiaoVien, gv.HoTen, gv.GioiTinh, gv.NgaySinh,
+               gv.DiaChi, gv.Email, gv.MaMonGiangDay,
+               mh.TenMonHoc
+        FROM GiaoVien gv
+        LEFT JOIN MonHoc mh ON gv.MaMonGiangDay = mh.MaMonHoc
+        ORDER BY gv.HoTen;
+      `);
+
+      const [timetables] = await sequelize.query(`
+        SELECT t.MaLop, t.Thu, t.TietHoc, t.MaMonHoc, t.MaGiaoVien,
+               m.TenMonHoc
+        FROM ThoiKhoaBieu t
+        LEFT JOIN MonHoc m ON t.MaMonHoc = m.MaMonHoc
+        ORDER BY t.MaLop, t.Thu, t.TietHoc;
+      `);
+
       res.render("pages/find", {
-        title: "Tra cứu hồ sơ học sinh",
+        title: "Tra cứu",
         user: req.session.user,
         students,
         scores,
         attendances,
+        teachers,
+        timetables,
       });
     } catch (err) {
       console.error("Lỗi /find:", err);
@@ -210,11 +229,8 @@ class PageController {
 
   async showRulesPage(req, res) {
     try {
-      const [rules] = await sequelize.query(`
-        SELECT TenQuyDinh, GiaTri
-        FROM ThongSoQuyDinh
-        ORDER BY TenQuyDinh ASC;
-      `);
+      const quyDinhService = require("../services/quydinh.service");
+      const rules = await quyDinhService.getAllQuyDinh();
 
       const role = (req.session?.user?.role || "").trim();
       const canEditRules = role === "Admin" || role === "BGH";
@@ -230,6 +246,18 @@ class PageController {
     } catch (err) {
       console.error("Lỗi /rules:", err);
       res.status(500).send("Không tải được thông số quy định.");
+    }
+  }
+
+  async updateRule(req, res) {
+    try {
+      const quyDinhService = require("../services/quydinh.service");
+      const { TenQuyDinh, GiaTri } = req.body;
+      await quyDinhService.updateQuyDinh({ TenQuyDinh, GiaTri });
+      return res.redirect("/rules");
+    } catch (err) {
+      console.error("Lỗi updateRule:", err);
+      return res.status(400).send(err.message || "Không cập nhật được quy định");
     }
   }
   async viewClassStudents(req, res) {

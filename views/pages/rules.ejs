@@ -75,7 +75,7 @@
             Điểm số
           </a>
         <% if (role !== 'HocSinh') { %>
-          <a class="<%= title === 'Tra cứu hồ sơ học sinh' ? 'active' : '' %>" href="/find">
+          <a class="<%= title === 'Tra cứu' ? 'active' : '' %>" href="/find">
             Tra cứu
           </a>
         <% } %>
@@ -86,6 +86,11 @@
         <a class="<%= title === 'Danh sách giáo viên' ? 'active' : '' %>" href="/teacher">
           Giáo viên
         </a>
+        <% if (role === 'Admin' || role === 'BGH' || role === 'GiaoVu') { %>
+          <a class="<%= title === 'Quản lý môn học' ? 'active' : '' %>" href="/subject">
+            📚 Môn học
+          </a>
+        <% } %>
         <a class="<%= title === 'Quy định' ? 'active' : '' %>" href="/rules">
           Quy định
         </a>
@@ -102,6 +107,92 @@
 
     <main class="main">
       <div class="page-header">
+        <h1 class="page-title">Quy định</h1>
+        <p class="page-desc">Quy định dành cho giáo viên và thông số quy định hệ thống.</p>
+      </div>
+
+      <% if (permissions && permissions.canEditRules) { %>
+        <section class="card" style="margin-bottom: 16px;">
+          <h2 style="margin-bottom: 16px; font-size: 18px;">Thông số quy định</h2>
+          <div class="table-wrap" style="overflow:auto; max-height:400px;">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th style="width:300px;">TÊN QUY ĐỊNH</th>
+                  <th style="width:150px;">GIÁ TRỊ</th>
+                  <th style="width:150px;">THAO TÁC</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% if (rules && rules.length) { %>
+                  <% rules.forEach(function(rule) { %>
+                    <tr>
+                      <td><strong><%= rule.TenQuyDinh %></strong></td>
+                      <td><%= rule.GiaTri %></td>
+                      <td>
+                        <button class="btn btn-sm btn-edit-rule" 
+                                data-ten="<%= rule.TenQuyDinh %>" 
+                                data-giatri="<%= rule.GiaTri %>">
+                          Sửa
+                        </button>
+                      </td>
+                    </tr>
+                  <% }) %>
+                <% } else { %>
+                  <tr>
+                    <td colspan="3" class="text-center muted">Chưa có thông số quy định.</td>
+                  </tr>
+                <% } %>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Modal sửa quy định -->
+        <div id="modal-edit-rule-value" class="sp-overlay" style="display:none;">
+          <div class="sp-modal">
+            <h2 class="sp-title">Sửa giá trị quy định</h2>
+            <form class="sp-form" method="POST" action="/rules/update">
+              <input type="hidden" name="TenQuyDinh" id="edit-rule-ten" />
+              <div class="sp-field">
+                <label>Tên quy định</label>
+                <input type="text" id="edit-rule-ten-display" readonly style="background:#f1f5f9; cursor:not-allowed;" />
+              </div>
+              <div class="sp-field">
+                <label>Giá trị</label>
+                <input type="number" name="GiaTri" id="edit-rule-giatri" step="0.01" required />
+              </div>
+              <div class="sp-actions">
+                <button type="button" class="sp-btn sp-btn--ghost" onclick="closeEditRuleValueModal()">Đóng</button>
+                <button type="submit" class="sp-btn">Lưu thay đổi</button>
+              </div>
+            </form>
+          </div>
+        </div>
+        <script>
+          function openEditRuleValueModal(ten, giatri) {
+            document.getElementById('edit-rule-ten').value = ten;
+            document.getElementById('edit-rule-ten-display').value = ten;
+            document.getElementById('edit-rule-giatri').value = giatri;
+            document.getElementById('modal-edit-rule-value').style.display = 'grid';
+          }
+          function closeEditRuleValueModal() {
+            document.getElementById('modal-edit-rule-value').style.display = 'none';
+          }
+          document.querySelectorAll('.btn-edit-rule').forEach(btn => {
+            btn.addEventListener('click', function() {
+              const ten = this.getAttribute('data-ten');
+              const giatri = this.getAttribute('data-giatri');
+              openEditRuleValueModal(ten, giatri);
+            });
+          });
+          document.getElementById('modal-edit-rule-value')?.addEventListener('click', e => {
+            if (e.target.id === 'modal-edit-rule-value') closeEditRuleValueModal();
+          });
+        </script>
+      <% } %>
+
+      <div class="page-header" style="margin-top: 32px;">
         <h1 class="page-title">Quy định dành cho giáo viên</h1>
         <p class="page-desc">Áp dụng trong toàn trường. Mọi giáo viên cần đọc kỹ, tuân thủ và ký cam kết.</p>
       </div>

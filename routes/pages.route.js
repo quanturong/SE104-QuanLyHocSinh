@@ -338,6 +338,9 @@ router.get(
       const role = getRole(req);
       const canManageStudents = role === "Admin" || role === "GiaoVu";
 
+      const error = req.query.error || null;
+      const success = req.query.success || null;
+
       res.render("pages/student", {
         title: "Danh sách học sinh",
         user: req.session.user,
@@ -346,6 +349,8 @@ router.get(
         permissions: {
           canManageStudents,
         },
+        error: error,
+        success: success,
       });
     } catch (err) {
       console.error("Lỗi /student:", err);
@@ -361,7 +366,7 @@ router.post(
   allowRoles(staffRoles),
   async (req, res) => {
     try {
-      const { MaHocSinh, HoTen, GioiTinh, NgaySinh, DiaChi, Email, MaLop } = req.body;
+      const { HoTen, GioiTinh, NgaySinh, DiaChi, Email, MaLop } = req.body;
       const birth = new Date(NgaySinh);
       const now   = new Date();
       let age = now.getFullYear() - birth.getFullYear();
@@ -370,7 +375,7 @@ router.post(
         age--;
       }
       if (age < 15 || age > 20) {
-        return res.status(400).send("Tuổi học sinh phải từ 15 đến 20.");
+        return res.redirect("/student?error=" + encodeURIComponent("Tuổi học sinh phải từ 15 đến 20."));
       }
 
       const [[{ SoHS }]] = await sequelize.query(
@@ -378,21 +383,18 @@ router.post(
         { replacements: [MaLop] }
       );
       if (SoHS >= 40) {
-        return res
-          .status(400)
-          .send("Lớp này đã đủ sĩ số tối đa 40 học sinh. Vui lòng chọn lớp khác.");
+        return res.redirect("/student?error=" + encodeURIComponent("Lớp này đã đủ sĩ số tối đa 40 học sinh. Vui lòng chọn lớp khác."));
       }
 
-      // INSERT học sinh
+      // INSERT học sinh (MaHocSinh sẽ được tự động tạo bởi database)
       await sequelize.query(
         `
         INSERT INTO HoSoHocSinh
-          (MaHocSinh, HoTen, GioiTinh, NgaySinh, DiaChi, Email, MaLop)
-        VALUES (?, ?, ?, ?, ?, ?, ?);
+          (HoTen, GioiTinh, NgaySinh, DiaChi, Email, MaLop)
+        VALUES (?, ?, ?, ?, ?, ?);
         `,
         {
           replacements: [
-            MaHocSinh,
             HoTen,
             GioiTinh,
             NgaySinh,
@@ -413,10 +415,10 @@ router.post(
         { replacements: [MaLop, MaLop] }
       );
 
-      return res.redirect("/student");
+      return res.redirect("/student?success=" + encodeURIComponent("Thêm học sinh thành công."));
     } catch (err) {
       console.error("Lỗi POST /student:", err);
-      return res.status(500).send("Không thêm được học sinh mới.");
+      return res.redirect("/student?error=" + encodeURIComponent("Không thêm được học sinh mới: " + (err.message || "Lỗi không xác định")));
     }
   }
 );
@@ -487,7 +489,7 @@ router.post(
         age--;
       }
       if (age < 15 || age > 20) {
-        return res.status(400).send("Tuổi học sinh phải từ 15 đến 20.");
+        return res.redirect("/student?error=" + encodeURIComponent("Tuổi học sinh phải từ 15 đến 20."));
       }
       if (OldMaHocSinh !== MaHocSinh) {
         const [[existing]] = await sequelize.query(
@@ -496,7 +498,7 @@ router.post(
         );
         
         if (existing.cnt > 0) {
-          return res.status(400).send(`Mã học sinh "${MaHocSinh}" đã tồn tại. Vui lòng chọn mã khác.`);
+          return res.redirect("/student?error=" + encodeURIComponent(`Mã học sinh "${MaHocSinh}" đã tồn tại. Vui lòng chọn mã khác.`));
         }
       }
 
@@ -551,7 +553,7 @@ router.post(
         await sequelize.query('COMMIT;');
         
         console.log('Sửa học sinh và cập nhật sĩ số thành công!');
-        return res.redirect("/student");
+        return res.redirect("/student?success=" + encodeURIComponent("Sửa thông tin học sinh thành công."));
         
       } catch (err) {
         await sequelize.query('ROLLBACK;');
@@ -560,7 +562,10 @@ router.post(
 
     } catch (err) {
       console.error("Lỗi POST /student/edit:", err);
-      return res.status(500).send("Không sửa được học sinh: " + err.message);
+      const errorMsg = err.message || "Không sửa được học sinh";
+      // Bỏ phần (QĐ1), (QĐ2) nếu có
+      const cleanErrorMsg = errorMsg.replace(/\s*\(QĐ\d+\)\.?/g, '');
+      return res.redirect("/student?error=" + encodeURIComponent(cleanErrorMsg));
     }
   }
 );
@@ -615,44 +620,34 @@ router.get(
   allowRoles(staffRoles),
   pageController.viewClassStudents
 );
+const giaoVienController = require("../controllers/giaovien.controller");
+
 router.get(
   "/teacher",
   requireLogin,
-   allowRoles(allRoles),
-  async (req, res) => {
-    try {
-      const [teachers] = await sequelize.query(`
-        SELECT gv.MaGiaoVien, gv.HoTen, gv.GioiTinh, gv.NgaySinh,
-               gv.DiaChi, gv.Email, gv.MaMonGiangDay,
-               mh.TenMonHoc
-        FROM GiaoVien gv
-        LEFT JOIN MonHoc mh ON gv.MaMonGiangDay = mh.MaMonHoc
-        ORDER BY gv.MaGiaoVien ASC;
-      `);
+  allowRoles(allRoles),
+  (req, res) => giaoVienController.showTeacherPage(req, res)
+);
 
-      const [subjects] = await sequelize.query(`
-        SELECT MaMonHoc, TenMonHoc
-        FROM MonHoc
-        ORDER BY TenMonHoc ASC;
-      `);
+router.post(
+  "/teacher",
+  requireLogin,
+  allowRoles(["Admin", "BGH"]),
+  (req, res) => giaoVienController.createTeacher(req, res)
+);
 
-      const role = getRole(req);
-      const canManageTeachers = role === "Admin" || role === "BGH";
+router.post(
+  "/teacher/edit",
+  requireLogin,
+  allowRoles(["Admin", "BGH"]),
+  (req, res) => giaoVienController.updateTeacher(req, res)
+);
 
-      res.render("pages/teacher", {
-        title: "Danh sách giáo viên",
-        user: req.session.user,
-        teachers,
-        subjects,
-        permissions: {
-          canManageTeachers,
-        },
-      });
-    } catch (err) {
-      console.error("Lỗi /teacher:", err);
-      res.status(500).send("Không tải được danh sách giáo viên.");
-    }
-  }
+router.post(
+  "/teacher/delete",
+  requireLogin,
+  allowRoles(["Admin", "BGH"]),
+  (req, res) => giaoVienController.deleteTeacher(req, res)
 );
 
 
@@ -1121,6 +1116,13 @@ router.get(
   (req, res) => pageController.showRulesPage(req, res)
 );
 
+router.post(
+  "/rules/update",
+  requireLogin,
+  allowRoles(["Admin", "BGH"]),
+  (req, res) => pageController.updateRule(req, res)
+);
+
 
 router.get(
   "/find",
@@ -1133,5 +1135,82 @@ router.get("/create-user", requireLogin, requireAdmin, (req, res) => userControl
 router.post("/create-user", requireLogin, requireAdmin, (req, res) => userController.createUser(req, res));
 router.post("/import-users-csv", requireLogin, requireAdmin, upload.single("csvFile"), (req, res) => userController.importUsersFromCSV(req, res));
 router.get("/api/users", requireLogin, requireAdmin, (req, res) => userController.getAllUsers(req, res));
+
+router.post(
+  "/user/permission",
+  requireLogin,
+  requireAdmin,
+  async (req, res) => {
+    try {
+      const userService = require("../services/user.service");
+      const { TenDangNhap, VaiTro } = req.body;
+      await userService.updateUserRole(TenDangNhap, VaiTro);
+      return res.redirect("/create-user");
+    } catch (err) {
+      console.error("Lỗi POST /user/permission:", err);
+      return res.status(400).send(err.message || "Không cập nhật được phân quyền");
+    }
+  }
+);
+
+const namHocController = require("../controllers/namhoc.controller");
+
+router.get(
+  "/school-year",
+  requireLogin,
+  allowRoles(["Admin", "BGH", "GiaoVu"]),
+  (req, res) => namHocController.showSchoolYearPage(req, res)
+);
+
+router.post(
+  "/school-year",
+  requireLogin,
+  allowRoles(["Admin", "BGH", "GiaoVu"]),
+  (req, res) => namHocController.createSchoolYear(req, res)
+);
+
+router.post(
+  "/school-year/edit",
+  requireLogin,
+  allowRoles(["Admin", "BGH", "GiaoVu"]),
+  (req, res) => namHocController.updateSchoolYear(req, res)
+);
+
+router.post(
+  "/school-year/delete",
+  requireLogin,
+  allowRoles(["Admin", "BGH", "GiaoVu"]),
+  (req, res) => namHocController.deleteSchoolYear(req, res)
+);
+
+const monHocController = require("../controllers/monhoc.controller");
+
+router.get(
+  "/subject",
+  requireLogin,
+  allowRoles(["Admin", "BGH", "GiaoVu"]),
+  (req, res) => monHocController.showSubjectPage(req, res)
+);
+
+router.post(
+  "/subject",
+  requireLogin,
+  allowRoles(["Admin", "BGH", "GiaoVu"]),
+  (req, res) => monHocController.createSubject(req, res)
+);
+
+router.post(
+  "/subject/edit",
+  requireLogin,
+  allowRoles(["Admin", "BGH", "GiaoVu"]),
+  (req, res) => monHocController.updateSubject(req, res)
+);
+
+router.post(
+  "/subject/delete",
+  requireLogin,
+  allowRoles(["Admin", "BGH", "GiaoVu"]),
+  (req, res) => monHocController.deleteSubject(req, res)
+);
 
 module.exports = router;

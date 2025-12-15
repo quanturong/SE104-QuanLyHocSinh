@@ -31,6 +31,9 @@
         <% } %>
         <a href="/timetable">Thời khóa biểu</a>
         <a href="/teacher">Giáo viên</a>
+        <% if (role === 'Admin' || role === 'BGH' || role === 'GiaoVu') { %>
+          <a href="/subject">📚 Môn học</a>
+        <% } %>
         <a href="/rules">Quy định</a>
         <% if (role === 'Admin') { %>
           <a href="/create-user">👤 Tạo tài khoản</a>

@@ -40,7 +40,7 @@
             Điểm số
           </a>
         <% if (role !== 'HocSinh') { %>
-          <a class="<%= title === 'Tra cứu hồ sơ học sinh' ? 'active' : '' %>" href="/find">
+          <a class="<%= title === 'Tra cứu' ? 'active' : '' %>" href="/find">
             Tra cứu
           </a>
         <% } %>
@@ -51,6 +51,11 @@
         <a class="<%= title === 'Danh sách giáo viên' ? 'active' : '' %>" href="/teacher">
           Giáo viên
         </a>
+        <% if (role === 'Admin' || role === 'BGH' || role === 'GiaoVu') { %>
+          <a class="<%= title === 'Quản lý môn học' ? 'active' : '' %>" href="/subject">
+            📚 Môn học
+          </a>
+        <% } %>
         <a class="<%= title === 'Quy định' ? 'active' : '' %>" href="/rules">
           Quy định
         </a>
@@ -188,8 +193,125 @@
           </div>
         </div>
       </section>
+
+      <section class="card" style="margin-top: 32px;">
+        <div class="page-header" style="margin-bottom: 16px;">
+          <h2 style="font-size: 18px;">Quản lý phân quyền người dùng</h2>
+          <p class="page-desc" style="margin: 0;">Cập nhật vai trò (phân quyền) cho các tài khoản trong hệ thống.</p>
+        </div>
+
+        <div class="toolbar" style="margin-bottom: 16px;">
+          <button class="btn" id="btn-refresh-users">🔄 Làm mới danh sách</button>
+        </div>
+
+        <div class="table-wrap" style="overflow:auto; max-height:500px;">
+          <table class="table" id="tbl-users">
+            <thead>
+              <tr>
+                <th style="width:60px;">STT</th>
+                <th style="width:200px;">TÊN ĐĂNG NHẬP</th>
+                <th style="width:200px;">VAI TRÒ HIỆN TẠI</th>
+                <th style="width:200px;">THAY ĐỔI VAI TRÒ</th>
+                <th style="width:150px;">THAO TÁC</th>
+              </tr>
+            </thead>
+            <tbody id="users-tbody">
+              <tr>
+                <td colspan="5" class="text-center muted">Đang tải danh sách người dùng...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
     </main>
   </div>
+
+  <script>
+    async function loadUsers() {
+      try {
+        const response = await fetch('/api/users');
+        const users = await response.json();
+        const tbody = document.getElementById('users-tbody');
+        
+        if (!users || users.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="5" class="text-center muted">Chưa có người dùng nào trong hệ thống.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = users.map((user, index) => {
+          return `
+            <tr>
+              <td class="text-center">${index + 1}</td>
+              <td><strong>${user.TenDangNhap || ''}</strong></td>
+              <td><span class="pill">${user.VaiTro || ''}</span></td>
+              <td>
+                <select class="select" style="width:100%;" data-username="${user.TenDangNhap}" data-current="${user.VaiTro}">
+                  <option value="Admin" ${user.VaiTro === 'Admin' ? 'selected' : ''}>Admin</option>
+                  <option value="BGH" ${user.VaiTro === 'BGH' ? 'selected' : ''}>BGH</option>
+                  <option value="GiaoVu" ${user.VaiTro === 'GiaoVu' ? 'selected' : ''}>GiaoVu</option>
+                  <option value="GiaoVien" ${user.VaiTro === 'GiaoVien' ? 'selected' : ''}>GiaoVien</option>
+                  <option value="HocSinh" ${user.VaiTro === 'HocSinh' ? 'selected' : ''}>HocSinh</option>
+                </select>
+              </td>
+              <td>
+                <button class="btn btn-sm btn-update-role" data-username="${user.TenDangNhap}">Cập nhật</button>
+              </td>
+            </tr>
+          `;
+        }).join('');
+
+        // Attach event listeners
+        document.querySelectorAll('.btn-update-role').forEach(btn => {
+          btn.addEventListener('click', async function() {
+            const username = this.getAttribute('data-username');
+            const select = document.querySelector(`select[data-username="${username}"]`);
+            const newRole = select.value;
+            const currentRole = select.getAttribute('data-current');
+
+            if (newRole === currentRole) {
+              // Tự động reset về giá trị cũ và không hiển thị thông báo
+              select.value = currentRole;
+              return;
+            }
+
+            if (!confirm(`Bạn có chắc muốn thay đổi vai trò của "${username}" từ "${currentRole}" sang "${newRole}"?`)) {
+              select.value = currentRole;
+              return;
+            }
+
+            try {
+              const formData = new FormData();
+              formData.append('TenDangNhap', username);
+              formData.append('VaiTro', newRole);
+
+              const response = await fetch('/user/permission', {
+                method: 'POST',
+                body: formData
+              });
+
+              if (response.ok) {
+                alert('Cập nhật phân quyền thành công!');
+                loadUsers();
+              } else {
+                const errorText = await response.text();
+                alert('Lỗi: ' + errorText);
+                select.value = currentRole;
+              }
+            } catch (err) {
+              alert('Lỗi khi cập nhật: ' + err.message);
+              select.value = currentRole;
+            }
+          });
+        });
+      } catch (err) {
+        console.error('Lỗi loadUsers:', err);
+        document.getElementById('users-tbody').innerHTML = '<tr><td colspan="5" class="text-center muted">Lỗi khi tải danh sách người dùng.</td></tr>';
+      }
+    }
+
+    document.getElementById('btn-refresh-users')?.addEventListener('click', loadUsers);
+    loadUsers();
+  </script>
 </body>
 </html>
 
