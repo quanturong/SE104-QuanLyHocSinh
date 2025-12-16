@@ -420,10 +420,32 @@ body.page-student{
 .table tbody tr:hover{background:linear-gradient(90deg, rgba(14,165,233,.04) 0%, rgba(6,182,212,.04) 100%)}
 .table-wrap{overflow:auto;border-radius:16px}
 .table-scores th,.table-scores td{text-align:center}
-
-.btn{
-  border:none;border-radius:12px;padding:12px 18px;cursor:pointer;font-weight:00;font-size:14px;color:#fff;
-  background:var(--accent-gradient);box-shadow:0 4px 12px rgba(14,165,233,.25);transition:all .25s ease;
+ /* Improve alignment in subject score table: fixed columns, name left, numeric columns centered */
+.table-scores{table-layout:fixed; width:100%}
+.table-scores thead th{ text-align:center }
+.table-scores th:nth-child(1), .table-scores td:nth-child(1){width:70px;text-align:center}
+.table-scores th:nth-child(2), .table-scores td:nth-child(2){width:220px;text-align:left;padding-left:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.table-scores th:nth-child(3), .table-scores td:nth-child(3),
+.table-scores th:nth-child(4), .table-scores td:nth-child(4),
+.table-scores th:nth-child(5), .table-scores td:nth-child(5),
+.table-scores th:nth-child(6), .table-scores td:nth-child(6){text-align:center;padding:0 12px} 
+.table-scores th:nth-child(7), .table-scores td:nth-child(7){text-align:center}
+.table-scores td .score{display:inline-flex;align-items:center;justify-content:center;height:36px;min-width:44px;width:44px;padding:0;border-radius:10px} 
+.score-cell{white-space:nowrap}
+.action-cell{display:flex;justify-content:center;align-items:center;gap:8px}
+/* Student table alignment: name left, numeric centered */
+#tbl-students{table-layout:fixed;width:100%}
+#tbl-students th:nth-child(1), #tbl-students td:nth-child(1){width:70px;text-align:center}
+#tbl-students th:nth-child(2), #tbl-students td:nth-child(2){width:240px;text-align:left;padding-left:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#tbl-students th:nth-child(3), #tbl-students td:nth-child(3){width:100px;text-align:center}
+#tbl-students th:nth-child(4), #tbl-students td:nth-child(4),
+#tbl-students th:nth-child(5), #tbl-students td:nth-child(5),
+#tbl-students th:nth-child(6), #tbl-students td:nth-child(6){text-align:center;padding:0 12px}
+#tbl-students th:nth-child(7), #tbl-students td:nth-child(7){text-align:center;padding:0 12px}
+#tbl-students th:nth-child(8), #tbl-students td:nth-child(8){text-align:center;padding:0 12px}
+#tbl-students td .score{display:inline-flex;align-items:center;justify-content:center;height:36px;min-width:44px;width:44px;padding:0;border-radius:10px} 
+.btn{border:none;border-radius:12px;padding:12px 18px;cursor:pointer;font-weight:700;font-size:14px;color:#fff;
+background:var(--accent-gradient);box-shadow:0 4px 12px rgba(14,165,233,.25);transition:all .25s ease;
 }
 .btn:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(14,165,233,.35)}
 .btn-sm{padding:8px 14px;font-size:13px;border-radius:10px}
@@ -450,7 +472,7 @@ body.page-student{
   background:linear-gradient(135deg,#dc2626 0%,#b91c1c 100%);transform:translateY(-2px);box-shadow:0 6px 16px rgba(239,68,68,.35)
 }
 .badge{
-  display:inline-block;padding:5px 10px;border-radius:10px;font-size:12px;font-weight:700;border:1px solid transparent;
+  display:inline-flex;align-items:center;justify-content:center;padding:6px 12px;border-radius:10px;font-size:12px;font-weight:700;border:1px solid transparent;
 }
 .b-success{background:linear-gradient(135deg,#d1fae5 0%,#a7f3d0 100%);color:#065f46;border-color:#6ee7b7}
 .b-info{background:linear-gradient(135deg,#dbeafe 0%,#bfdbfe 100%);color:#1e40af;border-color:#93c5fd}
