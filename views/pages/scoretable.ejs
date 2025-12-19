@@ -101,18 +101,24 @@
                             </thead>
                             <tbody>
                                 <% // Dữ liệu D3 (Danh sách học sinh) %>
-                                <% studentsOverview.forEach((student, index) => { %>
-                                <tr>
-                                    <td class="text-center"><%= index + 1 %></td>
-                                    <td><%= student.HoTen %></td>
-                                    <td><%= student.MaLop %></td>
-                                    <td class="score-cell"><span class="score score-<%= student.TB_HK1_Style %>"><%= student.TB_HK1.toFixed(1) %></span></td>
-                                    <td class="score-cell"><span class="score score-<%= student.TB_HK2_Style %>"><%= student.TB_HK2.toFixed(1) %></span></td>
-                                    <td class="score-cell"><span class="score score-<%= student.TB_CN_Style %>"><%= student.TB_CN.toFixed(1) %></span></td>
-                                    <td><span class="badge b-<%= student.HanhKiem_Style %>"><%= student.HanhKiem %></span></td>
-                                    <td><span class="badge b-<%= student.XepLoai_Style %>"><%= student.XepLoai %></span></td>
-                                </tr>
-                                <% }); %>
+                                <% if (studentsOverview && studentsOverview.length > 0) { %>
+                                    <% studentsOverview.forEach((student, index) => { %>
+                                    <tr>
+                                        <td class="text-center"><%= index + 1 %></td>
+                                        <td><%= student.HoTen %></td>
+                                        <td><%= student.MaLop %></td>
+                                        <td class="score-cell"><span class="score score-<%= student.TB_HK1_Style %>"><%= (typeof student.TB_HK1 === 'number') ? student.TB_HK1.toFixed(1) : '0.0' %></span></td>
+                                        <td class="score-cell"><span class="score score-<%= student.TB_HK2_Style %>"><%= (typeof student.TB_HK2 === 'number') ? student.TB_HK2.toFixed(1) : '0.0' %></span></td>
+                                        <td class="score-cell"><span class="score score-<%= student.TB_CN_Style %>"><%= (typeof student.TB_CN === 'number') ? student.TB_CN.toFixed(1) : '0.0' %></span></td>
+                                        <td><span class="badge b-<%= student.HanhKiem_Style %>"><%= student.HanhKiem %></span></td>
+                                        <td><span class="badge b-<%= student.XepLoai_Style %>"><%= student.XepLoai %></span></td>
+                                    </tr>
+                                    <% }); %>
+                                <% } else { %>
+                                    <tr>
+                                        <td colspan="8" class="text-center">Không có học sinh cho Năm học này hoặc dữ liệu đang trống.</td>
+                                    </tr>
+                                <% } %>
                             </tbody>
                         </table>
                     </div>
@@ -150,9 +156,18 @@
                                 <% }); %>
                             </select>
                         </div>
+                        <div class="class-info-item">
+                            <label class="class-label">Lọc lớp</label>
+                            <select class="select class-select select-sm" id="class-subject">
+                                <option value="" <%= (typeof selectedClass === 'undefined' || !selectedClass) ? 'selected' : '' %>>Tất cả</option>
+                                <% classes.forEach(lop => { %>
+                                    <option value="<%= lop.MaLop %>" <%= (typeof selectedClass !== 'undefined' && selectedClass === lop.MaLop) ? 'selected' : '' %>><%= lop.MaLop %></option>
+                                <% }); %>
+                            </select>
+                        </div>
                         <div class="class-info-item" style="display:flex; align-items:center; gap:8px;">
                             <button class="btn btn-sm" id="btn-import-excel">Import Excel</button>
-                            <small style="font-size:12px; color:#666;">(File Excel 9 cột: HoTen, HocKy, Namhoc, MonHoc, Diem15p, Diem1Tiet, DiemCK, DiemTBM, DanhGia)</small>
+                            <small style="font-size:12px; color:#666;">(File Excel 8 cột: HoTen, HocKy, Namhoc, MonHoc, Diem15p, Diem1Tiet, DiemCK, DiemTBM)</small>
                             <form id="frm-import" action="/scoretable/import" method="post" enctype="multipart/form-data" style="display:none;">
                                 <input type="file" name="scoreFile" id="scoreFile" accept=".xls,.xlsx" />
                             </form>
@@ -177,7 +192,7 @@
                                 <% // Dữ liệu D6 (Danh sách điểm môn học chi tiết) %>
                                 <% if (subjectScores && subjectScores.length > 0) { %>
                                     <% subjectScores.forEach((score, index) => { %>
-                                    <tr>
+                                    <tr data-id="<%= score.MaHocSinh %>" data-ho-ten="<%= score.HoTen %>" data-diem15p="<%= (typeof score.Diem15p === 'number') ? score.Diem15p.toFixed(1) : '' %>" data-diem1tiet="<%= (typeof score.Diem1Tiet === 'number') ? score.Diem1Tiet.toFixed(1) : '' %>" data-diemck="<%= (typeof score.DiemCK === 'number') ? score.DiemCK.toFixed(1) : '' %>">
                                         <td class="text-center"><%= index + 1 %></td>
                                         <td><%= score.HoTen %></td>
                                         <td class="score-cell"><span class="score score-<%= score.Diem15p_Style %>"><%= (typeof score.Diem15p === 'number') ? score.Diem15p.toFixed(1) : '0.0' %></span></td>
@@ -253,20 +268,57 @@
                 });
             }
 
-            const subjectFilters = document.querySelectorAll('#year-subject, #semester-subject, #subject-subject');
+            const subjectFilters = document.querySelectorAll('#year-subject, #semester-subject, #subject-subject, #class-subject');
             subjectFilters.forEach(filter => {
                 filter.addEventListener('change', () => {
                     const year = document.getElementById('year-subject').value;
                     const semester = document.getElementById('semester-subject').value;
                     const subject = document.getElementById('subject-subject').value;
-                    window.location.href = `/scoretable?tab=subject&year=${year}&semester=${semester}&subject=${subject}`;
+                    const classFilter = document.getElementById('class-subject') ? document.getElementById('class-subject').value : '';
+                    window.location.href = `/scoretable?tab=subject&year=${year}&semester=${semester}&subject=${subject}&class=${encodeURIComponent(classFilter)}`;
                 });
             });
         })();
 
-        // Thêm hàm mở modal Sửa điểm (Giả lập)
+        // Hàm mở modal Sửa điểm: đọc data- attributes từ hàng và hiển thị modal
         function openEditModal(studentId) {
-            alert(`Mở modal sửa điểm cho Học sinh ID: ${studentId}. Sau này sẽ dùng AJAX POST để gửi D1 về server.`);
+            const row = document.querySelector(`#tbl-subject tr[data-id='${studentId}']`);
+            if (!row) return alert('Không tìm thấy hàng học sinh.');
+
+            const hoTen = row.getAttribute('data-ho-ten') || '';
+            const d15 = row.getAttribute('data-diem15p') || '';
+            const d1t = row.getAttribute('data-diem1tiet') || '';
+            const dck = row.getAttribute('data-diemck') || '';
+
+            document.getElementById('editStudentId').value = studentId;
+            document.getElementById('editHoTen').textContent = hoTen;
+            document.getElementById('editDiem15p').value = d15;
+            document.getElementById('editDiem1Tiet').value = d1t;
+            document.getElementById('editDiemCK').value = dck;
+
+            // Set current filters so redirect after save returns to same view
+            document.getElementById('editYear').value = document.getElementById('year-subject').value;
+            document.getElementById('editHocKy').value = document.getElementById('semester-subject').value;
+            document.getElementById('editMaMon').value = document.getElementById('subject-subject').value;
+
+            document.getElementById('modal-edit').classList.add('open');
+        }
+
+        // Close modal
+        function closeEditModal() {
+            document.getElementById('modal-edit').classList.remove('open');
+        }
+
+        // Submit handler: simple client-side validation
+        function submitEditForm(e) {
+            e.preventDefault();
+            const d15 = parseFloat(document.getElementById('editDiem15p').value) || 0;
+            const d1t = parseFloat(document.getElementById('editDiem1Tiet').value) || 0;
+            const dck = parseFloat(document.getElementById('editDiemCK').value) || 0;
+
+            if (d15 < 0 || d1t < 0 || dck < 0) return alert('Điểm không được nhỏ hơn 0');
+
+            document.getElementById('frm-edit').submit();
         }
 
         // Import Excel button logic
@@ -283,6 +335,47 @@
             }
             document.getElementById('frm-import').submit();
         });
+
+        // ========== EDIT MODAL HTML INJECTION ==========
     </script>
+
+    <!-- Edit modal -->
+    <div id="modal-edit" class="modal">
+        <div class="modal-backdrop" onclick="closeEditModal()"></div>
+        <div class="modal-panel">
+            <h3>Sửa điểm của <span id="editHoTen"></span></h3>
+            <form id="frm-edit" method="post" action="/scoretable/update" onsubmit="submitEditForm(event)">
+                <input type="hidden" name="MaHocSinh" id="editStudentId" />
+                <input type="hidden" name="NamHoc" id="editYear" />
+                <input type="hidden" name="HocKy" id="editHocKy" />
+                <input type="hidden" name="MaMon" id="editMaMon" />
+
+                <div style="display:flex; gap:8px; margin-bottom:8px;">
+                    <label style="width:120px;">Điểm 15p</label>
+                    <input class="input" name="Diem15p" id="editDiem15p" type="number" step="0.1" min="0" />
+                </div>
+                <div style="display:flex; gap:8px; margin-bottom:8px;">
+                    <label style="width:120px;">Điểm 1 tiết</label>
+                    <input class="input" name="Diem1Tiet" id="editDiem1Tiet" type="number" step="0.1" min="0" />
+                </div>
+                <div style="display:flex; gap:8px; margin-bottom:8px;">
+                    <label style="width:120px;">Điểm CK</label>
+                    <input class="input" name="DiemCK" id="editDiemCK" type="number" step="0.1" min="0" />
+                </div>
+
+                <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:12px;">
+                    <button type="button" class="btn" onclick="closeEditModal()">Hủy</button>
+                    <button type="submit" class="btn btn-primary">Lưu</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <style>
+        .modal{position:fixed; inset:0; display:none;}
+        .modal.open{display:block}
+        .modal-backdrop{position:absolute; inset:0; background:rgba(0,0,0,0.4)}
+        .modal-panel{position:relative; width:480px; max-width:96%; margin:80px auto; background:white; padding:16px; border-radius:6px; box-shadow:0 6px 24px rgba(0,0,0,0.2)}
+    </style>
 </body>
 </html>

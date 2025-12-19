@@ -217,6 +217,17 @@
                  } %>
             </select>
 
+            <!-- Year filter added: chọn Năm học để tính toán TB/HK/Xếp loại -->
+            <select class="select" id="filter-year">
+              <% if (years && years.length) { %>
+                <% years.forEach(function(y){ %>
+                  <option value="<%= y %>" <%= (selectedYear === y) ? 'selected' : '' %>><%= y %></option>
+                <% }) %>
+              <% } else { %>
+                <option value="">Chưa có năm học</option>
+              <% } %>
+            </select>
+
             <% if (canManageStudents) { %>
               <button class="btn" id="btn-add">+ Thêm học sinh</button>
             <% } %>
@@ -238,6 +249,12 @@
                 <th style="width:220px;">ĐỊA CHỈ</th>
                 <th style="width:160px;">EMAIL</th>
                 <th style="width:80px;">LỚP</th>
+                <!-- Thêm cột điểm và đánh giá -->
+                <th style="width:90px;">TB HK1</th>
+                <th style="width:90px;">TB HK2</th>
+                <th style="width:90px;">TB CN</th>
+                <th style="width:120px;">HẠNH KIỂM</th>
+                <th style="width:120px;">XẾP LOẠI</th>
                 <% if (canManageStudents) { %>
                   <th style="width:110px;">THAO TÁC</th>
                 <% } %>
@@ -257,6 +274,11 @@
                     data-diachi="<%= st.DiaChi || '' %>"
                     data-email="<%= st.Email || '' %>"
                     data-malop="<%= st.MaLop || '' %>"
+                    data-tbhk1="<%= (st.TB_HK1 !== undefined ? st.TB_HK1 : '') %>"
+                    data-tbhk2="<%= (st.TB_HK2 !== undefined ? st.TB_HK2 : '') %>"
+                    data-tbcn="<%= (st.TB_CN !== undefined ? st.TB_CN : '') %>"
+                    data-hanhkiem="<%= st.HanhKiem || '' %>"
+                    data-xeploai="<%= st.XepLoai || '' %>"
                   >
                     <td class="text-center"><%= index + 1 %></td>
                     <td><%= st.MaHocSinh %></td>
@@ -266,6 +288,45 @@
                     <td><%= st.DiaChi || '' %></td>
                     <td><%= st.Email || '' %></td>
                     <td><%= st.MaLop || '' %></td>
+
+                    <!-- TB HK1 -->
+                    <td class="text-center score-cell">
+                      <% if (st.TB_HK1_Style && st.TB_HK1_Style !== 'none') { %>
+                        <span class="score score-<%= st.TB_HK1_Style %>"><%= st.TB_HK1 %></span>
+                      <% } else { %>
+                        <span class="muted">-</span>
+                      <% } %>
+                    </td>
+
+                    <!-- TB HK2 -->
+                    <td class="text-center score-cell">
+                      <% if (st.TB_HK2_Style && st.TB_HK2_Style !== 'none') { %>
+                        <span class="score score-<%= st.TB_HK2_Style %>"><%= st.TB_HK2 %></span>
+                      <% } else { %>
+                        <span class="muted">-</span>
+                      <% } %>
+                    </td>
+
+                    <!-- TB CN -->
+                    <td class="text-center score-cell">
+                      <% if (st.TB_CN_Style && st.TB_CN_Style !== 'none') { %>
+                        <span class="score score-<%= st.TB_CN_Style %>"><%= st.TB_CN %></span>
+                      <% } else { %>
+                        <span class="muted">-</span>
+                      <% } %>
+                    </td>
+
+                    <!-- Hạnh kiểm -->
+                    <td class="text-center">
+                      <% const hkStyle = (st.HanhKiem_Style === 'good') ? 'b-success' : (st.HanhKiem_Style === 'average') ? 'b-info' : (st.HanhKiem_Style === 'average-low') ? 'b-secondary' : (st.HanhKiem_Style === 'fail') ? 'b-warn' : '' %>
+                      <span class="badge <%= hkStyle %>"><%= st.HanhKiem %></span>
+                    </td>
+
+                    <!-- Xếp loại -->
+                    <td class="text-center">
+                      <% const xlStyle = (st.XepLoai_Style === 'good' || st.XepLoai_Style === 'excellent') ? 'b-success' : (st.XepLoai_Style === 'average') ? 'b-info' : (st.XepLoai_Style === 'average-low') ? 'b-secondary' : (st.XepLoai_Style === 'fail') ? 'b-warn' : '' %>
+                      <span class="badge <%= xlStyle %>"><%= st.XepLoai %></span>
+                    </td>
 
                     <% if (canManageStudents) { %>
                       <td class="text-center">
@@ -329,6 +390,15 @@
   searchInput && searchInput.addEventListener('input', applyFilter);
   filterGender && filterGender.addEventListener('change', applyFilter);
   filterClass && filterClass.addEventListener('change', applyFilter);
+
+  // Khi đổi năm học, reload page để tính toán lại TB/HK/Xếp loại dựa trên Năm học
+  const filterYear = document.getElementById('filter-year');
+  filterYear && filterYear.addEventListener('change', function(){
+    const y = this.value;
+    const params = new URLSearchParams(window.location.search);
+    if (y) params.set('year', y); else params.delete('year');
+    window.location.search = params.toString();
+  });
 })();
 
 // PHẦN 2: THÊM HỌC SINH
@@ -479,7 +549,7 @@
         return;
       }
       
-      let csvContent = 'STT,Mã HS,Họ Tên,Giới Tính,Ngày Sinh,Địa Chỉ,Email,Lớp\n';
+      let csvContent = 'STT,Mã HS,Họ Tên,Giới Tính,Ngày Sinh,Địa Chỉ,Email,Lớp,TB HK1,TB HK2,TB CN,Hạnh kiểm,Xếp loại\n';
       
       let count = 0;
       rows.forEach((tr) => {
@@ -492,8 +562,13 @@
           const diachi = tr.getAttribute('data-diachi') || '';
           const email = tr.getAttribute('data-email') || '';
           const malop = tr.getAttribute('data-malop') || '';
-          
-          csvContent += `${count},"${mahs}","${hoten}","${gioitinh}","${ngaysinh}","${diachi}","${email}","${malop}"\n`;
+          const tbhk1 = tr.getAttribute('data-tbhk1') || '';
+          const tbhk2 = tr.getAttribute('data-tbhk2') || '';
+          const tbcn  = tr.getAttribute('data-tbcn')  || '';
+          const hanhkiem = tr.getAttribute('data-hanhkiem') || '';
+          const xeploai  = tr.getAttribute('data-xeploai')  || '';
+
+          csvContent += `${count},"${mahs}","${hoten}","${gioitinh}","${ngaysinh}","${diachi}","${email}","${malop}","${tbhk1}","${tbhk2}","${tbcn}","${hanhkiem}","${xeploai}"\n`;
         }
       });
       

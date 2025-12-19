@@ -9,7 +9,7 @@ const { HoSoHocSinh, MonHoc, BangDiemMonHoc } = require('../models');
 class ScoreController {
     async showScoreTable(req, res) {
         // Lấy filters từ query params
-        const { tab = 'students', year, semester, subject } = req.query; 
+        const { tab = 'students', year, semester, subject, class: selectedClass } = req.query; 
 
         // 1. Dữ liệu mặc định (đảm bảo không bị ReferenceError trong EJS)
         const defaultRenderData = {
@@ -24,6 +24,7 @@ class ScoreController {
             selectedYear: year || null, // Sử dụng giá trị từ query
             selectedSemester: semester || null,
             selectedSubject: subject || null,
+            selectedClass: selectedClass || '',
             // Lấy thông báo lỗi/thành công từ Flash (dùng cho các POST/redirect)
             flashError: req.flash('error'),
             flashSuccess: req.flash('success'),
@@ -38,11 +39,32 @@ class ScoreController {
             dataToRender.classes = await lookupService.getAllClasses();
             dataToRender.subjects = await lookupService.getAllSubjects();
 
-            // 3. Lấy Dữ liệu chính cho từng tab
-            if (tab === 'students') {
-                dataToRender.studentsOverview = await scoreService.getStudentsOverview(year);
-            } else if (tab === 'subject') {
-                dataToRender.subjectScores = await scoreService.getSubjectScores(year, semester, subject);
+            // 3. Thiết lập giá trị mặc định nếu người dùng không truyền query params
+            if (!dataToRender.selectedYear) {
+                dataToRender.selectedYear = (dataToRender.years && dataToRender.years.length) ? dataToRender.years[0] : null;
+            }
+            if (!dataToRender.selectedSemester) {
+                dataToRender.selectedSemester = dataToRender.selectedSemester || '1';
+            }
+            if (!dataToRender.selectedSubject) {
+                dataToRender.selectedSubject = (dataToRender.subjects && dataToRender.subjects.length) ? dataToRender.subjects[0].MaMonHoc : null;
+            }
+
+            // Ensure selectedClass is defined (empty means all)
+            if (typeof dataToRender.selectedClass === 'undefined' || dataToRender.selectedClass === null) {
+                dataToRender.selectedClass = '';
+            }
+
+            // 4. Tải dữ liệu cho các tab. Preload cả hai để khi người dùng chuyển tab dữ liệu đã có sẵn
+            dataToRender.studentsOverview = await scoreService.getStudentsOverview(dataToRender.selectedYear);
+            dataToRender.subjectScores = [];
+            if (dataToRender.selectedYear && dataToRender.selectedSemester && dataToRender.selectedSubject) {
+                dataToRender.subjectScores = await scoreService.getSubjectScores(
+                    dataToRender.selectedYear,
+                    dataToRender.selectedSemester,
+                    dataToRender.selectedSubject,
+                    dataToRender.selectedClass
+                );
             }
             
             // 4. Nếu có Flash Error/Success, ưu tiên hiển thị
@@ -87,8 +109,8 @@ class ScoreController {
                 return res.redirect(referer);
             }
 
-            // Expected headers (case-insensitive): HoTen, HocKy, Namhoc, MonHoc, Diem15p, Diem1Tiet, DiemCK, DiemTBM, DanhGia
-            const requiredFields = ['hoten','hocky','namhoc','monhoc','diem15p','diem1tiet','diemck','diemtbm','danhgia'];
+            // Expected headers (case-insensitive): HoTen, HocKy, Namhoc, MonHoc, Diem15p, Diem1Tiet, DiemCK, DiemTBM
+            const requiredFields = ['hoten','hocky','namhoc','monhoc','diem15p','diem1tiet','diemck','diemtbm'];
             const headers = Object.keys(rows[0]).map(h => (h || '').toString().trim().toLowerCase());
             const missing = requiredFields.filter(f => !headers.includes(f));
             if (missing.length > 0) {
@@ -114,7 +136,6 @@ class ScoreController {
                 const Diem1Tiet = r['diem1tiet'] === null || r['diem1tiet'] === '' ? null : parseFloat(r['diem1tiet']);
                 const DiemCK = r['diemck'] === null || r['diemck'] === '' ? null : parseFloat(r['diemck']);
                 const DiemTBM = r['diemtbm'] === null || r['diemtbm'] === '' ? null : parseFloat(r['diemtbm']);
-                const DanhGia = r['danhgia'] === null ? null : r['danhgia'].toString().trim();
 
                 // Basic validations
                 if (!HoTen) { errors.push(`Dòng ${i+2}: HoTen trống`); continue; }
@@ -143,9 +164,7 @@ class ScoreController {
                     Diem1Tiet: Diem1Tiet,
                     DiemCK: DiemCK,
                     DiemTBMon: DiemTBM,
-                    DanhGia: DanhGia,
                 };
-
                 if (existing) {
                     await existing.update(payload);
                 } else {
@@ -173,12 +192,51 @@ class ScoreController {
     // Phần updateScore
     async updateScore(req, res) {
         try {
+            const { MaHocSinh, NamHoc, HocKy, MaMon, Diem15p, Diem1Tiet, DiemCK } = req.body;
+
+            // Basic validation
+            if (!MaHocSinh || !NamHoc || !HocKy || !MaMon) {
+                req.flash('error', 'Thiếu thông tin bắt buộc để cập nhật điểm.');
+                return res.redirect(req.get('Referer') || '/scoretable');
+            }
+
+            const d15 = (Diem15p === '' || Diem15p === undefined) ? null : parseFloat(Diem15p);
+            const d1t = (Diem1Tiet === '' || Diem1Tiet === undefined) ? null : parseFloat(Diem1Tiet);
+            const dck = (DiemCK === '' || DiemCK === undefined) ? null : parseFloat(DiemCK);
+
+            // Compute DiemTBMon: average of available numeric components (fallback to 0 when all null)
+            const parts = [d15, d1t, dck].filter(v => typeof v === 'number' && !isNaN(v));
+            const DiemTBMon = parts.length ? parseFloat((parts.reduce((s,a)=>s+a,0)/parts.length).toFixed(1)) : 0;
+
+            // Upsert into BangDiemMonHoc
+            const where = { MaHocSinh: MaHocSinh, MaMonHoc: MaMon, HocKy: parseInt(HocKy,10), NamHoc: NamHoc };
+            let existing = await BangDiemMonHoc.findOne({ where });
+            const payload = {
+                MaHocSinh: MaHocSinh,
+                MaMonHoc: MaMon,
+                HocKy: parseInt(HocKy,10),
+                NamHoc: NamHoc,
+                Diem15Phut: d15,
+                Diem1Tiet: d1t,
+                DiemCK: dck,
+                DiemTBMon: DiemTBMon,
+            };
+
+            if (existing) {
+                await existing.update(payload);
+            } else {
+                await BangDiemMonHoc.create(payload);
+            }
+
             req.flash('success', 'Cập nhật điểm thành công!');
-            // Sau khi thành công, chuyển hướng về trang trước (B13)
-            res.redirect(`/scoretable?tab=subject&year=${req.body.year}&semester=${req.body.HocKy}&subject=${req.body.MaMon}`);
+            // Preserve filters
+            const year = NamHoc;
+            const semester = HocKy;
+            const subject = MaMon;
+            res.redirect(`/scoretable?tab=subject&year=${encodeURIComponent(year)}&semester=${encodeURIComponent(semester)}&subject=${encodeURIComponent(subject)}`);
         } catch (error) {
-            // Nếu B9 xảy ra (Validation thất bại), hiển thị lỗi
-            req.flash('error', error.message);
+            console.error('Lỗi khi cập nhật điểm:', error);
+            req.flash('error', 'Có lỗi khi cập nhật điểm: ' + (error.message || error));
             const referer = req.get('Referer') || '/scoretable';
             res.redirect(referer);
         }
