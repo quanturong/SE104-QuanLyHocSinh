@@ -68,6 +68,15 @@
 
     <main class="main">
       <% const canExportReport = permissions && permissions.canExportReport; %>
+      <% // Safe defaults for filters (avoid ReferenceError when route doesn't pass them) %>
+      <% const selYear = (typeof selectedYear !== 'undefined') ? selectedYear : null; %>
+      <% const selSemester = (typeof selectedSemester !== 'undefined') ? selectedSemester : null; %>
+      <% const selSubject = (typeof selectedSubject !== 'undefined') ? selectedSubject : null; %>
+      <% const subjectsSafe = (typeof subjects !== 'undefined' && subjects) ? subjects : []; %>
+      <% // Ensure reportMonTotals is defined to avoid ReferenceError in template %>
+      <% const reportMonTotalsSafe = (typeof reportMonTotals !== 'undefined' && reportMonTotals) ? reportMonTotals : { classes: 0, students: 0, passed: 0, passRate: 0 }; %>
+      <% // Keep backward compatibility by providing reportMonTotals variable too %>
+      <% if (typeof reportMonTotals === 'undefined') { var reportMonTotals = reportMonTotalsSafe; } %>
 
       <div class="page-header">
         <h1 class="page-title">Báo cáo học tập</h1>
@@ -98,7 +107,7 @@
               <select class="select class-select" id="subject-year">
                 <% if (namHocs && namHocs.length) { %>
                   <% namHocs.forEach(function(nh, idx) { %>
-                    <option value="<%= nh.MaNamHoc %>" <%= idx === 0 ? "selected" : "" %>>
+                    <option value="<%= nh.MaNamHoc %>" <%= (selYear ? selYear === nh.MaNamHoc : idx === 0) ? "selected" : "" %>>
                       <%= nh.MaNamHoc %>
                     </option>
                   <% }) %>
@@ -111,9 +120,9 @@
             <div class="class-info-item">
               <label class="class-label">Học kì</label>
               <select class="select class-select" id="subject-semester">
-                <option value="1">Học kì I</option>
-                <option value="2">Học kì II</option>
-                <option value="full">Cả năm</option>
+                <option value="1" <%= (selSemester === '1') ? 'selected' : '' %>>Học kì I</option>
+                <option value="2" <%= (selSemester === '2') ? 'selected' : '' %>>Học kì II</option>
+                <option value="full" <%= (selSemester === 'full') ? 'selected' : '' %>>Cả năm</option>
               </select>
             </div>
 
@@ -121,15 +130,11 @@
               <label class="class-label">Môn học</label>
               <select class="select class-select" id="subject-subject">
                 <option value="">-- Chọn môn học --</option>
-                <option value="toan">Toán</option>
-                <option value="vatly">Vật lý</option>
-                <option value="hoahoc">Hóa học</option>
-                <option value="sinhhoc">Sinh học</option>
-                <option value="nguvan">Ngữ văn</option>
-                <option value="lichsu">Lịch sử</option>
-                <option value="dialy">Địa lý</option>
-                <option value="daoduc">Đạo đức</option>
-                <option value="educ">Thể dục</option>
+                <% if (subjectsSafe && subjectsSafe.length) { %>
+                  <% subjectsSafe.forEach(function(s) { %>
+                    <option value="<%= s.MaMonHoc %>" <%= (selSubject === s.MaMonHoc) ? 'selected' : '' %>><%= s.TenMonHoc %></option>
+                  <% }) %>
+                <% } %> 
               </select>
             </div>
           </div>
@@ -139,51 +144,28 @@
           <section class="card stat-mini">
             <div class="stat-mini-label">Tổng số lớp</div>
             <div class="stat-mini-value" id="subject-stat-classes">
-              <%= reportMon ? reportMon.length : 0 %>
+              <%= (reportMonTotals && reportMonTotals.classes) ? reportMonTotals.classes : 0 %>
             </div>
           </section>
 
           <section class="card stat-mini">
             <div class="stat-mini-label">Tổng học sinh</div>
             <div class="stat-mini-value" id="subject-stat-students">
-              <%
-                let tongHSMon = 0;
-                if (reportMon && reportMon.length) {
-                  reportMon.forEach(r => { tongHSMon += (r.SiSo || r.SiSoLop || 0); });
-                }
-              %>
-              <%= tongHSMon %>
+              <%= (reportMonTotals && reportMonTotals.students) ? reportMonTotals.students : 0 %>
             </div>
           </section>
 
           <section class="card stat-mini">
             <div class="stat-mini-label">Số lượng đạt</div>
             <div class="stat-mini-value stat-success" id="subject-stat-pass">
-              <%
-                let tongDatMon = 0;
-                if (reportMon && reportMon.length) {
-                  reportMon.forEach(r => { tongDatMon += (r.SoLuongDat || r.SoDat || 0); });
-                }
-              %>
-              <%= tongDatMon %>
+              <%= (reportMonTotals && reportMonTotals.passed) ? reportMonTotals.passed : 0 %>
             </div>
           </section>
 
           <section class="card stat-mini">
             <div class="stat-mini-label">Tỉ lệ đạt (TB)</div>
             <div class="stat-mini-value stat-success" id="subject-stat-rate">
-              <%
-                let avgRateMon = 0;
-                if (reportMon && reportMon.length) {
-                  let sumRate = 0, cnt = 0;
-                  reportMon.forEach(r => {
-                    const rr = Number(r.TiLe || r.TiLeDat || 0);
-                    if (!isNaN(rr)) { sumRate += rr; cnt++; }
-                  });
-                  avgRateMon = cnt ? (sumRate / cnt) : 0;
-                }
-              %>
-              <%= avgRateMon ? avgRateMon.toFixed(1) : 0 %>%
+              <%= (reportMonTotals && reportMonTotals.passRate) ? reportMonTotals.passRate.toFixed(1) : 0 %>%
             </div>
           </section>
         </div>
@@ -191,7 +173,7 @@
         <section class="card">
           <div class="toolbar">
             <h3 style="margin: 0; font-size: 16px; font-weight: 700; color: #073b4c;">
-              Báo cáo môn: <span id="subject-name-display">Toán</span> - Học kì <span id="semester-display">I</span>
+              Báo cáo môn: <span id="subject-name-display"><%= (subjectsSafe && subjectsSafe.find(s => s.MaMonHoc === selSubject) ? subjectsSafe.find(s => s.MaMonHoc === selSubject).TenMonHoc : (selSubject ? selSubject : 'Tất cả')) %></span> - Học kì <span id="semester-display"><%= (selSemester === '2' ? 'II' : (selSemester === 'full' ? 'Cả năm' : 'I')) %></span>
             </h3>
             <div style="flex: 1;"></div>
 
@@ -249,6 +231,28 @@
           </div>
         </section>
       </div>
+
+      <script>
+        // Reload report when filters change
+        (function(){
+          const y = document.getElementById('subject-year');
+          const s = document.getElementById('subject-semester');
+          const sub = document.getElementById('subject-subject');
+          function apply(){
+            const year = y.value;
+            const sem = s.value;
+            const subject = sub.value;
+            const params = new URLSearchParams();
+            if (year) params.set('year', year);
+            if (sem) params.set('semester', sem);
+            if (subject) params.set('subject', subject);
+            window.location.href = '/report?'+params.toString();
+          }
+          y && y.addEventListener('change', apply);
+          s && s.addEventListener('change', apply);
+          sub && sub.addEventListener('change', apply);
+        })();
+      </script>
 
       <div id="tab-semester" class="report-content">
         <section class="card" style="margin-bottom: 16px;">

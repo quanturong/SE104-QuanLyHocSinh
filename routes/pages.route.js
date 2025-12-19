@@ -7,6 +7,8 @@ const pageController = require("../controllers/page.controller");
 const userController = require("../controllers/user.controller");
 const userService = require("../services/user.service");
 const scoreController = require('../controllers/score.controller');
+const scoreService = require('../services/score.service');
+const lookupService = require('../services/lookup.service');
 
 router.get("/change-password", (req, res) => {
   res.render("pages/change-password", {
@@ -101,6 +103,8 @@ const normalizeRole = (rawRole) => {
 // Score routes (must be registered after helpers are defined)
 router.get("/scoretable", requireLogin, scoreController.showScoreTable);
 router.post('/scoretable/import', requireLogin, upload.single('scoreFile'), scoreController.importScores);
+// Endpoint to update a single student's scores for a subject
+router.post('/scoretable/update', requireLogin, scoreController.updateScore);
 
 const allowRoles = (roles) => {
   return (req, res, next) => {
@@ -322,14 +326,44 @@ router.get(
       const role = getRole(req);
       const canManageStudents = role === "Admin" || role === "GiaoVu";
 
+      // New: allow filtering by school year and compute overview from scores
+      const years = await lookupService.getAllSchoolYears();
+      const selectedYear = req.query.year || (years && years.length ? years[0] : null);
+
+      let studentsEnriched = students;
+      if (selectedYear) {
+        const overview = await scoreService.getStudentsOverview(selectedYear);
+        const map = {};
+        overview.forEach(o => { if (o.MaHocSinh) map[o.MaHocSinh] = o; });
+
+        studentsEnriched = students.map(s => {
+          const o = map[s.MaHocSinh] || {};
+          return {
+            ...s,
+            TB_HK1: o.TB_HK1 !== undefined ? o.TB_HK1 : 0,
+            TB_HK2: o.TB_HK2 !== undefined ? o.TB_HK2 : 0,
+            TB_CN:  o.TB_CN  !== undefined ? o.TB_CN  : 0,
+            HanhKiem: o.HanhKiem || 'Chưa xếp loại',
+            XepLoai:  o.XepLoai  || 'Chưa xếp loại',
+            TB_HK1_Style: o.TB_HK1_Style || 'none',
+            TB_HK2_Style: o.TB_HK2_Style || 'none',
+            TB_CN_Style:  o.TB_CN_Style  || 'none',
+            HanhKiem_Style: o.HanhKiem_Style || 'none',
+            XepLoai_Style:  o.XepLoai_Style  || 'none',
+          };
+        });
+      }
+
       const error = req.query.error || null;
       const success = req.query.success || null;
 
       res.render("pages/student", {
         title: "Danh sách học sinh",
         user: req.session.user,
-        students,
+        students: studentsEnriched,
         classes,
+        years,
+        selectedYear,
         permissions: {
           canManageStudents,
         },
@@ -845,21 +879,31 @@ router.get(
   allowRoles(staffRoles),
   async (req, res) => {
     try {
-      const [reportMon] = await sequelize.query(`
-        SELECT *
-        FROM BaoCaoTongKetMon
-        ORDER BY NamHoc DESC, HocKy, MaMonHoc, MaLop;
-      `);
+      // Read filters from query params
+      const selectedYear = req.query.year || null;
+      const selectedSemester = req.query.semester || null; // '1','2' or 'full'
+      const selectedSubject = req.query.subject || null;
+
+      // Load available subjects and years
+      const [subjects] = await sequelize.query(
+        "SELECT MaMonHoc, TenMonHoc FROM MonHoc ORDER BY TenMonHoc;"
+      );
+
+      const [namHocs] = await sequelize.query(
+        "SELECT MaNamHoc FROM NamHoc ORDER BY MaNamHoc DESC;"
+      );
+
+      // Use service to compute subject report and aggregates
+      const reportService = require('../services/report.service');
+      const reportResult = await reportService.getSubjectReport(selectedYear, selectedSemester, selectedSubject);
+      const reportMon = reportResult.rows || [];
+      const reportMonTotals = reportResult.totals || { classes: 0, students: 0, passed: 0, passRate: 0 };
 
       const [reportHK] = await sequelize.query(`
         SELECT *
         FROM BaoCaoTongKetHK
         ORDER BY NamHoc DESC, HocKy, MaLop;
       `);
-
-      const [namHocs] = await sequelize.query(
-        "SELECT MaNamHoc FROM NamHoc ORDER BY MaNamHoc DESC;"
-      );
 
       const role = getRole(req);
       const canExportReport =
@@ -869,8 +913,13 @@ router.get(
         title: "Báo cáo",
         user: req.session.user,
         reportMon,
+        reportMonTotals,
         reportHK,
         namHocs,
+        subjects,
+        selectedYear,
+        selectedSemester,
+        selectedSubject,
         permissions: {
           canExportReport,
         },

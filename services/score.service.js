@@ -142,35 +142,56 @@ exports.getStudentsOverview = async (year) => {
 /**
  * Lấy danh sách điểm chi tiết theo môn học, năm học và kỳ học từ bảng BangDiemMonHoc
  */
-exports.getSubjectScores = async (year, semester, subjectId) => {
-    // Nếu thiếu tham số thì trả về mảng rỗng
+exports.getSubjectScores = async (year, semester, subjectId, classId = '') => {
+    // Nếu thiếu tham số bắt buộc thì trả về mảng rỗng
     if (!year || !semester || !subjectId) return [];
 
     try {
-        // 1. Lấy danh sách MaHocSinh xuất hiện trong năm & kỳ (những học sinh có ít nhất 1 bản ghi trong năm/kỳ)
-        const studentsInTerm = await BangDiemMonHoc.findAll({
-            attributes: ['MaHocSinh'],
-            where: { NamHoc: year, HocKy: semester },
-            group: ['MaHocSinh'],
-            raw: true,
-        });
+        let students = [];
+        let studentIdsFilter = null;
 
-        const studentIds = studentsInTerm.map(r => r.MaHocSinh);
+        // Nếu có filter lớp, lấy tất cả học sinh trong lớp đó (hiển thị cả khi chưa có điểm)
+        if (classId) {
+            students = await HoSoHocSinh.findAll({
+                where: { MaLop: classId },
+                attributes: ['MaHocSinh', 'HoTen', 'MaLop'],
+                raw: true,
+                order: [['HoTen', 'ASC']],
+            });
 
-        // Nếu không có học sinh cho năm/kỳ này thì trả về mảng rỗng
-        if (studentIds.length === 0) return [];
+            if (!students || students.length === 0) return [];
+            studentIdsFilter = students.map(s => s.MaHocSinh);
+        } else {
+            // 1. Lấy danh sách MaHocSinh xuất hiện trong năm & kỳ (những học sinh có ít nhất 1 bản ghi trong năm/kỳ)
+            const studentsInTerm = await BangDiemMonHoc.findAll({
+                attributes: ['MaHocSinh'],
+                where: { NamHoc: year, HocKy: semester },
+                group: ['MaHocSinh'],
+                raw: true,
+            });
 
-        // 2. Lấy thông tin học sinh (tên, id) và sắp xếp theo họ tên
-        const students = await HoSoHocSinh.findAll({
-            where: { MaHocSinh: studentIds },
-            attributes: ['MaHocSinh', 'HoTen', 'MaLop'],
-            raw: true,
-            order: [['HoTen', 'ASC']],
-        });
+            const studentIds = studentsInTerm.map(r => r.MaHocSinh);
 
-        // 3. Lấy các bản ghi điểm thực tế cho môn được chọn (nếu có)
+            // Nếu không có học sinh cho năm/kỳ này thì trả về mảng rỗng
+            if (studentIds.length === 0) return [];
+
+            // 2. Lấy thông tin học sinh (tên, id) và sắp xếp theo họ tên
+            students = await HoSoHocSinh.findAll({
+                where: { MaHocSinh: studentIds },
+                attributes: ['MaHocSinh', 'HoTen', 'MaLop'],
+                raw: true,
+                order: [['HoTen', 'ASC']],
+            });
+
+            studentIdsFilter = studentIds;
+        }
+
+        // 3. Lấy các bản ghi điểm thực tế cho môn được chọn (nếu có), giới hạn bởi các học sinh đã lấy
+        const recordsWhere = { NamHoc: year, HocKy: semester, MaMonHoc: subjectId };
+        if (studentIdsFilter && studentIdsFilter.length > 0) recordsWhere.MaHocSinh = studentIdsFilter;
+
         const records = await BangDiemMonHoc.findAll({
-            where: { NamHoc: year, HocKy: semester, MaMonHoc: subjectId },
+            where: recordsWhere,
             attributes: ['MaHocSinh', 'Diem15Phut', 'Diem1Tiet', 'DiemCK', 'DiemTBMon'],
             raw: true,
         });
@@ -190,6 +211,7 @@ exports.getSubjectScores = async (year, semester, subjectId) => {
             return {
                 MaHocSinh: s.MaHocSinh,
                 HoTen: s.HoTen,
+                MaLop: s.MaLop,
 
                 Diem15p: parseFloat(Diem15p.toFixed(1)),
                 Diem1Tiet: parseFloat(Diem1Tiet.toFixed(1)),
