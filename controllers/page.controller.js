@@ -178,11 +178,10 @@ class PageController {
                b.NamHoc,
                b.Diem15Phut,
                b.Diem1Tiet,
-               b.DiemTBMon,
-               b.DanhGia
+               b.DiemTBMon
         FROM BangDiemMonHoc b
         LEFT JOIN HoSoHocSinh hs ON b.MaHocSinh = hs.MaHocSinh
-        LEFT JOIN MonHoc m ON b.MaMonHoc = m.MaMonHoc;
+        LEFT JOIN MonHoc m ON b.MaMonHoc = m.MaMonHoc; 
       `);
 
       const [attendances] = await sequelize.query(`
