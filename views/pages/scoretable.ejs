@@ -4,35 +4,20 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title><%= title %></title>
-    <link rel="stylesheet" href="../css/style.css" />
+    <link rel="stylesheet" href="/css/style.css" />
 </head>
 <body class="page-student">
     <div class="layout">
-        <aside class="sidebar">
-            <div class="brand">
-                <div class="logo">🎓</div>
-                <span>Student Management – Quản lí học sinh</span>
-            </div>
-            <nav class="nav">
-                <a href="/tablecontrol">Bảng điều khiển</a>
-                <a href="/student">Học sinh</a>
-                <a href="/class">Lớp học</a>
-                <a href="/attendance">Điểm danh</a>
-                <a href="/report">Báo cáo</a>
-                <a class="active" href="/scoretable">Điểm số</a>
-                <a href="/timetable">Thời khóa biểu</a>
-                <a href="/find">Tra cứu</a>
-                <a href="/teacher">Giáo viên</a>
-                <a href="/rules">Quy định</a>
-            </nav>
-            <div class="spacer"></div>
-            <a class="nav logout" href="/login">Đăng xuất</a>
-        </aside>
+        <%- include('../partials/sidebar') %>
 
         <main class="main">
+            <% 
+                // Defensive check: đảm bảo isStudent luôn được định nghĩa
+                const isStudentFlag = (typeof isStudent !== 'undefined' && isStudent === true) ? true : false;
+            %>
             <div class="page-header">
-                <h1 class="page-title">Bảng điểm</h1>
-                <p class="page-desc">Chuyển tab để xem danh sách học sinh hoặc bảng điểm môn học theo năm/kỳ.</p>
+                <h1 class="page-title"><%= isStudentFlag ? 'Bảng điểm cá nhân' : 'Bảng điểm' %></h1>
+                <p class="page-desc"><%= isStudentFlag ? 'Xem điểm số và kết quả học tập của bạn' : 'Chuyển tab để xem danh sách học sinh hoặc bảng điểm môn học theo năm/kỳ.' %></p>
                 <% if (error) { %>
                     <div class="alert alert-error"><%= error %></div>
                 <% } %>
@@ -45,8 +30,8 @@
                 <button class="report-btn active" data-report="students" onclick="switchTab('students')">
                     <div class="report-btn-icon">🧑‍🎓</div>
                     <div>
-                        <div class="report-btn-title">Danh sách học sinh</div>
-                        <div class="report-btn-desc">Tổng quan lớp & xếp loại cả năm</div>
+                        <div class="report-btn-title"><%= isStudentFlag ? 'Kết quả học tập' : 'Danh sách học sinh' %></div>
+                        <div class="report-btn-desc"><%= isStudentFlag ? 'Tổng quan điểm & xếp loại cả năm' : 'Tổng quan lớp & xếp loại cả năm' %></div>
                     </div>
                 </button>
                 <button class="report-btn" data-report="subject" onclick="switchTab('subject')">
@@ -59,6 +44,7 @@
             </div>
 
             <section id="tab-students" class="report-content active">
+                <% if (!isStudentFlag) { %>
                 <section class="card" style="margin-bottom:16px;">
                     <div class="report-filter-grid">
                         <div class="class-info-item">
@@ -84,6 +70,20 @@
                         </div>
                     </div>
                 </section>
+                <% } else { %>
+                <section class="card" style="margin-bottom:16px;">
+                    <div class="report-filter-grid">
+                        <div class="class-info-item">
+                            <label class="class-label">Năm học</label>
+                            <select class="select class-select" id="year-students">
+                                <% years.forEach(year => { %>
+                                    <option value="<%= year %>" <%= (selectedYear === year) ? 'selected' : '' %>><%= year %></option>
+                                <% }); %>
+                            </select>
+                        </div>
+                    </div>
+                </section>
+                <% } %>
                 <section class="card">
                     <div class="table-wrap" style="overflow:auto; max-height:520px;">
                         <table class="table" id="tbl-students">
@@ -156,6 +156,7 @@
                                 <% }); %>
                             </select>
                         </div>
+                        <% if (!isStudentFlag) { %>
                         <div class="class-info-item">
                             <label class="class-label">Lọc lớp</label>
                             <select class="select class-select select-sm" id="class-subject">
@@ -172,6 +173,7 @@
                                 <input type="file" name="scoreFile" id="scoreFile" accept=".xls,.xlsx" />
                             </form>
                         </div>
+                        <% } %>
                     </div>
                 </section>
                 <section class="card">
@@ -185,7 +187,9 @@
                                     <th style="width:120px;">Điểm 1 tiết</th>
                                     <th style="width:120px;">Điểm CK</th>
                                     <th style="width:140px;">Điểm TB môn</th>
+                                    <% if (!isStudentFlag) { %>
                                     <th style="width:120px;">Sửa điểm</th>
+                                    <% } %>
                                 </tr>
                             </thead>
                             <tbody>
@@ -199,14 +203,16 @@
                                         <td class="score-cell"><span class="score score-<%= score.Diem1Tiet_Style %>"><%= (typeof score.Diem1Tiet === 'number') ? score.Diem1Tiet.toFixed(1) : '0.0' %></span></td>
                                         <td class="score-cell"><span class="score score-<%= score.DiemCK_Style %>"><%= (typeof score.DiemCK === 'number') ? score.DiemCK.toFixed(1) : '0.0' %></span></td>
                                         <td class="score-cell"><span class="score score-<%= score.DiemTB_Style %>"><%= (typeof score.DiemTB === 'number') ? score.DiemTB.toFixed(1) : '0.0' %></span></td>
+                                        <% if (!isStudentFlag) { %>
                                         <td class="action-cell">
                                             <button class="btn btn-sm btn-ghost" onclick="openEditModal(<%= score.MaHocSinh %>)">Sửa</button>
                                         </td>
+                                        <% } %>
                                     </tr>
                                     <% }); %>
                                 <% } else { %>
                                     <tr>
-                                        <td colspan="7" class="text-center">Không có học sinh cho Năm học / Học kỳ này hoặc chưa có dữ liệu môn học.</td>
+                                        <td colspan="<%= isStudentFlag ? 6 : 7 %>" class="text-center">Không có học sinh cho Năm học / Học kỳ này hoặc chưa có dữ liệu môn học.</td>
                                     </tr>
                                 <% } %>
                             </tbody>

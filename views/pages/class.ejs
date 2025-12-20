@@ -8,67 +8,7 @@
 </head>
 <body class="page-student">
   <div class="layout">
-    <aside class="sidebar">
-      <div class="brand">
-        <div class="logo">🎓</div>
-        <span>Student Management – Quản lí học sinh</span>
-      </div>
-
-      <% 
-        // Lấy role từ user (backend render: user: req.session.user)
-        const role = (user && user.role) ? user.role : ""; 
-      %>
-
-      <nav class="nav">
-        <a class="<%= title === 'Bảng điều khiển' ? 'active' : '' %>" href="/tablecontrol">
-          Bảng điều khiển
-        </a>
-
-        <% if (role !== 'HocSinh') { %>
-          <a class="<%= title === 'Danh sách học sinh' ? 'active' : '' %>" href="/student">
-            Học sinh
-          </a>
-          <a class="<%= title === 'Danh sách lớp' ? 'active' : '' %>" href="/class">
-            Lớp học
-          </a>
-          <a class="<%= title === 'Điểm danh' ? 'active' : '' %>" href="/attendance">
-            Điểm danh
-          </a>
-          <a class="<%= title === 'Báo cáo' ? 'active' : '' %>" href="/report">
-            Báo cáo
-          </a>
-          <a class="<%= title === 'Bảng điểm' ? 'active' : '' %>" href="/scoretable">
-            Điểm số
-          </a>
-          <a class="<%= title === 'Tra cứu' ? 'active' : '' %>" href="/find">
-            Tra cứu
-          </a>
-        <% } %>
-
-        <a class="<%= title === 'Thời khóa biểu' ? 'active' : '' %>" href="/timetable">
-          Thời khóa biểu
-        </a>
-        <a class="<%= title === 'Danh sách giáo viên' ? 'active' : '' %>" href="/teacher">
-          Giáo viên
-        </a>
-        <% if (role === 'Admin' || role === 'BGH' || role === 'GiaoVu') { %>
-          <a class="<%= title === 'Quản lý môn học' ? 'active' : '' %>" href="/subject">
-            📚 Môn học
-          </a>
-        <% } %>
-        <a class="<%= title === 'Quy định' ? 'active' : '' %>" href="/rules">
-          Quy định
-        </a>
-        <% if (role === 'Admin') { %>
-          <a class="<%= title === 'Tạo tài khoản' ? 'active' : '' %>" href="/create-user">
-            👤 Tạo tài khoản
-          </a>
-        <% } %>
-      </nav>
-
-      <div class="spacer"></div>
-      <a class="nav logout" href="/logout">Đăng xuất</a>
-    </aside>
+    <%- include('../partials/sidebar') %>
 
     <main class="main">
       <div class="page-header">
@@ -101,7 +41,7 @@
               <select class="select class-select" id="select-class">
                 <option value="">-- Chọn lớp --</option>
                 <% classes.forEach(cls => { %>
-                  <option value="<%= cls.MaLop %>" data-siso="<%= cls.SiSoLop %>">
+                  <option value="<%= cls.MaLop %>" data-siso="<%= cls.SiSoLop %>" <%= (selectedClass && selectedClass === cls.MaLop) ? 'selected' : '' %>>
                     <%= cls.KhoiLop %> - <%= cls.MaLop %>
                   </option>
                 <% }) %>
@@ -121,10 +61,9 @@
             <thead>
               <tr>
                 <th style="width:60px;">STT</th>
-                <th style="width:120px;">MÃ LỚP</th>
                 <th style="width:90px;">KHỐI</th>
+                <th style="width:120px;">MÃ LỚP</th>
                 <th style="width:100px;">SĨ SỐ</th>
-                <th style="width:120px;">MÃ GVCN</th>
               </tr>
             </thead>
             <tbody>
@@ -135,15 +74,14 @@
                     data-siso="<%= cls.SiSoLop || 0 %>"
                   >
                     <td class="text-center"><%= index + 1 %></td>
-                    <td class="text-center"><%= cls.MaLop %></td>
                     <td class="text-center"><%= cls.KhoiLop %></td>
+                    <td class="text-center"><%= cls.MaLop %></td>
                     <td class="text-center"><%= cls.SiSoLop || 0 %></td>
-                    <td class="text-center"><%= cls.MaGVCN || '' %></td>
                   </tr>
                 <% }) %>
               <% } else { %>
                 <tr>
-                  <td colspan="5" class="text-center muted">
+                  <td colspan="4" class="text-center muted">
                     Chưa có lớp trong hệ thống.
                   </td>
                 </tr>
@@ -158,37 +96,37 @@
           <button class="btn-page" disabled>›</button>
         </div>
       </section>
-      <% if (typeof studentsInClass !== 'undefined' && studentsInClass) { %>
-
       <section class="card" style="margin-top:16px;">
-        <h3>Danh sách học sinh – Lớp <%= selectedClass %></h3>
+        <h3>Danh sách học sinh<% if (selectedClass) { %> – Lớp <%= selectedClass %><% } %></h3>
 
-        <div class="table-wrap">
+        <div class="table-wrap" style="overflow:auto; max-height:520px;">
           <table class="table">
             <thead>
               <tr>
-                <th>STT</th>
-                <th>MÃ HS</th>
-                <th>HỌ TÊN</th>
-                <th>GIỚI TÍNH</th>
-                <th>NGÀY SINH</th>
-                <th>ĐỊA CHỈ</th>
-                <th>EMAIL</th>
+                <th style="width:60px;">STT</th>
+                <th style="width:100px;">MÃ HS</th>
+                <th style="width:200px;">HỌ TÊN</th>
+                <th style="width:100px;">GIỚI TÍNH</th>
+                <th style="width:120px;">NGÀY SINH</th>
+                <th style="width:200px;">ĐỊA CHỈ</th>
+                <th style="width:150px;">EMAIL</th>
               </tr>
             </thead>
             <tbody>
-              <% if (studentsInClass.length === 0) { %>
-                <tr><td colspan="7" class="text-center">Không có học sinh.</td></tr>
+              <% if (!selectedClass) { %>
+                <tr><td colspan="7" class="text-center muted">Vui lòng chọn lớp để xem danh sách học sinh.</td></tr>
+              <% } else if (!studentsInClass || studentsInClass.length === 0) { %>
+                <tr><td colspan="7" class="text-center muted">Không có học sinh trong lớp này.</td></tr>
               <% } else { %>
                 <% studentsInClass.forEach(function(st, idx){ %>
                   <tr>
-                    <td><%= idx + 1 %></td>
-                    <td><%= st.MaHocSinh %></td>
+                    <td class="text-center"><%= idx + 1 %></td>
+                    <td class="text-center"><%= st.MaHocSinh %></td>
                     <td><%= st.HoTen %></td>
-                    <td><%= st.GioiTinh %></td>
-                    <td><%= st.NgaySinh %></td>
-                    <td><%= st.DiaChi %></td>
-                    <td><%= st.Email %></td>
+                    <td class="text-center"><%= st.GioiTinh || '' %></td>
+                    <td class="text-center"><%= st.NgaySinh ? new Date(st.NgaySinh).toLocaleDateString('vi-VN') : '' %></td>
+                    <td><%= st.DiaChi || '' %></td>
+                    <td><%= st.Email || '' %></td>
                   </tr>
                 <% }) %>
               <% } %>
@@ -196,7 +134,6 @@
           </table>
         </div>
       </section>
-      <% } %>
 
     </main>
   </div>

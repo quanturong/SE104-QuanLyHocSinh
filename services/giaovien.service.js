@@ -68,7 +68,6 @@ class GiaoVienService {
   async deleteGiaoVien(maGiaoVien) {
     const usageInfo = await giaoVienRepository.getUsageInfo(maGiaoVien);
     
-    // Cảnh báo người dùng về các dữ liệu sẽ bị xóa/thay đổi
     const warnings = [];
     if (usageInfo.isChuNhiem) {
       const classes = usageInfo.chuNhiemClasses ? usageInfo.chuNhiemClasses.split(',').join(', ') : '';
@@ -80,17 +79,14 @@ class GiaoVienService {
     }
 
     try {
-      // Repository sẽ tự động xóa các bản ghi liên quan
       const ok = await giaoVienRepository.delete(maGiaoVien);
       if (!ok) throw new Error("Không tìm thấy giáo viên");
       
-      // Trả về thông tin về những gì đã bị xóa/thay đổi
       return {
         success: true,
         warnings: warnings.length > 0 ? `Đã xóa giáo viên. ${warnings.join(' và ')}.` : 'Đã xóa giáo viên thành công.'
       };
     } catch (err) {
-      // Bắt lỗi SequelizeForeignKeyConstraintError
       const isForeignKeyError = 
         err.name === 'SequelizeForeignKeyConstraintError' ||
         (err.message && (err.message.includes('FOREIGN KEY constraint') || err.message.includes('SQLITE_CONSTRAINT'))) ||

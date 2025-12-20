@@ -8,63 +8,7 @@
 </head>
 <body class="page-student">
   <div class="layout">
-    <aside class="sidebar">
-      <div class="brand">
-        <div class="logo">🎓</div>
-        <span>Student Management – Quản lí học sinh</span>
-      </div>
-
-      <% 
-        const role = (user && user.role) ? user.role : ""; 
-      %>
-
-      <nav class="nav">
-        <a class="<%= title === 'Bảng điều khiển' ? 'active' : '' %>" href="/tablecontrol">
-          Bảng điều khiển
-        </a>
-        <% if (role !== 'HocSinh') { %>
-          <a class="<%= title === 'Danh sách học sinh' ? 'active' : '' %>" href="/student">
-            Học sinh
-          </a>
-          <a class="<%= title === 'Danh sách lớp' ? 'active' : '' %>" href="/class">
-            Lớp học
-          </a>
-          <a class="<%= title === 'Điểm danh' ? 'active' : '' %>" href="/attendance">
-            Điểm danh
-          </a>
-          <a class="<%= title === 'Báo cáo' ? 'active' : '' %>" href="/report">
-            Báo cáo
-          </a>
-          <a class="<%= title === 'Bảng điểm' ? 'active' : '' %>" href="/scoretable">
-            Điểm số
-          </a>
-          <a class="<%= title === 'Tra cứu' ? 'active' : '' %>" href="/find">
-            Tra cứu
-          </a>
-        <% } %>
-        <a class="<%= title === 'Thời khóa biểu' ? 'active' : '' %>" href="/timetable">
-          Thời khóa biểu
-        </a>
-        <a class="<%= title === 'Danh sách giáo viên' ? 'active' : '' %>" href="/teacher">
-          Giáo viên
-        </a>
-        <% if (role === 'Admin' || role === 'BGH' || role === 'GiaoVu') { %>
-          <a class="<%= title === 'Quản lý môn học' ? 'active' : '' %>" href="/subject">
-            📚 Môn học
-          </a>
-        <% } %>
-        <a class="<%= title === 'Quy định' ? 'active' : '' %>" href="/rules">
-          Quy định
-        </a>
-        <% if (role === 'Admin') { %>
-          <a class="<%= title === 'Tạo tài khoản' ? 'active' : '' %>" href="/create-user">
-            👤 Tạo tài khoản
-          </a>
-        <% } %>
-      </nav>
-      <div class="spacer"></div>
-      <a class="nav logout" href="/logout">Đăng xuất</a>
-    </aside>
+    <%- include('../partials/sidebar') %>
 
     <main class="main">
       <% const canExportReport = permissions && permissions.canExportReport; %>
@@ -262,7 +206,7 @@
               <select class="select class-select" id="semester-year">
                 <% if (namHocs && namHocs.length) { %>
                   <% namHocs.forEach(function(nh, idx) { %>
-                    <option value="<%= nh.MaNamHoc %>" <%= idx === 0 ? "selected" : "" %>>
+                    <option value="<%= nh.MaNamHoc %>" <%= (selYear ? selYear === nh.MaNamHoc : idx === 0) ? "selected" : "" %>>
                       <%= nh.MaNamHoc %>
                     </option>
                   <% }) %>
@@ -275,9 +219,9 @@
             <div class="class-info-item">
               <label class="class-label">Học kì</label>
               <select class="select class-select" id="semester-semester">
-                <option value="1">Học kì I</option>
-                <option value="2">Học kì II</option>
-                <option value="full">Cả năm</option>
+                <option value="1" <%= (selSemester === '1') ? 'selected' : '' %>>Học kì I</option>
+                <option value="2" <%= (selSemester === '2') ? 'selected' : '' %>>Học kì II</option>
+                <option value="full" <%= (selSemester === 'full') ? 'selected' : '' %>>Cả năm</option>
               </select>
             </div>
           </div>

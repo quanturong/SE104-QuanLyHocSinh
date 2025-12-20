@@ -1,4 +1,3 @@
-//Import các module cần thiết
 const flash = require('connect-flash');
 const express = require("express");
 const path = require("path");
@@ -17,8 +16,6 @@ app.use(express.static(path.join(__dirname, "public")));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-//Middleware để đọc dữ liệu từ form 
-// Session middleware (single instance)
 app.use(
   session({
     secret: "secret-qlhs",
@@ -27,7 +24,6 @@ app.use(
   })
 );
 
-// Flash middleware (requires sessions)
 app.use(flash());
 
 sequelize
@@ -73,10 +69,8 @@ app.post("/login", async (req, res) => {
 
     let passwordMatch = false;
     if (user.MatKhau.startsWith("$2b$") || user.MatKhau.startsWith("$2a$")) {
-      // Mật khẩu đã được hash
       passwordMatch = await bcrypt.compare(password, user.MatKhau);
     } else {
-      // Mật khẩu plain text (dữ liệu cũ)
       passwordMatch = user.MatKhau === password;
     }
 
@@ -91,9 +85,36 @@ app.post("/login", async (req, res) => {
 
     console.log("✅ Đăng nhập thành công:", user.TenDangNhap, user.VaiTro);
 
+    const normalizeRole = (rawRole) => {
+      if (!rawRole) return "";
+      const r = rawRole.toString().trim().toLowerCase();
+      const mapping = {
+        "admin": "Admin",
+        "administrator": "Admin",
+        "bgh": "BGH",
+        "ban giám hiệu": "BGH",
+        "ban giam hieu": "BGH",
+        "giaovien": "GiaoVien",
+        "giáo viên": "GiaoVien",
+        "giao vien": "GiaoVien",
+        "teacher": "GiaoVien",
+        "giaovu": "GiaoVu",
+        "giáo vụ": "GiaoVu",
+        "giao vu": "GiaoVu",
+        "hocsinh": "HocSinh",
+        "học sinh": "HocSinh",
+        "hoc sinh": "HocSinh",
+        "student": "HocSinh",
+      };
+      return mapping[r] || rawRole.toString().trim();
+    };
+
+    const normalizedRole = normalizeRole(user.VaiTro);
+    console.log("Role normalized:", normalizedRole);
+
     let finalUsername = user.TenDangNhap;
 
-    if (user.VaiTro && user.VaiTro.toLowerCase() === "hocsinh") {
+    if (normalizedRole === "HocSinh") {
       const [hsRows] = await sequelize.query(
         `
         SELECT MaHocSinh
@@ -113,7 +134,7 @@ app.post("/login", async (req, res) => {
     req.session.user = {
       id: user.MaNguoiDung,
       username: finalUsername,
-      role: user.VaiTro,
+      role: normalizedRole,
     };
 
     return res.redirect("/tablecontrol");
@@ -134,7 +155,6 @@ app.get("/logout", (req, res) => {
   });
 });
 
-//Định tuyến đến trang quản lý học sinh 
 const pageRoutes = require("./routes/pages.route");
 app.use("/", pageRoutes);
 

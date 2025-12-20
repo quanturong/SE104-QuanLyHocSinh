@@ -1,5 +1,3 @@
-// services/lookup.service.js
-
 const { NamHoc, LopHoc, MonHoc } = require('../models'); 
 
 const lookupService = {
@@ -9,15 +7,12 @@ const lookupService = {
      */
     async getAllSchoolYears() {
         try {
-            // Truy vấn bảng NamHoc, chỉ lấy MaNamHoc
             const years = await NamHoc.findAll({
                 attributes: ['MaNamHoc'],
-                // Sắp xếp theo ngày kết thúc giảm dần để lấy năm mới nhất lên đầu
                 order: [['NgayKetThuc', 'DESC']],
-                raw: true, // Lấy kết quả dưới dạng JSON thuần
+                raw: true,
             });
             
-            // Chuyển đổi thành mảng chuỗi đơn giản để khớp với logic Controller/View
             return years.map(y => y.MaNamHoc);
         } catch (error) {
             console.error("Lỗi khi lấy danh sách Năm học:", error);
@@ -31,14 +26,12 @@ const lookupService = {
      */
     async getAllClasses() {
         try {
-            // Truy vấn bảng LopHoc, lấy MaLop và TenLop
             const classes = await LopHoc.findAll({
                 attributes: ['MaLop', 'KhoiLop'],
                 order: [['MaLop', 'ASC']],
                 raw: true,
             });
             
-            // Lưu ý: View EJS của bạn sử dụng 'MaLop' và 'TenLop'
             return classes; 
         } catch (error) {
             console.error("Lỗi khi lấy danh sách Lớp học:", error);
@@ -51,14 +44,12 @@ const lookupService = {
      */
     async getAllSubjects() {
         try {
-            // Truy vấn bảng MonHoc, lấy MaMon và TenMon
             const subjects = await MonHoc.findAll({
                 attributes: ['MaMonHoc', 'TenMonHoc'],
                 order: [['TenMonHoc', 'ASC']],
                 raw: true,
             });
             
-            // Lưu ý: View EJS của bạn sử dụng 'MaMon' và 'TenMon'
             return subjects;
         } catch (error) {
             console.error("Lỗi khi lấy danh sách Môn học:", error);

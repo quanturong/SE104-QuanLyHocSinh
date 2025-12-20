@@ -8,66 +8,7 @@
 </head>
 <body class="page-student">
   <div class="layout">
-    <aside class="sidebar">
-      <div class="brand">
-        <div class="logo">🎓</div>
-        <span>Student Management – Quản lí học sinh</span>
-      </div>
-
-      <%
-        const role = (user && user.role) ? user.role : "";
-        const canManageStudents = permissions && permissions.canManageStudents;
-      %>
-
-      <nav class="nav">
-        <a class="<%= title === 'Bảng điều khiển' ? 'active' : '' %>" href="/tablecontrol">
-          Bảng điều khiển
-        </a>
-        <% if (role !== 'HocSinh') { %>
-          <a class="<%= title === 'Danh sách học sinh' ? 'active' : '' %>" href="/student">
-            Học sinh
-          </a>
-          <a class="<%= title === 'Danh sách lớp' ? 'active' : '' %>" href="/class">
-            Lớp học
-          </a>
-          <a class="<%= title === 'Điểm danh' ? 'active' : '' %>" href="/attendance">
-            Điểm danh
-          </a>
-          <a class="<%= title === 'Báo cáo' ? 'active' : '' %>" href="/report">
-            Báo cáo
-          </a>
-        <% } %>
-        <a class="<%= title === 'Bảng điểm' ? 'active' : '' %>" href="/scoretable">
-          Điểm số
-        </a>
-        <% if (role !== 'HocSinh') { %>
-          <a class="<%= title === 'Tra cứu' ? 'active' : '' %>" href="/find">
-            Tra cứu
-          </a>
-        <% } %>
-        <a class="<%= title === 'Thời khóa biểu' ? 'active' : '' %>" href="/timetable">
-          Thời khóa biểu
-        </a>
-        <a class="<%= title === 'Danh sách giáo viên' ? 'active' : '' %>" href="/teacher">
-          Giáo viên
-        </a>
-        <% if (role === 'Admin' || role === 'BGH' || role === 'GiaoVu') { %>
-          <a class="<%= title === 'Quản lý môn học' ? 'active' : '' %>" href="/subject">
-            📚 Môn học
-          </a>
-        <% } %>
-        <a class="<%= title === 'Quy định' ? 'active' : '' %>" href="/rules">
-          Quy định
-        </a>
-        <% if (role === 'Admin') { %>
-          <a class="<%= title === 'Tạo tài khoản' ? 'active' : '' %>" href="/create-user">
-            👤 Tạo tài khoản
-          </a>
-        <% } %>
-      </nav>
-      <div class="spacer"></div>
-      <a class="nav logout" href="/logout">Đăng xuất</a>
-    </aside>
+    <%- include('../partials/sidebar') %>
 
     <main class="main">
       <!-- Include notification modal -->
@@ -228,7 +169,7 @@
               <% } %>
             </select>
 
-            <% if (canManageStudents) { %>
+            <% if (permissions && permissions.canManageStudents) { %>
               <button class="btn" id="btn-add">+ Thêm học sinh</button>
             <% } %>
             <button class="btn btn-export" id="btn-export">📊 Xuất Excel</button>
@@ -255,7 +196,7 @@
                 <th style="width:90px;">TB CN</th>
                 <th style="width:120px;">HẠNH KIỂM</th>
                 <th style="width:120px;">XẾP LOẠI</th>
-                <% if (canManageStudents) { %>
+                <% if (permissions && permissions.canManageStudents) { %>
                   <th style="width:110px;">THAO TÁC</th>
                 <% } %>
               </tr>
@@ -328,7 +269,7 @@
                       <span class="badge <%= xlStyle %>"><%= st.XepLoai %></span>
                     </td>
 
-                    <% if (canManageStudents) { %>
+                    <% if (permissions && permissions.canManageStudents) { %>
                       <td class="text-center">
                         <button class="btn btn-sm btn-edit" type="button">Sửa</button>
                         <button class="btn btn-sm btn-delete" type="button">Xóa</button>
@@ -338,7 +279,7 @@
                 <% }) %>
               <% } else { %>
                 <tr>
-                  <td colspan="<%= canManageStudents ? 9 : 8 %>" class="text-center muted">
+                  <td colspan="<%= (permissions && permissions.canManageStudents) ? 9 : 8 %>" class="text-center muted">
                     Chưa có dữ liệu học sinh trong hệ thống.
                   </td>
                 </tr>

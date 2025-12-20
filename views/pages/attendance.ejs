@@ -8,41 +8,7 @@
 </head>
 <body class="page-student">
   <div class="layout">
-    <aside class="sidebar">
-      <div class="brand">
-        <div class="logo">🎓</div>
-        <span>Student Management – Quản lí học sinh</span>
-      </div>
-
-      <%
-        // Lấy role từ user (backend đã truyền user: req.session.user)
-        const role = (user && user.role) ? user.role : "";
-      %>
-
-      <nav class="nav">
-        <a href="/tablecontrol">Bảng điều khiển</a>
-        <% if (role !== 'HocSinh') { %>
-          <a href="/student">Học sinh</a>
-          <a href="/class">Lớp học</a>
-          <a class="active" href="/attendance">Điểm danh</a>
-          <a href="/report">Báo cáo</a>
-          <a href="/scoretable">Điểm số</a>
-          <a href="/find">Tra cứu</a>
-        <% } %>
-        <a href="/timetable">Thời khóa biểu</a>
-        <a href="/teacher">Giáo viên</a>
-        <% if (role === 'Admin' || role === 'BGH' || role === 'GiaoVu') { %>
-          <a href="/subject">📚 Môn học</a>
-        <% } %>
-        <a href="/rules">Quy định</a>
-        <% if (role === 'Admin') { %>
-          <a href="/create-user">👤 Tạo tài khoản</a>
-        <% } %>
-      </nav>
-
-      <div class="spacer"></div>
-      <a class="nav logout" href="/logout">Đăng xuất</a>
-    </aside>
+    <%- include('../partials/sidebar') %>
 
     <main class="main">
       <div class="page-header">

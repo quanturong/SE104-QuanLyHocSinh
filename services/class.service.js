@@ -1,8 +1,7 @@
-const { LopHoc } = require('../models'); // Giả sử LopHoc là Model của bạn
+const { LopHoc } = require('../models');
 
 exports.getAllClasses = async () => {
     try {
-        // Truy vấn tất cả lớp học, chỉ lấy Mã Lớp và Tên Lớp
         const classes = await LopHoc.findAll({
             attributes: ['MaLop', 'SiSoLop'], 
             order: [['MaLop', 'ASC']],

@@ -50,20 +50,16 @@ class UserService {
       resolve(rows[0]);
     });
   });
-}
+  }
   async updatePasswordByUsername(username, newHash) {
-    // Tìm user theo TenDangNhap bằng repository có sẵn
     const user = await nguoiDungRepository.findByUsername(username);
 
     if (!user) {
-      // Không tồn tại user -> trả false cho controller xử lý
       return false;
     }
 
-    // Cập nhật mật khẩu mới (đã hash sẵn)
     user.MatKhau = newHash;
 
-    // Lưu lại vào DB (Sequelize Model.save())
     await user.save();
 
     return true;

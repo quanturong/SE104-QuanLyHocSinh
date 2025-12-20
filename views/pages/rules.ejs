@@ -43,73 +43,20 @@
 </head>
 <body class="page-student">
   <div class="layout">
-    <aside class="sidebar">
-      <div class="brand">
-        <div class="logo">🎓</div>
-        <span>Student Management – Quản lí học sinh</span>
-      </div>
-      <nav class="nav">
-        <% 
-          const role = (user && user.role) ? user.role : ""; 
-        %>
-
-        <a class="<%= title === 'Bảng điều khiển' ? 'active' : '' %>" href="/tablecontrol">
-          Bảng điều khiển
-        </a>
-
-        <% if (role !== 'HocSinh') { %>
-          <a class="<%= title === 'Danh sách học sinh' ? 'active' : '' %>" href="/student">
-            Học sinh
-          </a>
-          <a class="<%= title === 'Danh sách lớp' ? 'active' : '' %>" href="/class">
-            Lớp học
-          </a>
-          <a class="<%= title === 'Điểm danh' ? 'active' : '' %>" href="/attendance">
-            Điểm danh
-          </a>
-          <a class="<%= title === 'Báo cáo' ? 'active' : '' %>" href="/report">
-            Báo cáo
-          </a>
-        <% } %>
-          <a class="<%= title === 'Bảng điểm' ? 'active' : '' %>" href="/scoretable">
-            Điểm số
-          </a>
-        <% if (role !== 'HocSinh') { %>
-          <a class="<%= title === 'Tra cứu' ? 'active' : '' %>" href="/find">
-            Tra cứu
-          </a>
-        <% } %>
-
-        <a class="<%= title === 'Thời khóa biểu' ? 'active' : '' %>" href="/timetable">
-          Thời khóa biểu
-        </a>
-        <a class="<%= title === 'Danh sách giáo viên' ? 'active' : '' %>" href="/teacher">
-          Giáo viên
-        </a>
-        <% if (role === 'Admin' || role === 'BGH' || role === 'GiaoVu') { %>
-          <a class="<%= title === 'Quản lý môn học' ? 'active' : '' %>" href="/subject">
-            📚 Môn học
-          </a>
-        <% } %>
-        <a class="<%= title === 'Quy định' ? 'active' : '' %>" href="/rules">
-          Quy định
-        </a>
-        <% if (role === 'Admin') { %>
-          <a class="<%= title === 'Tạo tài khoản' ? 'active' : '' %>" href="/create-user">
-            👤 Tạo tài khoản
-          </a>
-        <% } %>
-      </nav>
-
-      <div class="spacer"></div>
-      <a class="nav logout" href="/login">Đăng xuất</a>
-    </aside>
+    <%- include('../partials/sidebar') %>
 
     <main class="main">
+      <% if (permissions && permissions.canEditRules) { %>
       <div class="page-header">
         <h1 class="page-title">Quy định</h1>
         <p class="page-desc">Quy định dành cho giáo viên và thông số quy định hệ thống.</p>
       </div>
+      <% } else { %>
+      <div class="page-header">
+        <h1 class="page-title">Quy định</h1>
+        <p class="page-desc">Quy định dành cho giáo viên.</p>
+      </div>
+      <% } %>
 
       <% if (permissions && permissions.canEditRules) { %>
         <section class="card" style="margin-bottom: 16px;">
@@ -360,10 +307,12 @@
     </main>
   </div>
 
+  <% if (permissions && permissions.canEditRules) { %>
   <div class="floating-actions">
     <button class="floating-btn edit" id="btn-edit-rule" title="Sửa quy định">✏️</button>
     <button class="floating-btn add" id="btn-add-rule" title="Thêm quy định mới">➕</button>
   </div>
+  <% } %>
 
   <div class="sp-overlay" id="modal-add-rule" style="display:none;">
     <div class="sp-modal" style="max-width:800px;">
@@ -521,7 +470,14 @@
       }catch(_){}
     })();
 
-    document.getElementById('btn-add-rule').addEventListener('click', openAddRuleModal);
+    // ========== CHỈ CHẠY NẾU CÓ QUYỀN CHỈNH SỬA ==========
+    <% if (permissions && permissions.canEditRules) { %>
+    const btnAddRule = document.getElementById('btn-add-rule');
+    const btnEditRule = document.getElementById('btn-edit-rule');
+    
+    if (btnAddRule) {
+      btnAddRule.addEventListener('click', openAddRuleModal);
+    }
 
     function openAddRuleModal() {
       const modal = document.getElementById('modal-add-rule');
@@ -553,7 +509,9 @@
     });
 
     // ========== MODAL SỬA QUY ĐỊNH ==========
-    document.getElementById('btn-edit-rule').addEventListener('click', openEditRuleModal);
+    if (btnEditRule) {
+      btnEditRule.addEventListener('click', openEditRuleModal);
+    }
 
     function openEditRuleModal() {
       const modal = document.getElementById('modal-edit-rule');
@@ -601,6 +559,7 @@
       alert(`Đã lưu thay đổi cho quy định: ${title}\n(Demo - chưa nối API)`);
       closeEditRuleModal();
     });
+    <% } %>
   </script>
 </body>
 </html>

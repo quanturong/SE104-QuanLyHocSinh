@@ -3,9 +3,7 @@ const { sequelize } = require("../models");
 class PageController {
   async showTableControl(req, res) {
     try {
-      console.log("DEBUG /tablecontrol - session.user =", req.session.user);
       const role = (req.session?.user?.role || "").trim();
-      console.log("DEBUG /tablecontrol - role =", role);
 
       const [studentRows] = await sequelize.query(
         "SELECT COUNT(*) AS SoHocSinh FROM HoSoHocSinh;"
@@ -105,10 +103,8 @@ class PageController {
         const [gvRows] = await sequelize.query(
           `
           SELECT gv.MaGiaoVien, gv.HoTen, gv.GioiTinh, gv.NgaySinh,
-                gv.DiaChi, gv.Email,
-                l.MaLop AS LopChuNhiem
+                gv.DiaChi, gv.Email
           FROM GiaoVien gv
-          LEFT JOIN LopHoc l ON l.MaGVChuNhiem = gv.MaGiaoVien
           WHERE gv.MaGiaoVien = ? OR gv.Email = ?
           LIMIT 1;
           `,
@@ -122,12 +118,12 @@ class PageController {
             HoTen: gv.HoTen,
             VaiTro: role,
             MaSo: gv.MaGiaoVien,
-            LopHienTai: gv.LopChuNhiem || null,
+            LopHienTai: null, // Bảng LopHoc không có cột MaGVChuNhiem
             NgaySinh: gv.NgaySinh,
             GioiTinh: gv.GioiTinh,
             Email: gv.Email,
             DiaChi: gv.DiaChi,
-            LopChuNhiem: gv.LopChuNhiem || null,
+            LopChuNhiem: null, // Bảng LopHoc không có cột MaGVChuNhiem
           };
         }
       }
@@ -228,10 +224,20 @@ class PageController {
 
   async showRulesPage(req, res) {
     try {
+      const role = (req.session?.user?.role || "").trim();
+      const isStudent = role === "HocSinh";
+
+      if (isStudent) {
+        res.render("pages/rules-student", {
+          title: "Quy định",
+          user: req.session.user,
+        });
+        return;
+      }
+
       const quyDinhService = require("../services/quydinh.service");
       const rules = await quyDinhService.getAllQuyDinh();
 
-      const role = (req.session?.user?.role || "").trim();
       const canEditRules = role === "Admin" || role === "BGH";
 
       res.render("pages/rules", {
@@ -270,11 +276,10 @@ class PageController {
         SELECT 
           l.MaLop,
           l.KhoiLop,
-          l.MaGVChuNhiem AS MaGVCN,
           COUNT(hs.MaHocSinh) AS SiSoLop
         FROM LopHoc l
         LEFT JOIN HoSoHocSinh hs ON l.MaLop = hs.MaLop
-        GROUP BY l.MaLop, l.KhoiLop, l.MaGVChuNhiem
+        GROUP BY l.MaLop, l.KhoiLop
         ORDER BY l.KhoiLop ASC, l.MaLop ASC;
       `);
 

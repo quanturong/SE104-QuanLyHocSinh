@@ -52,10 +52,9 @@ router.post("/change-password", async (req, res) => {
   });
 });
 
-// Multer setup: use memory storage so we can parse file buffer directly
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB limit
+  limits: { fileSize: 5 * 1024 * 1024 },
 });
 
 const requireLogin = (req, res, next) => {
@@ -71,26 +70,17 @@ const normalizeRole = (rawRole) => {
   const r = rawRole.toString().trim().toLowerCase();
 
   const mapping = {
-    // Quản trị
     "admin": "Admin",
     "administrator": "Admin",
     "quản trị hệ thống": "Admin",
     "quan tri he thong": "Admin",
-
-    // Ban giám hiệu
     "bgh": "BGH",
     "ban giám hiệu": "BGH",
     "ban giam hieu": "BGH",
-
-    // Giáo viên
     "giaovien": "GiaoVien",
     "giáo viên": "GiaoVien",
     "giao vien": "GiaoVien",
     "teacher": "GiaoVien",
-
-    
-
-    // Học sinh
     "hocsinh": "HocSinh",
     "học sinh": "HocSinh",
     "hoc sinh": "HocSinh",
@@ -100,10 +90,8 @@ const normalizeRole = (rawRole) => {
   return mapping[r] || rawRole.toString().trim();
 };
 
-// Score routes (must be registered after helpers are defined)
 router.get("/scoretable", requireLogin, scoreController.showScoreTable);
 router.post('/scoretable/import', requireLogin, upload.single('scoreFile'), scoreController.importScores);
-// Endpoint to update a single student's scores for a subject
 router.post('/scoretable/update', requireLogin, scoreController.updateScore);
 
 const allowRoles = (roles) => {
@@ -337,7 +325,8 @@ router.get(
         overview.forEach(o => { if (o.MaHocSinh) map[o.MaHocSinh] = o; });
 
         studentsEnriched = students.map(s => {
-          const o = map[s.MaHocSinh] || {};
+          const studentId = String(s.MaHocSinh);
+          const o = map[studentId] || {};
           return {
             ...s,
             TB_HK1: o.TB_HK1 !== undefined ? o.TB_HK1 : 0,
@@ -377,7 +366,6 @@ router.get(
   }
 );
 
-// Thêm học sinh - CẬP NHẬT SiSoLop
 router.post(
   "/student",
   requireLogin,
@@ -404,7 +392,6 @@ router.post(
         return res.redirect("/student?error=" + encodeURIComponent("Lớp này đã đủ sĩ số tối đa 40 học sinh. Vui lòng chọn lớp khác."));
       }
 
-      // INSERT học sinh (MaHocSinh sẽ được tự động tạo bởi database)
       await sequelize.query(
         `
         INSERT INTO HoSoHocSinh
@@ -423,7 +410,6 @@ router.post(
         }
       );
 
-      // CẬP NHẬT SiSoLop
       await sequelize.query(
         `
         UPDATE LopHoc 
@@ -581,7 +567,6 @@ router.post(
     } catch (err) {
       console.error("Lỗi POST /student/edit:", err);
       const errorMsg = err.message || "Không sửa được học sinh";
-      // Bỏ phần (QĐ1), (QĐ2) nếu có
       const cleanErrorMsg = errorMsg.replace(/\s*\(QĐ\d+\)\.?/g, '');
       return res.redirect("/student?error=" + encodeURIComponent(cleanErrorMsg));
     }
@@ -598,11 +583,10 @@ router.get(
         SELECT 
           l.MaLop,
           l.KhoiLop,
-          l.MaGVChuNhiem AS MaGVCN,
           COUNT(hs.MaHocSinh) AS SiSoLop
         FROM LopHoc l
         LEFT JOIN HoSoHocSinh hs ON l.MaLop = hs.MaLop
-        GROUP BY l.MaLop, l.KhoiLop, l.MaGVChuNhiem
+        GROUP BY l.MaLop, l.KhoiLop
         ORDER BY l.KhoiLop ASC, l.MaLop ASC;
       `);
 
@@ -778,19 +762,9 @@ router.get(
           { replacements: [teacherId] }
         );
 
-        const [rowsCN] = await sequelize.query(
-          `
-          SELECT MaLop
-          FROM LopHoc
-          WHERE MaGVChuNhiem = ?;
-          `,
-          { replacements: [teacherId] }
-        );
-
         teacherClasses = [
           ...new Set([
             ...rowsTeach.map(r => r.MaLop),
-            ...rowsCN.map(r => r.MaLop),
           ]),
         ];
       }
@@ -881,10 +855,9 @@ router.get(
     try {
       // Read filters from query params
       const selectedYear = req.query.year || null;
-      const selectedSemester = req.query.semester || null; // '1','2' or 'full'
+      const selectedSemester = req.query.semester || null;
       const selectedSubject = req.query.subject || null;
 
-      // Load available subjects and years
       const [subjects] = await sequelize.query(
         "SELECT MaMonHoc, TenMonHoc FROM MonHoc ORDER BY TenMonHoc;"
       );
@@ -893,17 +866,29 @@ router.get(
         "SELECT MaNamHoc FROM NamHoc ORDER BY MaNamHoc DESC;"
       );
 
-      // Use service to compute subject report and aggregates
       const reportService = require('../services/report.service');
       const reportResult = await reportService.getSubjectReport(selectedYear, selectedSemester, selectedSubject);
       const reportMon = reportResult.rows || [];
       const reportMonTotals = reportResult.totals || { classes: 0, students: 0, passed: 0, passRate: 0 };
 
+      const hkWhere = [];
+      const hkReplacements = [];
+      if (selectedYear) {
+        hkWhere.push('NamHoc = ?');
+        hkReplacements.push(selectedYear);
+      }
+      if (selectedSemester && selectedSemester !== 'full') {
+        hkWhere.push('HocKy = ?');
+        hkReplacements.push(parseInt(selectedSemester, 10));
+      }
+      const hkWhereSQL = hkWhere.length ? ('WHERE ' + hkWhere.join(' AND ')) : '';
+      
       const [reportHK] = await sequelize.query(`
         SELECT *
         FROM BaoCaoTongKetHK
+        ${hkWhereSQL}
         ORDER BY NamHoc DESC, HocKy, MaLop;
-      `);
+      `, { replacements: hkReplacements });
 
       const role = getRole(req);
       const canExportReport =
@@ -927,6 +912,39 @@ router.get(
     } catch (err) {
       console.error("Lỗi /report:", err);
       res.status(500).send("Không tải được báo cáo.");
+    }
+  }
+);
+
+router.post(
+  "/report/recalculate",
+  requireLogin,
+  allowRoles(["Admin", "BGH", "GiaoVu"]),
+  async (req, res) => {
+    try {
+      const { year, semester } = req.body;
+      const reportService = require('../services/report.service');
+      
+      const yearParam = year && year !== '' ? year : null;
+      const semesterParam = semester && semester !== '' ? parseInt(semester, 10) : null;
+
+      const result = await reportService.recalculateAllReports(yearParam, semesterParam);
+
+      req.flash('success', 
+        `Tính toán lại báo cáo thành công! ` +
+        `Báo cáo môn học: ${result.subjectReport.created} mới, ${result.subjectReport.updated} cập nhật. ` +
+        `Báo cáo học kì: ${result.semesterReport.created} mới, ${result.semesterReport.updated} cập nhật.`
+      );
+      
+      const params = new URLSearchParams();
+      if (yearParam) params.set('year', yearParam);
+      if (semesterParam) params.set('semester', semesterParam);
+      
+      res.redirect('/report?' + params.toString());
+    } catch (err) {
+      console.error("Lỗi khi tính toán lại báo cáo:", err);
+      req.flash('error', 'Lỗi khi tính toán lại báo cáo: ' + err.message);
+      res.redirect('/report');
     }
   }
 );
