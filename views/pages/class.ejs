@@ -6,165 +6,166 @@
   <title>Danh sách lớp – Quản lí học sinh</title>
   <link rel="stylesheet" href="/css/style.css" />
 </head>
+
 <body class="page-student">
-  <div class="layout">
-    <%- include('../partials/sidebar') %>
+<div class="layout">
 
-    <main class="main">
-      <div class="page-header">
-        <h1 class="page-title">Danh sách lớp học</h1>
-        <p class="page-desc">
-          Dữ liệu lấy từ bảng <strong>LopHoc</strong>. Chọn lớp để xem sĩ số.
-        </p>
-      </div>
-      <section class="card" style="margin-bottom: 16px;">
-        <div class="class-info-grid">
-          <div class="class-info-item">
-            <label class="class-label">Năm học</label>
-            <select class="select class-select" id="select-year">
-              <% if (namHocs && namHocs.length) { %>
-                <% namHocs.forEach(function(nh, idx){ %>
-                  <option value="<%= nh.MaNamHoc %>" <%= idx === 0 ? "selected" : "" %>>
-                    <%= nh.MaNamHoc %>
-                  </option>
-                <% }) %>
-              <% } else { %>
-                <option>Chưa có năm học</option>
-              <% } %>
+  <%- include('../partials/sidebar') %>
+
+  <main class="main">
+
+    <!-- HEADER -->
+    <div class="page-header">
+      <h1 class="page-title">Danh sách lớp học</h1>
+      <p class="page-desc">
+        Dữ liệu lấy từ bảng <strong>LopHoc</strong>. Chọn lớp để xem sĩ số.
+      </p>
+    </div>
+
+    <!-- FILTER -->
+    <section class="card" style="margin-bottom:16px;">
+      <div class="ttb-filter-inline">
+
+        <div class="class-info-item">
+          <label class="class-label">Năm học</label>
+          <select class="select class-select" id="select-year">
+            <% namHocs.forEach((nh, idx) => { %>
+              <option value="<%= nh.MaNamHoc %>" <%= idx === 0 ? 'selected' : '' %>>
+                <%= nh.MaNamHoc %>
+              </option>
+            <% }) %>
+          </select>
+        </div>
+
+        <div class="class-info-item">
+          <label class="class-label">Lớp</label>
+          <div style="display:flex; gap:10px;">
+            <select class="select class-select" id="select-class">
+              <option value="">-- Chọn lớp --</option>
+              <% classes.forEach(cls => { %>
+                <option value="<%= cls.MaLop %>">
+                  <%= cls.KhoiLop %> - <%= cls.MaLop %>
+                </option>
+              <% }) %>
             </select>
+
+            <button id="btn-view" class="btn btn-sm">
+              Xem
+            </button>
           </div>
+        </div>
 
-          <div class="class-info-item">
-            <label class="class-label">Lớp</label>
+      </div>
+    </section>
 
-            <div style="display:flex; align-items:center; gap:10px;">
-              <select class="select class-select" id="select-class">
-                <option value="">-- Chọn lớp --</option>
-                <% classes.forEach(cls => { %>
-                  <option value="<%= cls.MaLop %>" data-siso="<%= cls.SiSoLop %>" <%= (selectedClass && selectedClass === cls.MaLop) ? 'selected' : '' %>>
-                    <%= cls.KhoiLop %> - <%= cls.MaLop %>
-                  </option>
-                <% }) %>
-              </select>
-
-              <button id="btn-view" class="btn btn-view-small">
-                Xem
-              </button>
-            </div>
-          </div>
-
-      </section>
-
-      <section class="card">
-        <div class="table-wrap" style="overflow:auto; max-height:560px;">
-          <table class="table" id="tbl-classes">
-            <thead>
-              <tr>
-                <th style="width:60px;">STT</th>
-                <th style="width:90px;">KHỐI</th>
-                <th style="width:120px;">MÃ LỚP</th>
-                <th style="width:100px;">SĨ SỐ</th>
-              </tr>
-            </thead>
-            <tbody>
-              <% if (classes && classes.length) { %>
-                <% classes.forEach(function(cls, index){ %>
-                  <tr
-                    data-class="<%= (cls.MaLop || '').toLowerCase() %>"
-                    data-siso="<%= cls.SiSoLop || 0 %>"
-                  >
-                    <td class="text-center"><%= index + 1 %></td>
-                    <td class="text-center"><%= cls.KhoiLop %></td>
-                    <td class="text-center"><%= cls.MaLop %></td>
-                    <td class="text-center"><%= cls.SiSoLop || 0 %></td>
-                  </tr>
-                <% }) %>
-              <% } else { %>
+    <!-- TABLE LỚP -->
+    <section class="card">
+      <div class="table-wrap">
+        <table class="table" id="tbl-classes" style="table-layout: fixed; width: 100%;">
+          <thead>
+            <tr>
+              <th style="width: 10%;">STT</th>
+              <th style="width: 20%;">MÃ LỚP</th>
+              <th style="width: 15%;">KHỐI</th>
+              <th style="width: 15%;">SĨ SỐ</th>
+              <th style="width: 40%;">GIÁO VIÊN CHỦ NHIỆM</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if (classes && classes.length) { %>
+              <% classes.forEach((cls, index) => { %>
                 <tr>
-                  <td colspan="4" class="text-center muted">
-                    Chưa có lớp trong hệ thống.
-                  </td>
+                  <td style="text-align: center;"><%= index + 1 %></td>
+                  <td style="text-align: center;"><%= cls.MaLop %></td>
+                  <td style="text-align: center;"><%= cls.KhoiLop %></td>
+                  <td style="text-align: center;"><%= cls.SiSoLop %></td>
+                  <td style="text-align: center;"><%= cls.TenGVChuNhiem || 'Chưa có' %></td>
                 </tr>
-              <% } %>
-            </tbody>
-          </table>
-        </div>
-
-        <div class="pagination">
-          <button class="btn-page" disabled>‹</button>
-          <span class="page-info">Trang <strong>1</strong> / <strong>1</strong></span>
-          <button class="btn-page" disabled>›</button>
-        </div>
-      </section>
-      <section class="card" style="margin-top:16px;">
-        <h3>Danh sách học sinh<% if (selectedClass) { %> – Lớp <%= selectedClass %><% } %></h3>
-
-        <div class="table-wrap" style="overflow:auto; max-height:520px;">
-          <table class="table">
-            <thead>
+              <% }) %>
+            <% } else { %>
               <tr>
-                <th style="width:60px;">STT</th>
-                <th style="width:100px;">MÃ HS</th>
-                <th style="width:200px;">HỌ TÊN</th>
-                <th style="width:100px;">GIỚI TÍNH</th>
-                <th style="width:120px;">NGÀY SINH</th>
-                <th style="width:200px;">ĐỊA CHỈ</th>
-                <th style="width:150px;">EMAIL</th>
+                <td colspan="5" class="text-center muted">
+                  Chưa có lớp trong hệ thống.
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              <% if (!selectedClass) { %>
-                <tr><td colspan="7" class="text-center muted">Vui lòng chọn lớp để xem danh sách học sinh.</td></tr>
-              <% } else if (!studentsInClass || studentsInClass.length === 0) { %>
-                <tr><td colspan="7" class="text-center muted">Không có học sinh trong lớp này.</td></tr>
-              <% } else { %>
-                <% studentsInClass.forEach(function(st, idx){ %>
-                  <tr>
-                    <td class="text-center"><%= idx + 1 %></td>
-                    <td class="text-center"><%= st.MaHocSinh %></td>
-                    <td><%= st.HoTen %></td>
-                    <td class="text-center"><%= st.GioiTinh || '' %></td>
-                    <td class="text-center"><%= st.NgaySinh ? new Date(st.NgaySinh).toLocaleDateString('vi-VN') : '' %></td>
-                    <td><%= st.DiaChi || '' %></td>
-                    <td><%= st.Email || '' %></td>
-                  </tr>
-                <% }) %>
-              <% } %>
-            </tbody>
-          </table>
-        </div>
-      </section>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
 
-    </main>
-  </div>
+      <div class="pagination">
+        <button class="btn-page" disabled>‹</button>
+        <span class="page-info">Trang <strong>1</strong> / <strong>1</strong></span>
+        <button class="btn-page" disabled>›</button>
+      </div>
+    </section>
 
-  <script>
-    (function() {
-      const selectClass = document.getElementById('select-class');
-      const countNumber = document.getElementById('count-number');
+    <!-- TABLE HỌC SINH -->
+    <section class="card" style="margin-top:16px;">
+      <h3>
+        Danh sách học sinh
+        <% if (selectedClass) { %> – Lớp <%= selectedClass %><% } %>
+      </h3>
 
-      function updateCount() {
-        const opt = selectClass.options[selectClass.selectedIndex];
-        if (!opt || !opt.getAttribute) return;
-        const siso = opt.getAttribute('data-siso');
-        countNumber.textContent = siso !== null ? siso : '--';
-      }
+      <div class="table-wrap">
+        <table class="table" id="tbl-students">
+          <thead>
+            <tr>
+              <th>STT</th>
+              <th>HỌ TÊN</th>
+              <th>MÃ HS</th>
+              <th>GIỚI TÍNH</th>
+              <th>NGÀY SINH</th>
+              <th>ĐỊA CHỈ</th>
+              <th>EMAIL</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if (!selectedClass) { %>
+              <tr>
+                <td colspan="7" class="text-center muted">
+                  Vui lòng chọn lớp để xem danh sách học sinh.
+                </td>
+              </tr>
+            <% } else if (!studentsInClass || studentsInClass.length === 0) { %>
+              <tr>
+                <td colspan="7" class="text-center muted">
+                  Không có học sinh trong lớp này.
+                </td>
+              </tr>
+            <% } else { %>
+              <% studentsInClass.forEach((st, idx) => { %>
+                <tr>
+                  <td><%= idx + 1 %></td>
+                  <td><%= st.HoTen %></td>
+                  <td><%= st.MaHocSinh %></td>
+                  <td><%= st.GioiTinh || '' %></td>
+                  <td>
+                    <%= st.NgaySinh ? new Date(st.NgaySinh).toLocaleDateString('vi-VN') : '' %>
+                  </td>
+                  <td><%= st.DiaChi || '' %></td>
+                  <td><%= st.Email || '' %></td>
+                </tr>
+              <% }) %>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
+    </section>
 
-      selectClass && selectClass.addEventListener('change', updateCount);
-    })();
-  </script>
-  <script>
-  document.getElementById("btn-view").addEventListener("click", function () {
-    const lop = document.getElementById("select-class").value;
+  </main>
+</div>
 
-    if (!lop) {
-      alert("Vui lòng chọn lớp!");
-      return;
-    }
-
-    window.location.href = `/class/view?lop=${lop}`;
-  });
-  </script>
+<script>
+document.getElementById("btn-view").addEventListener("click", function () {
+  const lop = document.getElementById("select-class").value;
+  if (!lop) {
+    alert("Vui lòng chọn lớp!");
+    return;
+  }
+  window.location.href = `/class/view?lop=${lop}`;
+});
+</script>
 
 </body>
 </html>

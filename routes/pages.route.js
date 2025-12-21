@@ -583,10 +583,12 @@ router.get(
         SELECT 
           l.MaLop,
           l.KhoiLop,
-          COUNT(hs.MaHocSinh) AS SiSoLop
+          COUNT(hs.MaHocSinh) AS SiSoLop,
+          gv.HoTen AS TenGVChuNhiem
         FROM LopHoc l
         LEFT JOIN HoSoHocSinh hs ON l.MaLop = hs.MaLop
-        GROUP BY l.MaLop, l.KhoiLop
+        LEFT JOIN GiaoVien gv ON l.MaGVChuNhiem = gv.MaGiaoVien
+        GROUP BY l.MaLop, l.KhoiLop, gv.HoTen
         ORDER BY l.KhoiLop ASC, l.MaLop ASC;
       `);
 
