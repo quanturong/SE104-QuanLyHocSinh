@@ -258,6 +258,44 @@ class ScoreController {
             res.redirect(referer);
         }
     }
+
+    async deleteScore(req, res) {
+        try {
+            const userRole = (req.session?.user?.role || "").trim();
+            if (userRole === "HocSinh") {
+                req.flash('error', 'Bạn không có quyền xóa điểm.');
+                return res.redirect('/scoretable');
+            }
+
+            const { MaHocSinh, NamHoc, HocKy, MaMon } = req.body;
+            if (!MaHocSinh || !NamHoc || !HocKy || !MaMon) {
+                req.flash('error', 'Thiếu thông tin để xóa điểm.');
+                return res.redirect(req.get('Referer') || '/scoretable');
+            }
+
+            const where = { MaHocSinh: MaHocSinh, MaMonHoc: MaMon, HocKy: parseInt(HocKy,10), NamHoc: NamHoc };
+            const existing = await BangDiemMonHoc.findOne({ where });
+            if (!existing) {
+                req.flash('error', 'Không tìm thấy bản ghi điểm để xóa.');
+                return res.redirect(req.get('Referer') || '/scoretable');
+            }
+
+            await existing.destroy();
+
+            reportService.autoRecalculateReports(NamHoc, parseInt(HocKy, 10));
+
+            req.flash('success', 'Xóa điểm thành công! Báo cáo sẽ được tự động cập nhật.');
+            const year = NamHoc;
+            const semester = HocKy;
+            const subject = MaMon;
+            res.redirect(`/scoretable?tab=subject&year=${encodeURIComponent(year)}&semester=${encodeURIComponent(semester)}&subject=${encodeURIComponent(subject)}`);
+        } catch (error) {
+            console.error('Lỗi khi xóa điểm:', error);
+            req.flash('error', 'Có lỗi khi xóa điểm: ' + (error.message || error));
+            const referer = req.get('Referer') || '/scoretable';
+            res.redirect(referer);
+        }
+    }
 }
 
 module.exports = new ScoreController();

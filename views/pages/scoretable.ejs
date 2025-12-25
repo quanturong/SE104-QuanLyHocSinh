@@ -206,6 +206,7 @@
                                         <% if (!isStudentFlag) { %>
                                         <td class="action-cell">
                                             <button class="btn btn-sm btn-ghost" onclick="openEditModal(<%= score.MaHocSinh %>)">Sửa</button>
+                                            <button class="btn btn-sm btn-danger" onclick="openDeleteConfirm(<%= score.MaHocSinh %>)">Xóa</button>
                                         </td>
                                         <% } %>
                                     </tr>
@@ -343,6 +344,20 @@
         });
 
         // ========== EDIT MODAL HTML INJECTION ==========
+
+        // Hàm xác nhận xóa: sử dụng form ẩn để POST tới endpoint xóa
+        function openDeleteConfirm(studentId) {
+            const row = document.querySelector(`#tbl-subject tr[data-id='${studentId}']`);
+            if (!row) return alert('Không tìm thấy học sinh.');
+            const hoTen = row.getAttribute('data-ho-ten') || '';
+            if (!confirm(`Bạn có chắc muốn xóa tất cả điểm môn của học sinh "${hoTen}" không?`)) return;
+
+            document.getElementById('delMaHocSinh').value = studentId;
+            document.getElementById('delNamHoc').value = document.getElementById('year-subject').value;
+            document.getElementById('delHocKy').value = document.getElementById('semester-subject').value;
+            document.getElementById('delMaMon').value = document.getElementById('subject-subject').value;
+            document.getElementById('frm-delete').submit();
+        }
     </script>
 
     <!-- Edit modal -->
@@ -382,6 +397,15 @@
         .modal.open{display:block}
         .modal-backdrop{position:absolute; inset:0; background:rgba(0,0,0,0.4)}
         .modal-panel{position:relative; width:480px; max-width:96%; margin:80px auto; background:white; padding:16px; border-radius:6px; box-shadow:0 6px 24px rgba(0,0,0,0.2)}
+        .btn-danger{background:#ff4d4f;color:white;border:none;padding:6px 10px;border-radius:4px;margin-left:8px}
     </style>
+
+    <!-- Hidden delete form -->
+    <form id="frm-delete" method="post" action="/scoretable/delete" style="display:none;">
+        <input type="hidden" name="MaHocSinh" id="delMaHocSinh" />
+        <input type="hidden" name="NamHoc" id="delNamHoc" />
+        <input type="hidden" name="HocKy" id="delHocKy" />
+        <input type="hidden" name="MaMon" id="delMaMon" />
+    </form>
 </body>
 </html>

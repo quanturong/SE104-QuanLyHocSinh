@@ -93,6 +93,7 @@ const normalizeRole = (rawRole) => {
 router.get("/scoretable", requireLogin, scoreController.showScoreTable);
 router.post('/scoretable/import', requireLogin, upload.single('scoreFile'), scoreController.importScores);
 router.post('/scoretable/update', requireLogin, scoreController.updateScore);
+router.post('/scoretable/delete', requireLogin, scoreController.deleteScore);
 
 const allowRoles = (roles) => {
   return (req, res, next) => {
