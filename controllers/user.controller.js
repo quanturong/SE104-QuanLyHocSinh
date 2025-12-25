@@ -204,7 +204,57 @@ class UserController {
       res.status(500).json({ error: "Lỗi khi lấy danh sách người dùng" });
     }
   }
-    async changePassword(req, res) {
+
+  async deleteUser(req, res) {
+    try {
+      const user = req.session.user;
+      if (!user || user.role !== "Admin") {
+        return res.status(403).json({ error: "Bạn không có quyền thực hiện thao tác này" });
+      }
+
+      // Xử lý cả JSON và form-data
+      const TenDangNhap = req.body?.TenDangNhap || req.body?.username;
+
+      if (!TenDangNhap) {
+        return res.status(400).json({ error: "Thiếu tên đăng nhập" });
+      }
+
+      // Không cho phép xóa chính mình
+      // Lấy TenDangNhap từ database để so sánh chính xác
+      // Vì user.username có thể là MaHocSinh (cho học sinh) hoặc TenDangNhap
+      const currentUser = await userService.getUserByUsername(user.username);
+      if (currentUser && currentUser.TenDangNhap === TenDangNhap) {
+        return res.status(400).json({ error: "Bạn không thể xóa chính tài khoản của mình" });
+      }
+      
+      // Nếu không tìm thấy bằng username, thử tìm trực tiếp bằng TenDangNhap
+      // (trường hợp user.username là MaHocSinh nhưng TenDangNhap trong DB khác)
+      if (!currentUser) {
+        const directUser = await userService.getUserByUsername(TenDangNhap);
+        // Kiểm tra nếu đây là tài khoản của chính user hiện tại
+        // Bằng cách kiểm tra xem có user nào có TenDangNhap trùng với user.username không
+        const allUsers = await userService.getAllUsers();
+        const myAccount = allUsers.find(u => u.TenDangNhap === user.username);
+        if (myAccount && myAccount.TenDangNhap === TenDangNhap) {
+          return res.status(400).json({ error: "Bạn không thể xóa chính tài khoản của mình" });
+        }
+      }
+
+      await userService.deleteUser(TenDangNhap);
+
+      return res.json({ 
+        success: true, 
+        message: `Đã xóa tài khoản "${TenDangNhap}" thành công` 
+      });
+    } catch (error) {
+      console.error("Lỗi khi xóa người dùng:", error);
+      return res.status(500).json({ 
+        error: error.message || "Lỗi khi xóa người dùng" 
+      });
+    }
+  }
+
+  async changePassword(req, res) {
     try {
       const user = req.session.user;
       if (!user) {

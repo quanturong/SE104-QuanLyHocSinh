@@ -23,6 +23,7 @@
 
       <!-- Include notification modal -->
       <%- include('../partials/notification-modal') %>
+      <%- include('../partials/delete-confirm-modal') %>
       <section class="card" style="margin-bottom:16px;">
         <div class="toolbar" style="display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap;">
           <div style="min-width:200px; flex:0 0 auto; display:flex; flex-direction:column;">
@@ -635,18 +636,22 @@
       if (deleteBtn) {
         const maGV = deleteBtn.getAttribute('data-delete');
         const hoTen = deleteBtn.getAttribute('data-hoten') || '';
-        if (confirm(`Bạn có chắc muốn xóa giáo viên "${hoTen}" (Mã: ${maGV})?`)) {
-          const form = document.createElement('form');
-          form.method = 'POST';
-          form.action = '/teacher/delete';
-          const input = document.createElement('input');
-          input.type = 'hidden';
-          input.name = 'MaGiaoVien';
-          input.value = maGV;
-          form.appendChild(input);
-          document.body.appendChild(form);
-          form.submit();
-        }
+        showDeleteConfirm(
+          `Bạn có chắc chắn muốn xóa giáo viên "${hoTen}" (Mã: ${maGV})?`,
+          '⚠️ Hành động này không thể hoàn tác!',
+          function() {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '/teacher/delete';
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'MaGiaoVien';
+            input.value = maGV;
+            form.appendChild(input);
+            document.body.appendChild(form);
+            form.submit();
+          }
+        );
       }
     });
   </script>

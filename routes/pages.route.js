@@ -995,6 +995,13 @@ router.post(
   }
 );
 
+router.post(
+  "/user/delete",
+  requireLogin,
+  requireAdmin,
+  (req, res) => userController.deleteUser(req, res)
+);
+
 const namHocController = require("../controllers/namhoc.controller");
 
 router.get(

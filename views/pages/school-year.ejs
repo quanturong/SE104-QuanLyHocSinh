@@ -14,6 +14,9 @@
         const canManage = permissions && permissions.canManageSchoolYear;
       %>
 
+      <!-- Include modals -->
+      <%- include('../partials/delete-confirm-modal') %>
+      
       <!-- Overlay thêm năm học -->
       <div id="school-year-overlay" class="sp-overlay" style="display:none;">
         <div class="sp-modal">
@@ -187,18 +190,22 @@
           const tr = this.closest('tr');
           if (!tr) return;
           const maNamHoc = tr.getAttribute('data-manamhoc') || '';
-          if (confirm(`Bạn có chắc muốn xóa năm học "${maNamHoc}"?`)) {
-            const form = document.createElement('form');
-            form.method = 'POST';
-            form.action = '/school-year/delete';
-            const input = document.createElement('input');
-            input.type = 'hidden';
-            input.name = 'MaNamHoc';
-            input.value = maNamHoc;
-            form.appendChild(input);
-            document.body.appendChild(form);
-            form.submit();
-          }
+          showDeleteConfirm(
+            `Bạn có chắc chắn muốn xóa năm học "${maNamHoc}"?`,
+            '⚠️ Hành động này không thể hoàn tác! Tất cả dữ liệu liên quan đến năm học này có thể bị ảnh hưởng.',
+            function() {
+              const form = document.createElement('form');
+              form.method = 'POST';
+              form.action = '/school-year/delete';
+              const input = document.createElement('input');
+              input.type = 'hidden';
+              input.name = 'MaNamHoc';
+              input.value = maNamHoc;
+              form.appendChild(input);
+              document.body.appendChild(form);
+              form.submit();
+            }
+          );
         });
       });
     })();

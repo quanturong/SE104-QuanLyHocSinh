@@ -60,6 +60,7 @@
 
       <!-- Include notification modal -->
       <%- include('../partials/notification-modal') %>
+      <%- include('../partials/delete-confirm-modal') %>
 
       <div class="page-header">
         <h1 class="page-title">📚 Quản lý môn học</h1>
@@ -189,18 +190,22 @@
           if (!tr) return;
           const maMonHoc = tr.getAttribute('data-mamonhoc') || '';
           const tenMonHoc = tr.getAttribute('data-tenmonhoc') || '';
-          if (confirm(`Bạn có chắc muốn xóa môn học "${tenMonHoc}" (${maMonHoc})?`)) {
-            const form = document.createElement('form');
-            form.method = 'POST';
-            form.action = '/subject/delete';
-            const input = document.createElement('input');
-            input.type = 'hidden';
-            input.name = 'MaMonHoc';
-            input.value = maMonHoc;
-            form.appendChild(input);
-            document.body.appendChild(form);
-            form.submit();
-          }
+          showDeleteConfirm(
+            `Bạn có chắc chắn muốn xóa môn học "${tenMonHoc}" (${maMonHoc})?`,
+            '⚠️ Hành động này không thể hoàn tác! Tất cả điểm số và thời khóa biểu liên quan có thể bị ảnh hưởng.',
+            function() {
+              const form = document.createElement('form');
+              form.method = 'POST';
+              form.action = '/subject/delete';
+              const input = document.createElement('input');
+              input.type = 'hidden';
+              input.name = 'MaMonHoc';
+              input.value = maMonHoc;
+              form.appendChild(input);
+              document.body.appendChild(form);
+              form.submit();
+            }
+          );
         });
       });
     })();

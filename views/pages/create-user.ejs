@@ -152,7 +152,7 @@
                 <th style="width:200px;">TÊN ĐĂNG NHẬP</th>
                 <th style="width:200px;">VAI TRÒ HIỆN TẠI</th>
                 <th style="width:200px;">THAY ĐỔI VAI TRÒ</th>
-                <th style="width:150px;">THAO TÁC</th>
+                <th style="width:200px;">THAO TÁC</th>
               </tr>
             </thead>
             <tbody id="users-tbody">
@@ -166,6 +166,9 @@
     </main>
   </div>
 
+  <!-- Include delete confirm modal -->
+  <%- include('../partials/delete-confirm-modal') %>
+
   <script>
     async function loadUsers() {
       try {
@@ -178,7 +181,15 @@
           return;
         }
 
+        // Lấy username của user hiện tại từ session
+        const currentUsername = '<%= (typeof user !== "undefined" && user && user.username) ? user.username : "" %>';
+
         tbody.innerHTML = users.map((user, index) => {
+          // So sánh TenDangNhap với username trong session
+          // Vì username trong session có thể là MaHocSinh (cho học sinh) hoặc TenDangNhap
+          const isCurrentUser = user.TenDangNhap === currentUsername || 
+                                (currentUsername && user.TenDangNhap && 
+                                 (user.TenDangNhap.toLowerCase() === currentUsername.toLowerCase()));
           return `
             <tr>
               <td class="text-center">${index + 1}</td>
@@ -193,8 +204,9 @@
                   <option value="HocSinh" ${user.VaiTro === 'HocSinh' ? 'selected' : ''}>HocSinh</option>
                 </select>
               </td>
-              <td>
+              <td style="display: flex; gap: 8px;">
                 <button class="btn btn-sm btn-update-role" data-username="${user.TenDangNhap}">Cập nhật</button>
+                ${isCurrentUser ? '' : `<button class="btn btn-sm" style="background: #dc3545; color: white;" onclick="deleteUser('${user.TenDangNhap}')">Xóa</button>`}
               </td>
             </tr>
           `;
@@ -250,6 +262,45 @@
     }
 
     document.getElementById('btn-refresh-users')?.addEventListener('click', loadUsers);
+
+    async function deleteUser(username) {
+      if (!username) {
+        alert('Lỗi: Không có tên đăng nhập');
+        return;
+      }
+
+      showDeleteConfirm(
+        `Bạn có chắc chắn muốn xóa tài khoản "${username}"?`,
+        '⚠️ Hành động này không thể hoàn tác! Tài khoản và tất cả dữ liệu liên quan sẽ bị xóa vĩnh viễn.',
+        async function() {
+          try {
+        const response = await fetch('/user/delete', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ TenDangNhap: username })
+        });
+
+            const result = await response.json();
+
+            if (response.ok && result.success) {
+              alert(result.message || 'Xóa tài khoản thành công!');
+              loadUsers(); // Reload danh sách
+            } else {
+              alert('Lỗi: ' + (result.error || 'Không thể xóa tài khoản'));
+            }
+          } catch (err) {
+            console.error('Lỗi khi xóa người dùng:', err);
+            alert('Lỗi khi xóa tài khoản: ' + err.message);
+          }
+        }
+      );
+    }
+
+    // Expose deleteUser to global scope for onclick handler
+    window.deleteUser = deleteUser;
+
     loadUsers();
   </script>
 </body>

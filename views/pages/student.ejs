@@ -13,6 +13,8 @@
     <main class="main">
       <!-- Include notification modal -->
       <%- include('../partials/notification-modal') %>
+      <!-- Include delete confirm modal -->
+      <%- include('../partials/delete-confirm-modal') %>
 
       <!-- Overlay thêm học sinh -->
       <div id="student-overlay" class="sp-overlay" style="display:none;">
@@ -458,22 +460,26 @@
         return;
       }
 
-      if (confirm(`Bạn có chắc chắn muốn xóa học sinh "${hoten}" (${mahs}) không?\n\nLưu ý: Tất cả điểm số và điểm danh sẽ bị xóa.`)) {
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = '/student/delete';
-        
-        const input = document.createElement('input');
-        input.type = 'hidden';
-        input.name = 'MaHocSinh';
-        input.value = mahs;
-        
-        form.appendChild(input);
-        document.body.appendChild(form);
-        
-        console.log('🗑️ Xóa học sinh:', mahs);
-        form.submit();
-      }
+      showDeleteConfirm(
+        `Bạn có chắc chắn muốn xóa học sinh "${hoten}" (${mahs})?`,
+        '⚠️ Lưu ý: Tất cả điểm số và điểm danh của học sinh này sẽ bị xóa vĩnh viễn!',
+        function() {
+          const form = document.createElement('form');
+          form.method = 'POST';
+          form.action = '/student/delete';
+          
+          const input = document.createElement('input');
+          input.type = 'hidden';
+          input.name = 'MaHocSinh';
+          input.value = mahs;
+          
+          form.appendChild(input);
+          document.body.appendChild(form);
+          
+          console.log('🗑️ Xóa học sinh:', mahs);
+          form.submit();
+        }
+      );
     });
   });
 })();

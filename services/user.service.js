@@ -44,12 +44,7 @@ class UserService {
     return await nguoiDungRepository.findById(id);
   }
   async getUserByUsername(username) {
-  return new Promise((resolve, reject) => {
-    db.query("SELECT * FROM taikhoan WHERE TenDangNhap = ?", [username], (err, rows) => {
-      if (err) return reject(err);
-      resolve(rows[0]);
-    });
-  });
+    return await nguoiDungRepository.findByUsername(username);
   }
   async updatePasswordByUsername(username, newHash) {
     const user = await nguoiDungRepository.findByUsername(username);
@@ -77,6 +72,22 @@ class UserService {
     }
 
     return await nguoiDungRepository.update(user.MaNguoiDung, { VaiTro: vaiTro });
+  }
+
+  async deleteUser(username) {
+    const user = await nguoiDungRepository.findByUsername(username);
+    if (!user) {
+      throw new Error("Không tìm thấy người dùng");
+    }
+
+    // Không cho phép xóa chính mình
+    // Note: Cần kiểm tra trong controller với session user
+
+    return await nguoiDungRepository.delete(user.MaNguoiDung);
+  }
+
+  async updatePassword(id, newHash) {
+    return await nguoiDungRepository.update(id, { MatKhau: newHash });
   }
 }
 
