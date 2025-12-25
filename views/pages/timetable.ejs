@@ -20,6 +20,12 @@
         <p class="page-desc">
           Chọn năm học, học kỳ và lớp để xem thời khóa biểu chi tiết theo từng tiết.
         </p>
+        <% if (error) { %>
+          <div class="alert alert-error"><%= error %></div>
+        <% } %>
+        <% if (success) { %>
+          <div class="alert alert-success"><%= success %></div>
+        <% } %>
       </div>
 
       <section class="card" style="margin-bottom:16px;">
@@ -28,8 +34,8 @@
             <label class="class-label">Năm học</label>
             <select class="select select-sm" id="ttb-year">
               <% if (typeof namHocs !== 'undefined' && namHocs && namHocs.length) { %>
-                <% namHocs.forEach(function(nh, idx){ %>
-                  <option value="<%= nh.MaNamHoc %>" <%= idx === 0 ? "selected" : "" %>>
+                <% namHocs.forEach(function(nh){ %>
+                  <option value="<%= nh.MaNamHoc %>" <%= (typeof selectedYear !== 'undefined' && selectedYear === nh.MaNamHoc) ? 'selected' : '' %>>
                     <%= nh.MaNamHoc %>
                   </option>
                 <% }) %>
@@ -42,8 +48,8 @@
           <div class="class-info-item">
             <label class="class-label">Học kỳ</label>
             <select class="select select-sm" id="ttb-semester">
-              <option value="1" selected>Học kỳ 1</option>
-              <option value="2">Học kỳ 2</option>
+              <option value="1" <%= (typeof selectedSemester !== 'undefined' && selectedSemester === '1') ? 'selected' : '' %>>Học kỳ 1</option>
+              <option value="2" <%= (typeof selectedSemester !== 'undefined' && selectedSemester === '2') ? 'selected' : '' %>>Học kỳ 2</option>
             </select>
           </div>
 
@@ -51,8 +57,8 @@
             <label class="class-label">Lớp</label>
             <select class="select select-sm" id="ttb-class">
               <% if (typeof classes !== 'undefined' && classes && classes.length) { %>
-                <% classes.forEach(function(c, idx){ %>
-                  <option value="<%= c.MaLop %>" <%= idx === 0 ? "selected" : "" %>>
+                <% classes.forEach(function(c){ %>
+                  <option value="<%= c.MaLop %>" <%= (typeof selectedClass !== 'undefined' && selectedClass === c.MaLop) ? 'selected' : '' %>>
                     <%= c.MaLop %>
                   </option>
                 <% }) %>
@@ -89,20 +95,26 @@
         </div>
 
         <% if (canEditTimetable) { %>
-          <div style="display:flex;justify-content:flex-end;margin-top:14px;">
+          <div style="display:flex;justify-content:flex-end;margin-top:14px;gap:8px;">
             <button class="btn-edit-tkb" id="btn-edit-tkb">🖊️ Sửa thời khóa biểu</button>
+            <button class="btn-reset-tkb" id="btn-reset-tkb" type="button" onclick="resetTimetableConfirm()">🗑️ Đặt lại</button>
           </div>
+
+          <form id="frm-reset-tkb" method="post" action="/timetable/reset" style="display:none;">
+            <input type="hidden" name="MaLop" id="resetMaLop" />
+            <input type="hidden" name="NamHoc" id="resetNamHoc" />
+          </form>
         <% } %>
       </section>
     <div class="sp-overlay" id="modal-edit-timetable" style="display:none;">
       <div class="sp-modal">
         <h2 class="sp-title">Sửa thời khóa biểu</h2>
         
-        <form class="sp-form" id="form-edit-timetable">
+        <form class="sp-form" id="form-edit-timetable" method="post" action="/timetable/save">
           <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px;">
             <div class="sp-field">
               <label>Thứ</label>
-              <select id="edit-thu">
+              <select id="edit-thu" name="Thu">
                 <option value="2">Thứ 2</option>
                 <option value="3">Thứ 3</option>
                 <option value="4">Thứ 4</option>
@@ -114,7 +126,7 @@
 
             <div class="sp-field">
               <label>Tiết học</label>
-              <select id="edit-tiet">
+              <select id="edit-tiet" name="TietHoc">
                 <option value="1">Tiết 1</option>
                 <option value="2">Tiết 2</option>
                 <option value="3">Tiết 3</option>
@@ -128,19 +140,19 @@
 
             <div class="sp-field">
               <label>Lớp</label>
-              <input type="text" id="edit-lop-tkb" readonly style="background:#f1f5f9; cursor:not-allowed;" />
+              <input type="text" id="edit-lop-tkb" name="MaLop" readonly style="background:#f1f5f9; cursor:not-allowed;" />
             </div>
           </div>
 
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
             <div class="sp-field">
               <label>Năm học</label>
-              <input type="text" id="edit-nam-hoc-tkb" readonly style="background:#f1f5f9; cursor:not-allowed;" />
+              <input type="text" id="edit-nam-hoc-tkb" name="NamHoc" readonly style="background:#f1f5f9; cursor:not-allowed;" />
             </div>
 
             <div class="sp-field">
               <label>Học kỳ</label>
-              <select id="edit-hoc-ky-tkb">
+              <select id="edit-hoc-ky-tkb" name="HocKy">
                 <option value="1">Học kỳ 1</option>
                 <option value="2">Học kỳ 2</option>
               </select>
@@ -149,38 +161,40 @@
 
           <div class="sp-field">
             <label>Môn học</label>
-            <select id="edit-mon-hoc-tkb">
-              <option>Toán 10</option>
-              <option>Vật lý 10</option>
-              <option>Hóa học 10</option>
-              <option>Sinh học 10</option>
-              <option>Văn 10</option>
-              <option>Anh văn 10</option>
-              <option>Sử 10</option>
-              <option>Địa 10</option>
-              <option>GDCD 10</option>
+            <select id="edit-mon-hoc-tkb" name="MaMonHoc">
+              <% if (typeof subjects !== 'undefined' && subjects && subjects.length) { %>
+                <option value="">(Không chọn)</option>
+                <% subjects.forEach(s => { %>
+                  <option value="<%= s.MaMonHoc %>"><%= s.TenMonHoc %></option>
+                <% }) %>
+              <% } else { %>
+                <option>Không có môn</option>
+              <% } %>
             </select>
           </div>
 
           <div class="sp-field">
             <label>Giáo viên</label>
-            <select id="edit-giao-vien-tkb">
-              <option>Nguyễn Văn An</option>
-              <option>Trần Thị Bình</option>
-              <option>Lê Minh Cường</option>
-              <option>Phạm Thu Dung</option>
-              <option>Võ Quốc Dũng</option>
+            <select id="edit-giao-vien-tkb" name="MaGiaoVien">
+              <% if (typeof teachers !== 'undefined' && teachers && teachers.length) { %>
+                <option value="">(Không chọn)</option>
+                <% teachers.forEach(t => { %>
+                  <option value="<%= t.MaGiaoVien %>"><%= t.HoTen %></option>
+                <% }) %>
+              <% } else { %>
+                <option>Không có giáo viên</option>
+              <% } %>
             </select>
           </div>
 
           <div class="sp-field">
             <label>Phòng học</label>
-            <input type="text" id="edit-phong-hoc" placeholder="VD: A101, B202..." />
+            <input type="text" id="edit-phong-hoc" name="PhongHoc" placeholder="VD: A101, B202..." />
           </div>
 
           <div class="sp-field">
             <label>Ghi chú</label>
-            <textarea id="edit-ghi-chu-tkb" rows="2" placeholder="Ghi chú thêm (nếu có)..."></textarea>
+            <textarea id="edit-ghi-chu-tkb" name="GhiChu" rows="2" placeholder="Ghi chú thêm (nếu có)..."></textarea>
           </div>
 
           <div class="sp-actions">
@@ -201,11 +215,15 @@
     const RAW_TKB  = <%- typeof timetables !== 'undefined' ? JSON.stringify(timetables) : '[]' %>;
     const CLASSES  = <%- typeof classes    !== 'undefined' ? JSON.stringify(classes)    : '[]' %>;
     const NAM_HOCS = <%- typeof namHocs    !== 'undefined' ? JSON.stringify(namHocs)    : '[]' %>;
+    const SELECTED_YEAR = '<%= typeof selectedYear !== 'undefined' ? selectedYear : '' %>';
+    const SELECTED_SEMESTER = '<%= typeof selectedSemester !== 'undefined' ? selectedSemester : '1' %>';
+    const SELECTED_CLASS = '<%= typeof selectedClass !== 'undefined' ? selectedClass : '' %>';
 
     const ttbYearSel     = document.getElementById('ttb-year');
     const ttbSemesterSel = document.getElementById('ttb-semester');
     const ttbClassSel    = document.getElementById('ttb-class');
     const ttbBody        = document.getElementById('ttb-body');
+    const CAN_EDIT_TKB   = <%= (permissions && permissions.canEditTimetable) ? 'true' : 'false' %>;
 
     function getAllPeriods(data) {
       const set = new Set();
@@ -239,7 +257,7 @@
         ttbBody.innerHTML = `
           <tr>
             <td colspan="7" class="text-center muted">
-              Chưa có thời khóa biểu cho lựa chọn hiện tại.
+              Chưa có thời khóa biểu cho lựa chọn hiện tại. ${CAN_EDIT_TKB ? 'Nhấn "Sửa thời khóa biểu" để tạo mới.' : ''}
             </td>
           </tr>`;
         return;
@@ -270,11 +288,26 @@
       ttbBody.innerHTML = html;
     }
 
-    ttbClassSel    && ttbClassSel.addEventListener('change', renderTable);
-    ttbYearSel     && ttbYearSel.addEventListener('change', renderTable);
-    ttbSemesterSel && ttbSemesterSel.addEventListener('change', renderTable);
+    // On change we reload page so server can provide the filtered data (by year/semester/class)
+    function reloadWithFilters() {
+      const year = ttbYearSel.value;
+      const semester = ttbSemesterSel.value;
+      const cls = ttbClassSel.value || '';
+      const q = `?year=${encodeURIComponent(year)}&semester=${encodeURIComponent(semester)}${cls ? '&class='+encodeURIComponent(cls) : ''}`;
+      window.location.href = '/timetable' + q;
+    }
 
-    window.addEventListener('DOMContentLoaded', renderTable);
+    ttbClassSel    && ttbClassSel.addEventListener('change', reloadWithFilters);
+    ttbYearSel     && ttbYearSel.addEventListener('change', reloadWithFilters);
+    ttbSemesterSel && ttbSemesterSel.addEventListener('change', reloadWithFilters);
+
+    window.addEventListener('DOMContentLoaded', () => {
+      // If the server provided selected values, ensure selects reflect them
+      if (SELECTED_YEAR) ttbYearSel.value = SELECTED_YEAR;
+      if (SELECTED_SEMESTER) ttbSemesterSel.value = SELECTED_SEMESTER;
+      if (SELECTED_CLASS) ttbClassSel.value = SELECTED_CLASS;
+      renderTable();
+    });
     function openEditTimetableModal() {
       document.getElementById('modal-edit-timetable').style.display = 'grid';
     }
@@ -287,11 +320,46 @@
         closeEditTimetableModal();
       }
     });
+
+    // Reset timetable for selected class/year
+    function resetTimetableConfirm() {
+      const lop = (ttbClassSel.value || '').toString();
+      const nam = (ttbYearSel.value || '').toString();
+      if (!lop || !nam) return alert('Vui lòng chọn lớp và năm học để đặt lại.');
+      if (!confirm(`Bạn có chắc muốn xóa toàn bộ thời khóa biểu của lớp "${lop}" - năm học "${nam}"?`)) return;
+      document.getElementById('resetMaLop').value = lop;
+      document.getElementById('resetNamHoc').value = nam;
+      document.getElementById('frm-reset-tkb').submit();
+    }
     document.getElementById('form-edit-timetable')?.addEventListener('submit', (e) => {
-      e.preventDefault();
-      alert('Đã lưu thay đổi thời khóa biểu!');
-      closeEditTimetableModal();
+      if (!confirm('Bạn có chắc muốn lưu thay đổi thời khóa biểu không?')) {
+        e.preventDefault();
+      }
     });
+    // Helper to prefill modal fields from existing RAW_TKB data
+    function fillModalFromData() {
+      const lop = document.getElementById('edit-lop-tkb').value;
+      const thu = parseInt(document.getElementById('edit-thu').value, 10);
+      const tiet = parseInt(document.getElementById('edit-tiet').value, 10);
+
+      const item = RAW_TKB.find(r => r.MaLop === lop && parseInt(r.Thu,10) === thu && parseInt(r.TietHoc,10) === tiet);
+      if (item) {
+        document.getElementById('edit-mon-hoc-tkb').value = item.MaMonHoc || '';
+        document.getElementById('edit-giao-vien-tkb').value = item.MaGiaoVien || '';
+        // optionally set room/note if available
+        document.getElementById('edit-phong-hoc').value = item.PhongHoc || '';
+        document.getElementById('edit-ghi-chu-tkb').value = item.GhiChu || '';
+      } else {
+        document.getElementById('edit-mon-hoc-tkb').value = '';
+        document.getElementById('edit-giao-vien-tkb').value = '';
+        document.getElementById('edit-phong-hoc').value = '';
+        document.getElementById('edit-ghi-chu-tkb').value = '';
+      }
+    }
+
+    document.getElementById('edit-thu')?.addEventListener('change', fillModalFromData);
+    document.getElementById('edit-tiet')?.addEventListener('change', fillModalFromData);
+
     const btnEdit = document.getElementById('btn-edit-tkb');
     if (btnEdit) {
       btnEdit.addEventListener('click', () => {
@@ -301,7 +369,10 @@
         document.getElementById('edit-thu').value = '2';
         document.getElementById('edit-tiet').value = '1';
         document.getElementById('edit-phong-hoc').value = 'A101';
-        
+
+        // Prefill subject/teacher if data exists for defaults
+        fillModalFromData();
+
         openEditTimetableModal();
       });
     }

@@ -662,19 +662,7 @@ router.get(
   allowRoles(allRoles),
   async (req, res) => {
     try {
-      const [tkbRows] = await sequelize.query(`
-        SELECT t.MaLop,
-               t.Thu,
-               t.TietHoc,
-               t.MaMonHoc,
-               m.TenMonHoc,
-               t.MaGiaoVien,
-               gv.HoTen AS TenGiaoVien
-        FROM ThoiKhoaBieu t
-        LEFT JOIN MonHoc   m  ON t.MaMonHoc   = m.MaMonHoc
-        LEFT JOIN GiaoVien gv ON t.MaGiaoVien = gv.MaGiaoVien
-        ORDER BY t.MaLop, t.Thu, t.TietHoc;
-      `);
+      const { year, semester = '1', class: selectedClass } = req.query;
 
       const [classes] = await sequelize.query(`
         SELECT MaLop, KhoiLop
@@ -688,9 +676,52 @@ router.get(
         ORDER BY MaNamHoc DESC;
       `);
 
+      // Determine selected year (default to latest if not provided)
+      const selectedYear = year || (namHocs && namHocs.length ? namHocs[0].MaNamHoc : null);
+      const selectedSemester = semester || '1';
+
+      // Also fetch subjects and teachers to populate edit modal selects
+      const [subjects] = await sequelize.query(`
+        SELECT MaMonHoc, TenMonHoc
+        FROM MonHoc
+        ORDER BY TenMonHoc;
+      `);
+      const [teachers] = await sequelize.query(`
+        SELECT MaGiaoVien, HoTen
+        FROM GiaoVien
+        ORDER BY HoTen;
+      `);
+
+      // Load timetable rows filtered by NamHoc (and optionally by class)
+      let sql = `
+        SELECT t.MaLop,
+               t.Thu,
+               t.TietHoc,
+               t.MaMonHoc,
+               m.TenMonHoc,
+               t.MaGiaoVien,
+               gv.HoTen AS TenGiaoVien
+        FROM ThoiKhoaBieu t
+        LEFT JOIN MonHoc   m  ON t.MaMonHoc   = m.MaMonHoc
+        LEFT JOIN GiaoVien gv ON t.MaGiaoVien = gv.MaGiaoVien
+        WHERE t.NamHoc = ?
+      `;
+      const params = [selectedYear];
+
+      if (selectedClass) {
+        sql += ` AND t.MaLop = ?`;
+        params.push(selectedClass);
+      }
+
+      sql += ` ORDER BY t.MaLop, t.Thu, t.TietHoc`;
+
+      const [tkbRows] = await sequelize.query(sql, { replacements: params });
+
       const role = getRole(req);
-      const canEditTimetable =
-        role === "Admin" || role === "BGH" || role === "GiaoVu";
+      const canEditTimetable = role === "Admin" || role === "BGH" || role === "GiaoVu";
+
+      const flashError = req.flash('error');
+      const flashSuccess = req.flash('success');
 
       res.render("pages/timetable", {
         title: "Thời khóa biểu",
@@ -698,6 +729,13 @@ router.get(
         timetables: tkbRows,
         classes,
         namHocs,
+        subjects,
+        teachers,
+        selectedYear,
+        selectedSemester,
+        selectedClass: (selectedClass && selectedClass.trim()) ? selectedClass : (classes && classes.length ? classes[0].MaLop : ''),
+        error: flashError.length ? flashError[0] : null,
+        success: flashSuccess.length ? flashSuccess[0] : null,
         permissions: {
           canEditTimetable,
         },
@@ -709,6 +747,57 @@ router.get(
   }
 );
 
+// Endpoint to save (create/update) a timetable entry
+router.post(
+  '/timetable/save',
+  requireLogin,
+  allowRoles(['Admin', 'BGH', 'GiaoVu']),
+  async (req, res) => {
+    try {
+      const { MaLop, NamHoc, Thu, TietHoc, MaMonHoc, MaGiaoVien } = req.body;
+      if (!MaLop || !NamHoc || !Thu || !TietHoc) {
+        req.flash('error', 'Thiếu thông tin bắt buộc để lưu thời khóa biểu.');
+        return res.redirect(req.get('Referer') || '/timetable');
+      }
+
+      const sql = `INSERT OR REPLACE INTO ThoiKhoaBieu (MaLop, NamHoc, Thu, TietHoc, MaMonHoc, MaGiaoVien) VALUES (?,?,?,?,?,?)`;
+      const params = [MaLop, NamHoc, parseInt(Thu, 10), parseInt(TietHoc, 10), MaMonHoc || null, MaGiaoVien ? parseInt(MaGiaoVien, 10) : null];
+      await sequelize.query(sql, { replacements: params });
+
+      req.flash('success', 'Lưu thời khóa biểu thành công.');
+      res.redirect(`/timetable?year=${encodeURIComponent(NamHoc)}&class=${encodeURIComponent(MaLop)}`);
+    } catch (err) {
+      console.error('Lỗi /timetable/save:', err);
+      req.flash('error', 'Có lỗi khi lưu thời khóa biểu: ' + err.message);
+      res.redirect(req.get('Referer') || '/timetable');
+    }
+  }
+);
+
+// Reset timetable entries for a class & year
+router.post(
+  '/timetable/reset',
+  requireLogin,
+  allowRoles(['Admin', 'BGH', 'GiaoVu']),
+  async (req, res) => {
+    try {
+      const { MaLop, NamHoc } = req.body;
+      if (!MaLop || !NamHoc) {
+        req.flash('error', 'Thiếu thông tin để đặt lại thời khóa biểu.');
+        return res.redirect(req.get('Referer') || '/timetable');
+      }
+
+      await sequelize.query(`DELETE FROM ThoiKhoaBieu WHERE MaLop = ? AND NamHoc = ?`, { replacements: [MaLop, NamHoc] });
+
+      req.flash('success', `Đã đặt lại thời khóa biểu cho lớp ${MaLop} - năm ${NamHoc}.`);
+      res.redirect(`/timetable?year=${encodeURIComponent(NamHoc)}&class=${encodeURIComponent(MaLop)}`);
+    } catch (err) {
+      console.error('Lỗi /timetable/reset:', err);
+      req.flash('error', 'Có lỗi khi đặt lại thời khóa biểu: ' + err.message);
+      res.redirect(req.get('Referer') || '/timetable');
+    }
+  }
+);
 
 router.get(
   "/attendance",
