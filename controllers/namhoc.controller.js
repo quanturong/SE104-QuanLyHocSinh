@@ -7,10 +7,15 @@ class NamHocController {
       const role = (req.session?.user?.role || "").trim();
       const canManageSchoolYear = role === "Admin" || role === "BGH" || role === "GiaoVu";
 
+      const error = req.query.error || null;
+      const success = req.query.success || null;
+
       res.render("pages/school-year", {
         title: "Quản lý năm học",
         user: req.session.user,
         schoolYears,
+        error,
+        success,
         permissions: {
           canManageSchoolYear,
         },
@@ -25,10 +30,10 @@ class NamHocController {
     try {
       const { MaNamHoc, NgayBatDau, NgayKetThuc } = req.body;
       await namHocService.createNamHoc({ MaNamHoc, NgayBatDau, NgayKetThuc });
-      return res.redirect("/school-year");
+      return res.redirect("/school-year?success=" + encodeURIComponent("Thêm năm học thành công"));
     } catch (err) {
       console.error("Lỗi createSchoolYear:", err);
-      return res.status(400).send(err.message || "Không thêm được năm học");
+      return res.redirect("/school-year?error=" + encodeURIComponent(err.message || "Không thêm được năm học"));
     }
   }
 
@@ -40,10 +45,10 @@ class NamHocController {
         NgayBatDau,
         NgayKetThuc,
       });
-      return res.redirect("/school-year");
+      return res.redirect("/school-year?success=" + encodeURIComponent("Sửa năm học thành công"));
     } catch (err) {
       console.error("Lỗi updateSchoolYear:", err);
-      return res.status(400).send(err.message || "Không sửa được năm học");
+      return res.redirect("/school-year?error=" + encodeURIComponent(err.message || "Không sửa được năm học"));
     }
   }
 

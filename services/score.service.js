@@ -38,16 +38,14 @@ exports.getStudentsOverview = async (year) => {
     if (!year) return []; 
 
     try {
-        const students = await HoSoHocSinh.findAll({
-            attributes: [
-                'MaHocSinh', 
-                'HoTen',
-                'MaLop',
-            ],
-            raw: true,
-            nest: true,
-            order: [['HoTen', 'ASC']],
-        });
+        // Lấy danh sách học sinh với lớp từ HocSinh_LopNamHoc
+        const [students] = await sequelize.query(`
+            SELECT DISTINCT hs.MaHocSinh, hs.HoTen, hln.MaLop
+            FROM HoSoHocSinh hs
+            LEFT JOIN HocSinh_LopNamHoc hln ON hs.MaHocSinh = hln.MaHocSinh
+                AND hln.MaNamHoc = ? AND hln.TrangThai = 'DangHoc'
+            ORDER BY hs.HoTen ASC
+        `, { replacements: [year] });
 
         if (!students || students.length === 0) return [];
 
@@ -130,12 +128,15 @@ exports.getSubjectScores = async (year, semester, subjectId, classId = '') => {
         let studentIdsFilter = null;
 
         if (classId) {
-            students = await HoSoHocSinh.findAll({
-                where: { MaLop: classId },
-                attributes: ['MaHocSinh', 'HoTen', 'MaLop'],
-                raw: true,
-                order: [['HoTen', 'ASC']],
-            });
+            // Lấy học sinh trong lớp từ HocSinh_LopNamHoc
+            const [studentsRows] = await sequelize.query(`
+                SELECT hs.MaHocSinh, hs.HoTen, hln.MaLop
+                FROM HoSoHocSinh hs
+                INNER JOIN HocSinh_LopNamHoc hln ON hs.MaHocSinh = hln.MaHocSinh
+                WHERE hln.MaLop = ? AND hln.MaNamHoc = ? AND hln.TrangThai = 'DangHoc'
+                ORDER BY hs.HoTen ASC
+            `, { replacements: [classId, year] });
+            students = studentsRows;
 
             if (!students || students.length === 0) return [];
             studentIdsFilter = students.map(s => s.MaHocSinh);
@@ -151,12 +152,16 @@ exports.getSubjectScores = async (year, semester, subjectId, classId = '') => {
 
             if (studentIds.length === 0) return [];
 
-            students = await HoSoHocSinh.findAll({
-                where: { MaHocSinh: studentIds },
-                attributes: ['MaHocSinh', 'HoTen', 'MaLop'],
-                raw: true,
-                order: [['HoTen', 'ASC']],
-            });
+            // Lấy học sinh với lớp từ HocSinh_LopNamHoc
+            const [studentsRows] = await sequelize.query(`
+                SELECT hs.MaHocSinh, hs.HoTen, hln.MaLop
+                FROM HoSoHocSinh hs
+                LEFT JOIN HocSinh_LopNamHoc hln ON hs.MaHocSinh = hln.MaHocSinh
+                    AND hln.MaNamHoc = ? AND hln.TrangThai = 'DangHoc'
+                WHERE hs.MaHocSinh IN (${studentIds.map(() => '?').join(',')})
+                ORDER BY hs.HoTen ASC
+            `, { replacements: [year, ...studentIds] });
+            students = studentsRows;
 
             studentIdsFilter = studentIds;
         }
@@ -214,12 +219,16 @@ exports.getStudentPersonalOverview = async (studentId, year) => {
     if (!year || !studentId) return [];
     
     try {
-        // Lấy thông tin học sinh
-        const student = await HoSoHocSinh.findOne({
-            where: { MaHocSinh: studentId },
-            attributes: ['MaHocSinh', 'HoTen', 'MaLop'],
-            raw: true,
-        });
+        // Lấy thông tin học sinh với lớp từ HocSinh_LopNamHoc
+        const [studentRows] = await sequelize.query(`
+            SELECT hs.MaHocSinh, hs.HoTen, hln.MaLop
+            FROM HoSoHocSinh hs
+            LEFT JOIN HocSinh_LopNamHoc hln ON hs.MaHocSinh = hln.MaHocSinh
+                AND hln.MaNamHoc = ? AND hln.TrangThai = 'DangHoc'
+            WHERE hs.MaHocSinh = ?
+            LIMIT 1
+        `, { replacements: [year, studentId] });
+        const student = studentRows[0] || null;
 
         if (!student) return [];
 
@@ -302,11 +311,22 @@ exports.getStudentPersonalScores = async (studentId, year, semester, subjectId) 
     if (!year || !semester || !subjectId || !studentId) return [];
     
     try {
-        const student = await HoSoHocSinh.findOne({
-            where: { MaHocSinh: studentId },
-            attributes: ['MaHocSinh', 'HoTen', 'MaLop'],
-            raw: true,
-        });
+        // Lấy thông tin học sinh với lớp từ HocSinh_LopNamHoc (cần năm học để lấy lớp)
+        // Vì không có year parameter, lấy năm học mới nhất
+        const [yearRow] = await sequelize.query(`
+            SELECT MaNamHoc FROM NamHoc ORDER BY MaNamHoc DESC LIMIT 1
+        `);
+        const currentYear = yearRow[0]?.MaNamHoc || null;
+        
+        const [studentRows] = await sequelize.query(`
+            SELECT hs.MaHocSinh, hs.HoTen, hln.MaLop
+            FROM HoSoHocSinh hs
+            LEFT JOIN HocSinh_LopNamHoc hln ON hs.MaHocSinh = hln.MaHocSinh
+                ${currentYear ? `AND hln.MaNamHoc = '${currentYear}' AND hln.TrangThai = 'DangHoc'` : ''}
+            WHERE hs.MaHocSinh = ?
+            LIMIT 1
+        `, { replacements: [studentId] });
+        const student = studentRows[0] || null;
 
         if (!student) return [];
 

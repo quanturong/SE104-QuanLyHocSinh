@@ -12,6 +12,9 @@ const BangDiemMonHoc = require("./BangDiemMonHoc");
 const BaoCaoTongKetMon = require("./BaoCaoTongKetMon");
 const BaoCaoTongKetHK = require("./BaoCaoTongKetHK");
 const ThongSoQuyDinh = require("./ThongSoQuyDinh");
+const PhanCongGiangDay = require("./PhanCongGiangDay");
+const Lop_NamHoc = require("./Lop_NamHoc");
+const HocSinh_LopNamHoc = require("./HocSinh_LopNamHoc");
 
 module.exports = {
   sequelize,
@@ -26,5 +29,8 @@ module.exports = {
   BangDiemMonHoc,
   BaoCaoTongKetMon,
   BaoCaoTongKetHK,
-  ThongSoQuyDinh
+  ThongSoQuyDinh,
+  PhanCongGiangDay,
+  Lop_NamHoc,
+  HocSinh_LopNamHoc
 };

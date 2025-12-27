@@ -4,21 +4,20 @@ const LopHoc = require("./LopHoc");
 const BangDiemMonHoc = require('./BangDiemMonHoc');
 
 const HoSoHocSinh = sequelize.define("HoSoHocSinh", {
-  MaHocSinh: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+  MaHocSinh: { type: DataTypes.STRING, primaryKey: true },
   HoTen: { type: DataTypes.STRING, allowNull: false },
   GioiTinh: { type: DataTypes.STRING },
   NgaySinh: { type: DataTypes.STRING },
   DiaChi: { type: DataTypes.STRING },
   Email: { type: DataTypes.STRING },
-  MaLop: { type: DataTypes.STRING, allowNull: false }
+  // MaLop đã được chuyển sang HocSinh_LopNamHoc để quản lý theo năm học
 }, {
   tableName: 'HoSoHocSinh', 
   freezeTableName: true, 
   timestamps: false
 });
 
-LopHoc.hasMany(HoSoHocSinh, { foreignKey: "MaLop" });
-HoSoHocSinh.belongsTo(LopHoc, { foreignKey: "MaLop" });
+// Relationships đã được chuyển sang HocSinh_LopNamHoc
 BangDiemMonHoc.belongsTo(HoSoHocSinh, { foreignKey: 'MaHocSinh' });
 
 module.exports = HoSoHocSinh;

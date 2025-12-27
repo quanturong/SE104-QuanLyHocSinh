@@ -8,6 +8,8 @@
 </head>
 <body class="page-student">
   <div class="layout">
+    <%- include('../partials/sidebar') %>
+
     <main class="main">
       <% 
         const role = (user && user.role) ? user.role : ""; 
@@ -21,10 +23,15 @@
       <div id="school-year-overlay" class="sp-overlay" style="display:none;">
         <div class="sp-modal">
           <h2 class="sp-title">Thêm năm học mới</h2>
-          <form class="sp-form" method="POST" action="/school-year">
+          <form class="sp-form" method="POST" action="/school-year" id="form-add-school-year">
             <div class="sp-field">
-              <label>Mã năm học</label>
-              <input name="MaNamHoc" placeholder="VD: 2024-2025" required />
+              <label>Mã năm học <span style="color: #c33;">*</span></label>
+              <input name="MaNamHoc" id="inputMaNamHoc" placeholder="VD: NH2024-2025" required 
+                     pattern="^NH\d{4}-\d{4}$" 
+                     title="Mã năm học phải có cấu trúc: NHYYYY-YYYY (VD: NH2024-2025)" />
+              <small style="color: #666; font-size: 12px; margin-top: 4px; display: block;">
+                Định dạng: NH + năm bắt đầu + "-" + năm kết thúc (VD: NH2024-2025)
+              </small>
             </div>
             <div class="sp-field">
               <label>Ngày bắt đầu</label>
@@ -46,11 +53,16 @@
       <div id="school-year-edit-overlay" class="sp-overlay" style="display:none;">
         <div class="sp-modal">
           <h2 class="sp-title">Sửa năm học</h2>
-          <form class="sp-form" method="POST" action="/school-year/edit">
+          <form class="sp-form" method="POST" action="/school-year/edit" id="form-edit-school-year">
             <input type="hidden" name="OldMaNamHoc" id="editOldMaNamHoc" />
             <div class="sp-field">
-              <label>Mã năm học</label>
-              <input name="MaNamHoc" id="editMaNamHoc" required />
+              <label>Mã năm học <span style="color: #c33;">*</span></label>
+              <input name="MaNamHoc" id="editMaNamHoc" required 
+                     pattern="^NH\d{4}-\d{4}$" 
+                     title="Mã năm học phải có cấu trúc: NHYYYY-YYYY (VD: NH2024-2025)" />
+              <small style="color: #666; font-size: 12px; margin-top: 4px; display: block;">
+                Định dạng: NH + năm bắt đầu + "-" + năm kết thúc (VD: NH2024-2025)
+              </small>
             </div>
             <div class="sp-field">
               <label>Ngày bắt đầu</label>
@@ -71,6 +83,16 @@
       <div class="page-header">
         <h1 class="page-title">Quản lý năm học</h1>
         <p class="page-desc">Khai báo và quản lý các năm học trong hệ thống.</p>
+        <% if (typeof error !== 'undefined' && error) { %>
+          <div style="background: #fee; color: #c33; padding: 12px 16px; border-radius: 8px; margin-top: 16px; border: 1px solid #fcc;">
+            <strong>❌ Lỗi:</strong> <%= error %>
+          </div>
+        <% } %>
+        <% if (typeof success !== 'undefined' && success) { %>
+          <div style="background: #efe; color: #3c3; padding: 12px 16px; border-radius: 8px; margin-top: 16px; border: 1px solid #cfc;">
+            <strong>✅ Thành công:</strong> <%= success %>
+          </div>
+        <% } %>
       </div>
 
       <section class="card" style="margin-bottom: 16px;">
@@ -108,8 +130,8 @@
                   <tr data-manamhoc="<%= sy.MaNamHoc %>" data-ngaybatdau="<%= sy.NgayBatDau %>" data-ngayketthuc="<%= sy.NgayKetThuc %>">
                     <td class="text-center"><%= index + 1 %></td>
                     <td><strong><%= sy.MaNamHoc %></strong></td>
-                    <td><%= sy.NgayBatDau %></td>
-                    <td><%= sy.NgayKetThuc %></td>
+                    <td><%= sy.NgayBatDau ? new Date(sy.NgayBatDau).toLocaleDateString('vi-VN') : '' %></td>
+                    <td><%= sy.NgayKetThuc ? new Date(sy.NgayKetThuc).toLocaleDateString('vi-VN') : '' %></td>
                     <% if (canManage) { %>
                       <td class="text-center">
                         <button class="btn btn-sm btn-edit" type="button">Sửa</button>
@@ -131,21 +153,129 @@
   </div>
 
   <script>
+    // Validation mã năm học
+    function validateMaNamHoc(maNamHoc) {
+      if (!maNamHoc || !maNamHoc.trim()) {
+        return { valid: false, message: "Mã năm học không được để trống" };
+      }
+
+      const trimmed = maNamHoc.trim();
+      const pattern = /^NH\d{4}-\d{4}$/;
+      
+      if (!pattern.test(trimmed)) {
+        return { 
+          valid: false, 
+          message: "Mã năm học phải có cấu trúc: NHYYYY-YYYY (VD: NH2024-2025)" 
+        };
+      }
+
+      const match = trimmed.match(/^NH(\d{4})-(\d{4})$/);
+      if (!match) {
+        return { valid: false, message: "Mã năm học không hợp lệ" };
+      }
+
+      const namBatDau = parseInt(match[1], 10);
+      const namKetThuc = parseInt(match[2], 10);
+
+      if (namKetThuc !== namBatDau + 1) {
+        return { 
+          valid: false, 
+          message: `Năm kết thúc phải bằng năm bắt đầu + 1. Hiện tại: ${namBatDau}-${namKetThuc}` 
+        };
+      }
+
+      if (namBatDau < 2000 || namBatDau > 2100) {
+        return { 
+          valid: false, 
+          message: "Năm học phải trong khoảng 2000-2100" 
+        };
+      }
+
+      return { valid: true, namBatDau, namKetThuc };
+    }
+
     (function () {
       const overlayAdd = document.getElementById('school-year-overlay');
       const btnAdd = document.getElementById('btn-add');
       const btnCancelAdd = document.getElementById('btn-cancel-add');
+      const formAdd = document.getElementById('form-add-school-year');
+      const inputMaNamHoc = document.getElementById('inputMaNamHoc');
 
       function openAdd() {
         if (overlayAdd) {
           overlayAdd.style.display = 'grid';
-          const form = overlayAdd.querySelector('form');
-          if (form) form.reset();
+          if (formAdd) formAdd.reset();
+          if (inputMaNamHoc) {
+            inputMaNamHoc.focus();
+            inputMaNamHoc.style.borderColor = '';
+          }
         }
       }
       function closeAdd() {
         if (overlayAdd) overlayAdd.style.display = 'none';
       }
+
+      // Validation khi nhập (form add)
+      if (inputMaNamHoc) {
+        inputMaNamHoc.addEventListener('blur', function() {
+          const value = this.value.trim();
+          if (value) {
+            const validation = validateMaNamHoc(value);
+            if (!validation.valid) {
+              this.setCustomValidity(validation.message);
+              this.style.borderColor = '#ef4444';
+            } else {
+              this.setCustomValidity('');
+              this.style.borderColor = '';
+            }
+          }
+        });
+
+        inputMaNamHoc.addEventListener('input', function() {
+          this.setCustomValidity('');
+          this.style.borderColor = '';
+        });
+      }
+
+      // Validation khi submit (form add)
+      if (formAdd) {
+        formAdd.addEventListener('submit', function(e) {
+          const maNamHoc = inputMaNamHoc?.value.trim();
+          if (maNamHoc) {
+            const validation = validateMaNamHoc(maNamHoc);
+            if (!validation.valid) {
+              e.preventDefault();
+              alert('Lỗi: ' + validation.message);
+              inputMaNamHoc?.focus();
+              return false;
+            }
+
+            // Kiểm tra năm học có khớp với ngày không
+            const ngayBatDauInput = formAdd.querySelector('input[name="NgayBatDau"]');
+            const ngayKetThucInput = formAdd.querySelector('input[name="NgayKetThuc"]');
+            
+            if (ngayBatDauInput && ngayKetThucInput && ngayBatDauInput.value && ngayKetThucInput.value) {
+              const ngayBatDau = new Date(ngayBatDauInput.value);
+              const ngayKetThuc = new Date(ngayKetThucInput.value);
+              const namBatDauFromDate = ngayBatDau.getFullYear();
+              const namKetThucFromDate = ngayKetThuc.getFullYear();
+
+              if (namBatDauFromDate !== validation.namBatDau) {
+                e.preventDefault();
+                alert(`Lỗi: Năm bắt đầu trong mã năm học (${validation.namBatDau}) không khớp với ngày bắt đầu (${namBatDauFromDate})`);
+                return false;
+              }
+
+              if (namKetThucFromDate !== validation.namKetThuc) {
+                e.preventDefault();
+                alert(`Lỗi: Năm kết thúc trong mã năm học (${validation.namKetThuc}) không khớp với ngày kết thúc (${namKetThucFromDate})`);
+                return false;
+              }
+            }
+          }
+        });
+      }
+
       btnAdd && btnAdd.addEventListener('click', openAdd);
       btnCancelAdd && btnCancelAdd.addEventListener('click', closeAdd);
       overlayAdd && overlayAdd.addEventListener('click', e => {
@@ -167,6 +297,65 @@
       overlayEdit && overlayEdit.addEventListener('click', e => {
         if (e.target === overlayEdit) closeEdit();
       });
+
+      const formEdit = document.getElementById('form-edit-school-year');
+      const inputEditMaNamHoc = document.getElementById('editMaNamHoc');
+
+      // Validation khi nhập (form edit)
+      if (inputEditMaNamHoc) {
+        inputEditMaNamHoc.addEventListener('blur', function() {
+          const value = this.value.trim();
+          if (value) {
+            const validation = validateMaNamHoc(value);
+            if (!validation.valid) {
+              this.setCustomValidity(validation.message);
+              this.style.borderColor = '#ef4444';
+            } else {
+              this.setCustomValidity('');
+              this.style.borderColor = '';
+            }
+          }
+        });
+
+        inputEditMaNamHoc.addEventListener('input', function() {
+          this.setCustomValidity('');
+          this.style.borderColor = '';
+        });
+      }
+
+      // Validation khi submit (form edit)
+      if (formEdit) {
+        formEdit.addEventListener('submit', function(e) {
+          const maNamHoc = inputEditMaNamHoc?.value.trim();
+          if (maNamHoc) {
+            const validation = validateMaNamHoc(maNamHoc);
+            if (!validation.valid) {
+              e.preventDefault();
+              alert('Lỗi: ' + validation.message);
+              inputEditMaNamHoc?.focus();
+              return false;
+            }
+
+            // Kiểm tra năm học có khớp với ngày không
+            const ngayBatDau = new Date(formEdit.querySelector('input[name="NgayBatDau"]').value);
+            const ngayKetThuc = new Date(formEdit.querySelector('input[name="NgayKetThuc"]').value);
+            const namBatDauFromDate = ngayBatDau.getFullYear();
+            const namKetThucFromDate = ngayKetThuc.getFullYear();
+
+            if (namBatDauFromDate !== validation.namBatDau) {
+              e.preventDefault();
+              alert(`Lỗi: Năm bắt đầu trong mã năm học (${validation.namBatDau}) không khớp với ngày bắt đầu (${namBatDauFromDate})`);
+              return false;
+            }
+
+            if (namKetThucFromDate !== validation.namKetThuc) {
+              e.preventDefault();
+              alert(`Lỗi: Năm kết thúc trong mã năm học (${validation.namKetThuc}) không khớp với ngày kết thúc (${namKetThucFromDate})`);
+              return false;
+            }
+          }
+        });
+      }
 
       document.querySelectorAll('.btn-edit').forEach(btn => {
         btn.addEventListener('click', function () {

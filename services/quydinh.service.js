@@ -11,6 +11,31 @@ class QuyDinhService {
     return quyDinh;
   }
 
+  /**
+   * Lấy giá trị quy định theo tên, trả về giá trị mặc định nếu không tìm thấy
+   * @param {string} tenQuyDinh - Tên quy định
+   * @param {number} defaultValue - Giá trị mặc định nếu không tìm thấy
+   * @returns {Promise<number>} - Giá trị quy định
+   */
+  async getGiaTriQuyDinh(tenQuyDinh, defaultValue = null) {
+    try {
+      const quyDinh = await quyDinhRepository.findByTen(tenQuyDinh);
+      if (quyDinh && quyDinh.GiaTri !== null && quyDinh.GiaTri !== undefined) {
+        return parseFloat(quyDinh.GiaTri);
+      }
+      if (defaultValue !== null) {
+        return defaultValue;
+      }
+      throw new Error(`Không tìm thấy quy định: ${tenQuyDinh}`);
+    } catch (error) {
+      if (defaultValue !== null) {
+        console.warn(`Không tìm thấy quy định ${tenQuyDinh}, sử dụng giá trị mặc định: ${defaultValue}`);
+        return defaultValue;
+      }
+      throw error;
+    }
+  }
+
   async updateQuyDinh(data) {
     const { TenQuyDinh, GiaTri } = data;
 

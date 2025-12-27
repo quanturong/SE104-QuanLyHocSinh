@@ -13,6 +13,7 @@
       const canEditTimetable = permissions && permissions.canEditTimetable; 
     %>
     <%- include('../partials/sidebar') %>
+    <%- include('../partials/delete-confirm-modal') %>
 
     <main class="main">
       <div class="page-header">
@@ -20,11 +21,15 @@
         <p class="page-desc">
           Chọn năm học, học kỳ và lớp để xem thời khóa biểu chi tiết theo từng tiết.
         </p>
-        <% if (error) { %>
-          <div class="alert alert-error"><%= error %></div>
+        <% if (typeof error !== 'undefined' && error) { %>
+          <div style="background: #fee; color: #c33; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #fcc;">
+            <strong>❌ Lỗi:</strong> <%= error %>
+          </div>
         <% } %>
-        <% if (success) { %>
-          <div class="alert alert-success"><%= success %></div>
+        <% if (typeof success !== 'undefined' && success) { %>
+          <div style="background: #efe; color: #3c3; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #cfc;">
+            <strong>✅ Thành công:</strong> <%= success %>
+          </div>
         <% } %>
       </div>
 
@@ -55,17 +60,30 @@
 
           <div class="class-info-item">
             <label class="class-label">Lớp</label>
-            <select class="select select-sm" id="ttb-class">
-              <% if (typeof classes !== 'undefined' && classes && classes.length) { %>
-                <% classes.forEach(function(c){ %>
-                  <option value="<%= c.MaLop %>" <%= (typeof selectedClass !== 'undefined' && selectedClass === c.MaLop) ? 'selected' : '' %>>
-                    <%= c.MaLop %>
-                  </option>
-                <% }) %>
-              <% } else { %>
-                <option>Chưa có lớp</option>
-              <% } %>
-            </select>
+            <% if (permissions && permissions.isStudent) { %>
+              <!-- Học sinh không thể chọn lớp, chỉ hiển thị lớp của mình -->
+              <input 
+                type="text" 
+                class="input input-sm" 
+                id="ttb-class" 
+                value="<%= typeof selectedClass !== 'undefined' && selectedClass ? selectedClass : 'Chưa có lớp' %>" 
+                readonly 
+                style="background:#f1f5f9; cursor:not-allowed;"
+              />
+              <input type="hidden" id="ttb-class-hidden" value="<%= typeof selectedClass !== 'undefined' && selectedClass ? selectedClass : '' %>" />
+            <% } else { %>
+              <select class="select select-sm" id="ttb-class">
+                <% if (typeof classes !== 'undefined' && classes && classes.length) { %>
+                  <% classes.forEach(function(c){ %>
+                    <option value="<%= c.MaLop %>" <%= (typeof selectedClass !== 'undefined' && selectedClass === c.MaLop) ? 'selected' : '' %>>
+                      <%= c.MaLop %>
+                    </option>
+                  <% }) %>
+                <% } else { %>
+                  <option>Chưa có lớp</option>
+                <% } %>
+              </select>
+            <% } %>
           </div>
         </div>
 
@@ -75,9 +93,9 @@
         </p>
       </section>
 
-      <section class="card">
+      <section class="card" id="timetable-section">
         <div class="table-wrap" style="overflow:auto; max-height:560px;">
-          <table class="table tt-table">
+          <table class="table tt-table" id="timetable-table">
             <thead>
               <tr>
                 <th class="sticky-col tt-period">Tiết</th>
@@ -103,6 +121,7 @@
           <form id="frm-reset-tkb" method="post" action="/timetable/reset" style="display:none;">
             <input type="hidden" name="MaLop" id="resetMaLop" />
             <input type="hidden" name="NamHoc" id="resetNamHoc" />
+            <input type="hidden" name="HocKy" id="resetHocKy" />
           </form>
         <% } %>
       </section>
@@ -135,6 +154,8 @@
                 <option value="6">Tiết 6</option>
                 <option value="7">Tiết 7</option>
                 <option value="8">Tiết 8</option>
+                <option value="9">Tiết 9</option>
+                <option value="10">Tiết 10</option>
               </select>
             </div>
 
@@ -234,8 +255,31 @@
     }
 
     function filterData() {
+      const year = ttbYearSel.value || '';
+      const semester = ttbSemesterSel.value || '';
       const lop = ttbClassSel.value || '';
-      return RAW_TKB.filter(row => !lop || row.MaLop === lop);
+      
+      let filtered = RAW_TKB;
+      
+      // Lọc theo năm học
+      if (year) {
+        filtered = filtered.filter(row => row.NamHoc === year);
+      }
+      
+      // Lọc theo lớp
+      if (lop) {
+        filtered = filtered.filter(row => row.MaLop === lop);
+      }
+      
+      // Lọc theo học kỳ
+      if (semester) {
+        filtered = filtered.filter(row => row.HocKy === parseInt(semester, 10));
+      } else {
+        // Mặc định là học kỳ 1
+        filtered = filtered.filter(row => row.HocKy === 1);
+      }
+      
+      return filtered;
     }
 
     function cellContent(item) {
@@ -252,16 +296,18 @@
 
     function renderTable() {
       const data = filterData();
+      const timetableTable = document.getElementById('timetable-table');
+      const timetableSection = document.getElementById('timetable-section');
 
       if (!data.length) {
-        ttbBody.innerHTML = `
-          <tr>
-            <td colspan="7" class="text-center muted">
-              Chưa có thời khóa biểu cho lựa chọn hiện tại. ${CAN_EDIT_TKB ? 'Nhấn "Sửa thời khóa biểu" để tạo mới.' : ''}
-            </td>
-          </tr>`;
+        ttbBody.innerHTML = '';
+        // Ẩn bảng và phần nút khi không có dữ liệu
+        if (timetableTable) timetableTable.style.display = 'none';
         return;
       }
+
+      // Hiển thị bảng khi có dữ liệu
+      if (timetableTable) timetableTable.style.display = 'table';
 
       const periods = getAllPeriods(data);
       const days = [2, 3, 4, 5, 6, 7];
@@ -292,12 +338,19 @@
     function reloadWithFilters() {
       const year = ttbYearSel.value;
       const semester = ttbSemesterSel.value;
-      const cls = ttbClassSel.value || '';
+      // Học sinh không thể thay đổi lớp, lấy từ hidden input hoặc select
+      const cls = (ttbClassSel && ttbClassSel.value) || 
+                  (document.getElementById('ttb-class-hidden') && document.getElementById('ttb-class-hidden').value) || 
+                  '';
       const q = `?year=${encodeURIComponent(year)}&semester=${encodeURIComponent(semester)}${cls ? '&class='+encodeURIComponent(cls) : ''}`;
       window.location.href = '/timetable' + q;
     }
 
-    ttbClassSel    && ttbClassSel.addEventListener('change', reloadWithFilters);
+    // Chỉ cho phép thay đổi lớp nếu không phải học sinh
+    const isStudent = <%= (permissions && permissions.isStudent) ? 'true' : 'false' %>;
+    if (ttbClassSel && !isStudent) {
+      ttbClassSel.addEventListener('change', reloadWithFilters);
+    }
     ttbYearSel     && ttbYearSel.addEventListener('change', reloadWithFilters);
     ttbSemesterSel && ttbSemesterSel.addEventListener('change', reloadWithFilters);
 
@@ -325,16 +378,27 @@
     function resetTimetableConfirm() {
       const lop = (ttbClassSel.value || '').toString();
       const nam = (ttbYearSel.value || '').toString();
-      if (!lop || !nam) return alert('Vui lòng chọn lớp và năm học để đặt lại.');
-      if (!confirm(`Bạn có chắc muốn xóa toàn bộ thời khóa biểu của lớp "${lop}" - năm học "${nam}"?`)) return;
-      document.getElementById('resetMaLop').value = lop;
-      document.getElementById('resetNamHoc').value = nam;
-      document.getElementById('frm-reset-tkb').submit();
+      const hk = (ttbSemesterSel.value || '1').toString();
+      if (!lop || !nam) {
+        alert('Vui lòng chọn lớp và năm học để đặt lại.');
+        return;
+      }
+      
+      const hkText = hk === '1' ? 'Học kỳ 1' : 'Học kỳ 2';
+      showDeleteConfirm(
+        `Bạn có chắc chắn muốn xóa toàn bộ thời khóa biểu của lớp "${lop}" - ${hkText} - năm học "${nam}"?`,
+        '⚠️ Hành động này không thể hoàn tác! Tất cả thời khóa biểu của lớp này sẽ bị xóa vĩnh viễn.',
+        function() {
+          document.getElementById('resetMaLop').value = lop;
+          document.getElementById('resetNamHoc').value = nam;
+          document.getElementById('resetHocKy').value = hk;
+          document.getElementById('frm-reset-tkb').submit();
+        }
+      );
     }
     document.getElementById('form-edit-timetable')?.addEventListener('submit', (e) => {
-      if (!confirm('Bạn có chắc muốn lưu thay đổi thời khóa biểu không?')) {
-        e.preventDefault();
-      }
+      // Form sẽ submit bình thường, không cần confirm vì đây là save, không phải delete
+      // Nếu muốn có confirm, có thể thêm vào đây
     });
     // Helper to prefill modal fields from existing RAW_TKB data
     function fillModalFromData() {

@@ -396,7 +396,8 @@
       document.getElementById('pf-teacher-avatar').textContent = initials;
 
       document.getElementById('pf-teacher-name').textContent = teacher.HoTen || '—';
-      document.getElementById('pf-teacher-sub').textContent = `Mã GV: ${teacher.MaGiaoVien} · Bộ môn: ${teacher.TenMonHoc || teacher.MaMonGiangDay || '—'}`;
+      const monHocText = teacher.TenMonHoc || teacher.MaMonGiangDay || '—';
+      document.getElementById('pf-teacher-sub').textContent = `Mã GV: ${teacher.MaGiaoVien} · Bộ môn: ${monHocText}`;
 
       let dobText = '—';
       if (teacher.NgaySinh) {

@@ -50,15 +50,34 @@ class PageController {
         return tong ? Math.round((r.SoCoMat * 100) / tong) : 0;
       });
 
-      const [topClassRows] = await sequelize.query(`
-        SELECT MaLop, SiSoLop
-        FROM LopHoc
-        ORDER BY SiSoLop DESC, MaLop
-        LIMIT 6;
+      // Lấy năm học hiện tại để tính sĩ số
+      const [currentYearRow] = await sequelize.query(`
+        SELECT MaNamHoc FROM NamHoc ORDER BY MaNamHoc DESC LIMIT 1
       `);
+      const currentYear = currentYearRow[0]?.MaNamHoc || null;
+      
+      let topClassRows;
+      if (currentYear) {
+        [topClassRows] = await sequelize.query(`
+          SELECT l.MaLop, COUNT(hln.MaHocSinh) AS SiSo
+          FROM LopHoc l
+          LEFT JOIN HocSinh_LopNamHoc hln ON l.MaLop = hln.MaLop 
+            AND hln.MaNamHoc = ? AND hln.TrangThai = 'DangHoc'
+          GROUP BY l.MaLop
+          ORDER BY SiSo DESC, l.MaLop
+          LIMIT 6;
+        `, { replacements: [currentYear] });
+      } else {
+        [topClassRows] = await sequelize.query(`
+          SELECT l.MaLop, 0 AS SiSo
+          FROM LopHoc l
+          ORDER BY l.MaLop
+          LIMIT 6;
+        `);
+      }
 
       const topClassLabels = topClassRows.map((r) => r.MaLop);
-      const topClassCounts = topClassRows.map((r) => r.SiSoLop);
+      const topClassCounts = topClassRows.map((r) => r.SiSo || 0);
 
       const username = req.session.user.username;
 
@@ -78,9 +97,13 @@ class PageController {
       if (role === "HocSinh") {
         const [hsRows] = await sequelize.query(
           `
-          SELECT MaHocSinh, HoTen, GioiTinh, NgaySinh, DiaChi, Email, MaLop
-          FROM HoSoHocSinh
-          WHERE MaHocSinh = ?;
+          SELECT hs.MaHocSinh, hs.HoTen, hs.GioiTinh, hs.NgaySinh, hs.DiaChi, hs.Email,
+                 hln.MaLop
+          FROM HoSoHocSinh hs
+          LEFT JOIN HocSinh_LopNamHoc hln ON hs.MaHocSinh = hln.MaHocSinh
+            AND hln.MaNamHoc = (SELECT MaNamHoc FROM NamHoc ORDER BY MaNamHoc DESC LIMIT 1)
+            AND hln.TrangThai = 'DangHoc'
+          WHERE hs.MaHocSinh = ?;
           `,
           { replacements: [username] }
         );
@@ -157,17 +180,26 @@ class PageController {
 
   async showFindPage(req, res) {
     try {
+      // Lấy năm học hiện tại
+      const [currentYearRow] = await sequelize.query(`
+        SELECT MaNamHoc FROM NamHoc ORDER BY MaNamHoc DESC LIMIT 1
+      `);
+      const currentYear = currentYearRow[0]?.MaNamHoc || null;
+
       const [students] = await sequelize.query(`
-        SELECT MaHocSinh, HoTen, GioiTinh, NgaySinh, DiaChi, Email, MaLop
-        FROM HoSoHocSinh
-        ORDER BY HoTen;
+        SELECT hs.MaHocSinh, hs.HoTen, hs.GioiTinh, hs.NgaySinh, hs.DiaChi, hs.Email,
+               hln.MaLop
+        FROM HoSoHocSinh hs
+        LEFT JOIN HocSinh_LopNamHoc hln ON hs.MaHocSinh = hln.MaHocSinh
+          ${currentYear ? `AND hln.MaNamHoc = '${currentYear}' AND hln.TrangThai = 'DangHoc'` : ''}
+        ORDER BY hs.HoTen;
       `);
 
       const [scores] = await sequelize.query(`
         SELECT b.MaDiem,
                b.MaHocSinh,
                hs.HoTen,
-               hs.MaLop,
+               hln.MaLop,
                b.MaMonHoc,
                m.TenMonHoc,
                b.HocKy,
@@ -177,25 +209,31 @@ class PageController {
                b.DiemTBMon
         FROM BangDiemMonHoc b
         LEFT JOIN HoSoHocSinh hs ON b.MaHocSinh = hs.MaHocSinh
+        LEFT JOIN HocSinh_LopNamHoc hln ON hs.MaHocSinh = hln.MaHocSinh 
+          AND hln.MaNamHoc = b.NamHoc AND hln.TrangThai = 'DangHoc'
         LEFT JOIN MonHoc m ON b.MaMonHoc = m.MaMonHoc; 
       `);
 
       const [attendances] = await sequelize.query(`
         SELECT d.MaDiemDanh,
                d.MaHocSinh,
-               hs.MaLop,
+               hln.MaLop,
                d.NgayDiemDanh,
                d.TrangThai
         FROM DiemDanh d
-        LEFT JOIN HoSoHocSinh hs ON d.MaHocSinh = hs.MaHocSinh;
+        LEFT JOIN HoSoHocSinh hs ON d.MaHocSinh = hs.MaHocSinh
+        LEFT JOIN HocSinh_LopNamHoc hln ON hs.MaHocSinh = hln.MaHocSinh
+          ${currentYear ? `AND hln.MaNamHoc = '${currentYear}' AND hln.TrangThai = 'DangHoc'` : ''};
       `);
 
       const [teachers] = await sequelize.query(`
-        SELECT gv.MaGiaoVien, gv.HoTen, gv.GioiTinh, gv.NgaySinh,
+        SELECT DISTINCT gv.MaGiaoVien, gv.HoTen, gv.GioiTinh, gv.NgaySinh,
                gv.DiaChi, gv.Email, gv.MaMonGiangDay,
-               mh.TenMonHoc
+               GROUP_CONCAT(DISTINCT mh.TenMonHoc) AS TenMonHoc
         FROM GiaoVien gv
-        LEFT JOIN MonHoc mh ON gv.MaMonGiangDay = mh.MaMonHoc
+        LEFT JOIN PhanCongGiangDay pc ON gv.MaGiaoVien = pc.MaGiaoVien
+        LEFT JOIN MonHoc mh ON pc.MaMonHoc = mh.MaMonHoc
+        GROUP BY gv.MaGiaoVien, gv.HoTen, gv.GioiTinh, gv.NgaySinh, gv.DiaChi, gv.Email, gv.MaMonGiangDay
         ORDER BY gv.HoTen;
       `);
 
@@ -272,28 +310,97 @@ class PageController {
       if (!lop) {
         return res.redirect("/class");
       }
-      const [classes] = await sequelize.query(`
+      // Lấy lớp với sĩ số và GVCN từ Lop_NamHoc (năm học hiện tại)
+      const [currentYearRow] = await sequelize.query(`
+        SELECT MaNamHoc FROM NamHoc ORDER BY MaNamHoc DESC LIMIT 1
+      `);
+      const currentYear = currentYearRow[0]?.MaNamHoc || null;
+      
+      // Đảm bảo lớp CHUA_CO_LOP tồn tại
+      const classService = require("../services/class.service");
+      await classService.ensureChuaCoLopExists();
+
+      let classes;
+      if (currentYear) {
+        // Tính sĩ số động từ HocSinh_LopNamHoc (loại trừ CHUA_CO_LOP khỏi danh sách lớp thông thường)
+        const [classesWithYear] = await sequelize.query(`
+          SELECT 
+            l.MaLop,
+            l.KhoiLop,
+            COALESCE(COUNT(hln.MaHocSinh), 0) AS SiSoLop,
+            gv.HoTen AS TenGVChuNhiem
+          FROM LopHoc l
+          LEFT JOIN HocSinh_LopNamHoc hln ON l.MaLop = hln.MaLop 
+            AND hln.MaNamHoc = ?
+            AND hln.TrangThai = 'DangHoc'
+          LEFT JOIN Lop_NamHoc ln ON l.MaLop = ln.MaLop AND ln.MaNamHoc = ?
+          LEFT JOIN GiaoVien gv ON ln.MaGVChuNhiem = gv.MaGiaoVien
+          WHERE 1=1
+          GROUP BY l.MaLop, l.KhoiLop, gv.HoTen
+          ORDER BY 
+            CASE WHEN l.MaLop = 'CHUA_CO_LOP' THEN 1 ELSE 0 END,
+            l.KhoiLop ASC, 
+            l.MaLop ASC;
+        `, { replacements: [currentYear, currentYear] });
+        classes = classesWithYear;
+      } else {
+        // Fallback: tính sĩ số từ HocSinh_LopNamHoc (năm học mới nhất)
+        const [classesFallback] = await sequelize.query(`
+          SELECT 
+            l.MaLop,
+            l.KhoiLop,
+            COALESCE(COUNT(hln.MaHocSinh), 0) AS SiSoLop,
+            NULL AS TenGVChuNhiem
+          FROM LopHoc l
+          LEFT JOIN HocSinh_LopNamHoc hln ON l.MaLop = hln.MaLop 
+            AND hln.TrangThai = 'DangHoc'
+            AND hln.MaNamHoc = (SELECT MaNamHoc FROM NamHoc ORDER BY MaNamHoc DESC LIMIT 1)
+          WHERE 1=1
+          GROUP BY l.MaLop, l.KhoiLop
+          ORDER BY l.KhoiLop ASC, l.MaLop ASC;
+        `);
+        classes = classesFallback;
+      }
+
+      // Lấy danh sách học sinh trong lớp theo năm học (bao gồm cả CHUA_CO_LOP nếu được chọn)
+      const selectedYear = req.query.year || currentYear;
+      let studentsInClass = [];
+      if (selectedYear) {
+        const [studentsRows] = await sequelize.query(
+          `
+          SELECT hs.MaHocSinh, hs.HoTen, hs.GioiTinh, hs.NgaySinh, hs.DiaChi, hs.Email
+          FROM HocSinh_LopNamHoc hln
+          INNER JOIN HoSoHocSinh hs ON hln.MaHocSinh = hs.MaHocSinh
+          WHERE hln.MaLop = ? AND hln.MaNamHoc = ? AND hln.TrangThai = 'DangHoc'
+          ORDER BY hs.HoTen ASC;
+          `,
+          { replacements: [lop, selectedYear] }
+        );
+        studentsInClass = studentsRows;
+      }
+
+      // Luôn thêm lớp CHUA_CO_LOP vào danh sách classes để hiển thị trong dropdown
+      const [chuaCoLopInfo] = await sequelize.query(`
         SELECT 
           l.MaLop,
           l.KhoiLop,
-          COUNT(hs.MaHocSinh) AS SiSoLop,
-          gv.HoTen AS TenGVChuNhiem
+          COALESCE(COUNT(hln.MaHocSinh), 0) AS SiSoLop,
+          NULL AS TenGVChuNhiem
         FROM LopHoc l
-        LEFT JOIN HoSoHocSinh hs ON l.MaLop = hs.MaLop
-        LEFT JOIN GiaoVien gv ON l.MaGVChuNhiem = gv.MaGiaoVien
-        GROUP BY l.MaLop, l.KhoiLop, gv.HoTen
-        ORDER BY l.KhoiLop ASC, l.MaLop ASC;
-      `);
-
-      const [studentsInClass] = await sequelize.query(
-        `
-        SELECT MaHocSinh, HoTen, GioiTinh, NgaySinh, DiaChi, Email
-        FROM HoSoHocSinh
-        WHERE MaLop = ?
-        ORDER BY HoTen ASC;
-        `,
-        { replacements: [lop] }
-      );
+        LEFT JOIN HocSinh_LopNamHoc hln ON l.MaLop = hln.MaLop 
+          AND hln.MaNamHoc = ?
+          AND hln.TrangThai = 'DangHoc'
+        WHERE l.MaLop = 'CHUA_CO_LOP'
+        GROUP BY l.MaLop, l.KhoiLop;
+      `, { replacements: [currentYear || selectedYear] });
+      
+      if (chuaCoLopInfo.length > 0) {
+        // Kiểm tra xem CHUA_CO_LOP đã có trong danh sách chưa
+        const exists = classes.find(c => c.MaLop === 'CHUA_CO_LOP');
+        if (!exists) {
+          classes.push(chuaCoLopInfo[0]);
+        }
+      }
 
       const [namHocs] = await sequelize.query(`
         SELECT MaNamHoc
@@ -314,6 +421,8 @@ class PageController {
         },
         selectedClass: lop,
         studentsInClass,
+        success: req.query.success,
+        error: req.query.error,
       });
     } catch (err) {
       console.error("Lỗi viewClassStudents:", err);

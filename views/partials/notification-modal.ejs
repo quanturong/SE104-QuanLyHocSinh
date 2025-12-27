@@ -42,6 +42,27 @@
   #notification-modal.info .notification-modal-content #notification-icon {
     background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
   }
+
+  /* Turn notification into a non-blocking toast */
+  #notification-modal {
+    position: fixed !important;
+    inset: 0 !important; /* full screen */
+    width: 100% !important;
+    height: 100% !important;
+    background: transparent !important;
+    backdrop-filter: none !important;
+    /* quan trọng: cho click xuyên qua nền */
+    pointer-events: none !important;
+    z-index: 9999 !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  /* chỉ hộp thông báo nhận click */
+  #notification-modal .notification-modal-content {
+    pointer-events: auto !important;
+    margin: 0 !important;
+  }
 </style>
 
 <script src="/js/notification.js"></script>

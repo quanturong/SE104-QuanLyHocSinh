@@ -13,14 +13,135 @@
   <%- include('../partials/sidebar') %>
 
   <main class="main">
+    <%
+      const canManage = permissions && permissions.canManageClasses;
+    %>
+
+    <!-- Overlay thêm lớp học -->
+    <div id="class-overlay" class="sp-overlay" style="display:none;">
+      <div class="sp-modal" style="max-width: 500px; border-radius: 12px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);">
+        <h2 class="sp-title" style="font-size: 22px; color: #1e40af; margin-bottom: 24px;">➕ Thêm lớp học mới</h2>
+        <form class="sp-form" method="POST" action="/class">
+          <div class="sp-field">
+            <label style="font-weight: 600; color: #334155; margin-bottom: 8px;">Mã lớp</label>
+            <input name="MaLop" placeholder="VD: 10A1, 11A2, 12A3, 12A5" required pattern="^1[0-2][A-Z][0-9]+$" style="padding: 12px 16px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px; transition: border-color 0.2s;" onfocus="this.style.borderColor='#3b82f6'" onblur="this.style.borderColor='#e2e8f0'" />
+            <small style="color: #64748b; font-size: 12px; margin-top: 4px; display: block;">Định dạng: 10A1, 11A2, 12A3, 12A5 (khối 10-12, chữ cái A-Z, số bất kỳ)</small>
+          </div>
+          <div class="sp-field">
+            <label style="font-weight: 600; color: #334155; margin-bottom: 8px;">Khối lớp</label>
+            <select name="KhoiLop" required style="padding: 12px 16px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px; transition: border-color 0.2s; width: 100%;" onfocus="this.style.borderColor='#3b82f6'" onblur="this.style.borderColor='#e2e8f0'">
+              <option value="">-- Chọn khối --</option>
+              <option value="10">Khối 10</option>
+              <option value="11">Khối 11</option>
+              <option value="12">Khối 12</option>
+            </select>
+          </div>
+          <div class="sp-actions" style="margin-top: 24px; gap: 12px;">
+            <button type="button" class="sp-btn sp-btn--ghost" id="btn-cancel-add" style="padding: 12px 24px; border-radius: 8px; font-weight: 600;">Đóng</button>
+            <button type="submit" class="sp-btn" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; padding: 12px 24px; border-radius: 8px; font-weight: 600; box-shadow: 0 4px 6px rgba(59, 130, 246, 0.3);">💾 Lưu</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Overlay sửa lớp học -->
+    <div id="class-edit-overlay" class="sp-overlay" style="display:none;">
+      <div class="sp-modal" style="max-width: 500px; border-radius: 12px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);">
+        <h2 class="sp-title" style="font-size: 22px; color: #1e40af; margin-bottom: 24px;">✏️ Sửa lớp học</h2>
+        <form class="sp-form" method="POST" action="/class/edit" id="editClassForm">
+          <input type="hidden" name="OldMaLop" id="editOldMaLop" />
+          <div class="sp-field">
+            <label style="font-weight: 600; color: #334155; margin-bottom: 8px;">Mã lớp</label>
+            <input name="MaLop" id="editMaLop" required pattern="^1[0-2][A-Z][0-9]+$" style="padding: 12px 16px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px; transition: border-color 0.2s;" onfocus="this.style.borderColor='#3b82f6'" onblur="this.style.borderColor='#e2e8f0'" />
+            <small style="color: #64748b; font-size: 12px; margin-top: 4px; display: block;">Định dạng: 10A1, 11A2, 12A3, 12A5 (khối 10-12, chữ cái A-Z, số bất kỳ)</small>
+          </div>
+          <div class="sp-field">
+            <label style="font-weight: 600; color: #334155; margin-bottom: 8px;">Khối lớp</label>
+            <input type="text" id="editKhoiLop" readonly style="padding: 12px 16px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px; background-color: #f1f5f9; color: #64748b; width: 100%;" />
+            <small style="color: #64748b; font-size: 12px; margin-top: 4px; display: block;">Khối lớp sẽ tự động được tính từ mã lớp</small>
+          </div>
+          <div class="sp-actions" style="margin-top: 24px; gap: 12px;">
+            <button type="button" class="sp-btn sp-btn--ghost" id="btn-cancel-edit" style="padding: 12px 24px; border-radius: 8px; font-weight: 600;">Đóng</button>
+            <button type="submit" class="sp-btn" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; padding: 12px 24px; border-radius: 8px; font-weight: 600; box-shadow: 0 4px 6px rgba(59, 130, 246, 0.3);">💾 Lưu thay đổi</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Include notification modal -->
+    <%- include('../partials/notification-modal') %>
+    <%- include('../partials/delete-confirm-modal') %>
+
+    <!-- Modal chuyển lớp -->
+    <div id="transfer-student-overlay" class="sp-overlay" style="display:none;">
+      <div class="sp-modal" style="max-width: 500px; border-radius: 12px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);">
+        <h2 class="sp-title" style="font-size: 22px; color: #1e40af; margin-bottom: 24px;">🔄 Chuyển lớp học sinh</h2>
+        <form class="sp-form" method="POST" action="/class/transfer-student" id="transferStudentForm">
+          <input type="hidden" name="MaHocSinh" id="transferMaHocSinh" />
+          <input type="hidden" name="OldMaLop" id="transferOldMaLop" />
+          <div class="sp-field">
+            <label style="font-weight: 600; color: #334155; margin-bottom: 8px;">Học sinh</label>
+            <input type="text" id="transferHoTen" readonly style="padding: 12px 16px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px; background-color: #f1f5f9; color: #64748b; width: 100%;" />
+          </div>
+          <div class="sp-field">
+            <label style="font-weight: 600; color: #334155; margin-bottom: 8px;">Lớp hiện tại</label>
+            <input type="text" id="transferCurrentClass" readonly style="padding: 12px 16px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px; background-color: #f1f5f9; color: #64748b; width: 100%;" />
+          </div>
+          <div class="sp-field">
+            <label style="font-weight: 600; color: #334155; margin-bottom: 8px;">Chuyển đến lớp</label>
+            <select name="NewMaLop" id="transferNewMaLop" required style="padding: 12px 16px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px; transition: border-color 0.2s; width: 100%;" onfocus="this.style.borderColor='#3b82f6'" onblur="this.style.borderColor='#e2e8f0'">
+              <option value="">-- Chọn lớp --</option>
+              <% if (classes && classes.length) { %>
+                <% classes.forEach(lop => { %>
+                  <% if (lop.MaLop !== 'CHUA_CO_LOP') { %>
+                    <option value="<%= lop.MaLop %>"><%= lop.MaLop %> (Khối <%= lop.KhoiLop %>)</option>
+                  <% } %>
+                <% }) %>
+                <% 
+                  // Thêm tùy chọn "Chưa có lớp" nếu lớp CHUA_CO_LOP tồn tại
+                  const chuaCoLopTransfer = classes.find(lop => lop.MaLop === 'CHUA_CO_LOP');
+                  if (chuaCoLopTransfer) { %>
+                    <option value="CHUA_CO_LOP">Chưa có lớp</option>
+                <% } %>
+              <% } %>
+            </select>
+          </div>
+          <div class="sp-actions" style="margin-top: 24px; gap: 12px;">
+            <button type="button" class="sp-btn sp-btn--ghost" id="btn-cancel-transfer" style="padding: 12px 24px; border-radius: 8px; font-weight: 600;">Đóng</button>
+            <button type="submit" class="sp-btn" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; padding: 12px 24px; border-radius: 8px; font-weight: 600; box-shadow: 0 4px 6px rgba(59, 130, 246, 0.3);">💾 Xác nhận chuyển lớp</button>
+          </div>
+        </form>
+      </div>
+    </div>
 
     <!-- HEADER -->
     <div class="page-header">
-      <h1 class="page-title">Danh sách lớp học</h1>
+      <h1 class="page-title">🏫 Danh sách lớp học</h1>
       <p class="page-desc">
-        Dữ liệu lấy từ bảng <strong>LopHoc</strong>. Chọn lớp để xem sĩ số.
+        Quản lý danh sách lớp học trong hệ thống. Chọn lớp để xem sĩ số và học sinh.
       </p>
     </div>
+
+    <!-- TOOLBAR -->
+    <section class="card" style="margin-bottom: 16px; background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); border: 1px solid #bae6fd;">
+      <div class="toolbar" style="justify-content: space-between; align-items: center;">
+        <div>
+          <div style="font-weight: 700; font-size: 18px; color: #0c4a6e; margin-bottom: 4px;">
+            📊 Tổng số: <%= (classes && classes.length) ? classes.length : 0 %> lớp học
+          </div>
+          <div style="font-size: 13px; color: #0369a1;">
+            Quản lý danh sách lớp học trong hệ thống
+          </div>
+        </div>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <% if (canManage) { %>
+            <button class="btn" id="btn-add" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; font-weight: 600; padding: 12px 24px; border-radius: 8px; box-shadow: 0 4px 6px rgba(59, 130, 246, 0.3); transition: all 0.2s; border: none; cursor: pointer;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 12px rgba(59, 130, 246, 0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 6px rgba(59, 130, 246, 0.3)'">
+              ➕ Thêm lớp học
+            </button>
+          <% } %>
+        </div>
+      </div>
+    </section>
 
     <!-- FILTER -->
     <section class="card" style="margin-bottom:16px;">
@@ -43,9 +164,13 @@
             <select class="select class-select" id="select-class">
               <option value="">-- Chọn lớp --</option>
               <% classes.forEach(cls => { %>
-                <option value="<%= cls.MaLop %>">
-                  <%= cls.KhoiLop %> - <%= cls.MaLop %>
-                </option>
+                <% if (cls.MaLop !== 'CHUA_CO_LOP') { %>
+                  <option value="<%= cls.MaLop %>">
+                    <%= cls.KhoiLop %> - <%= cls.MaLop %>
+                  </option>
+                <% } else { %>
+                  <option value="CHUA_CO_LOP">Chưa có lớp</option>
+                <% } %>
               <% }) %>
             </select>
 
@@ -59,44 +184,53 @@
     </section>
 
     <!-- TABLE LỚP -->
-    <section class="card">
-      <div class="table-wrap">
-        <table class="table" id="tbl-classes" style="table-layout: fixed; width: 100%;">
+    <section class="card" style="box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);">
+      <div class="table-wrap" style="overflow:auto; max-height:560px;">
+        <table class="table" id="tbl-classes" style="border-collapse: collapse;">
           <thead>
-            <tr>
-              <th style="width: 10%;">STT</th>
-              <th style="width: 20%;">MÃ LỚP</th>
-              <th style="width: 15%;">KHỐI</th>
-              <th style="width: 15%;">SĨ SỐ</th>
-              <th style="width: 40%;">GIÁO VIÊN CHỦ NHIỆM</th>
+            <tr style="background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border-bottom: 2px solid #e2e8f0;">
+              <th style="width:60px; padding: 14px 12px; font-weight: 700; color: #1e293b; text-align: center;">STT</th>
+              <th style="width:150px; padding: 14px 12px; font-weight: 700; color: #1e293b;">MÃ LỚP</th>
+              <th style="width:100px; padding: 14px 12px; font-weight: 700; color: #1e293b; text-align: center;">KHỐI</th>
+              <th style="width:100px; padding: 14px 12px; font-weight: 700; color: #1e293b; text-align: center;">SĨ SỐ</th>
+              <th style="padding: 14px 12px; font-weight: 700; color: #1e293b;">GIÁO VIÊN CHỦ NHIỆM</th>
+              <% if (canManage) { %>
+                <th style="width:150px; padding: 14px 12px; font-weight: 700; color: #1e293b; text-align: center;">THAO TÁC</th>
+              <% } %>
             </tr>
           </thead>
           <tbody>
             <% if (classes && classes.length) { %>
               <% classes.forEach((cls, index) => { %>
-                <tr>
-                  <td style="text-align: center;"><%= index + 1 %></td>
-                  <td style="text-align: center;"><%= cls.MaLop %></td>
-                  <td style="text-align: center;"><%= cls.KhoiLop %></td>
-                  <td style="text-align: center;"><%= cls.SiSoLop %></td>
-                  <td style="text-align: center;"><%= cls.TenGVChuNhiem || 'Chưa có' %></td>
+                <tr data-malop="<%= cls.MaLop %>" data-khoilop="<%= cls.KhoiLop %>" style="border-bottom: 1px solid #e2e8f0; transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='#f8fafc'" onmouseout="this.style.backgroundColor=''">
+                  <td class="text-center" style="padding: 12px; color: #64748b; font-weight: 600;"><%= index + 1 %></td>
+                  <td style="padding: 12px;">
+                    <strong style="color: #1e40af; font-size: 14px; background: #dbeafe; padding: 4px 10px; border-radius: 6px; display: inline-block;"><%= cls.MaLop === 'CHUA_CO_LOP' ? 'Chưa có lớp' : cls.MaLop %></strong>
+                  </td>
+                  <td class="text-center" style="padding: 12px; color: #334155; font-size: 14px; font-weight: 600;"><%= cls.KhoiLop === 0 ? '-' : cls.KhoiLop %></td>
+                  <td class="text-center" style="padding: 12px; color: #334155; font-size: 14px;"><%= cls.SiSoLop || 0 %></td>
+                  <td style="padding: 12px; color: #334155; font-size: 14px;"><%= cls.TenGVChuNhiem || 'Chưa có' %></td>
+                  <% if (canManage) { %>
+                    <td class="text-center" style="padding: 12px;">
+                      <% if (cls.MaLop !== 'CHUA_CO_LOP') { %>
+                        <button class="btn btn-sm btn-edit" type="button" style="background: #3b82f6; color: white; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 600; margin-right: 6px; border: none; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='#2563eb'; this.style.transform='translateY(-1px)'" onmouseout="this.style.background='#3b82f6'; this.style.transform='translateY(0)'">✏️ Sửa</button>
+                        <button class="btn btn-sm btn-delete" type="button" style="background: #ef4444; color: white; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 600; border: none; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='#dc2626'; this.style.transform='translateY(-1px)'" onmouseout="this.style.background='#ef4444'; this.style.transform='translateY(0)'">🗑️ Xóa</button>
+                      <% } else { %>
+                        <span style="color: #94a3b8; font-size: 12px; font-style: italic;">Lớp đặc biệt</span>
+                      <% } %>
+                    </td>
+                  <% } %>
                 </tr>
               <% }) %>
             <% } else { %>
               <tr>
-                <td colspan="5" class="text-center muted">
-                  Chưa có lớp trong hệ thống.
+                <td colspan="<%= canManage ? 6 : 5 %>" class="text-center muted" style="padding: 40px; color: #94a3b8; font-size: 15px;">
+                  📭 Chưa có lớp học trong hệ thống. Hãy thêm lớp học mới!
                 </td>
               </tr>
             <% } %>
           </tbody>
         </table>
-      </div>
-
-      <div class="pagination">
-        <button class="btn-page" disabled>‹</button>
-        <span class="page-info">Trang <strong>1</strong> / <strong>1</strong></span>
-        <button class="btn-page" disabled>›</button>
       </div>
     </section>
 
@@ -104,7 +238,7 @@
     <section class="card" style="margin-top:16px;">
       <h3>
         Danh sách học sinh
-        <% if (selectedClass) { %> – Lớp <%= selectedClass %><% } %>
+        <% if (selectedClass) { %> – Lớp <%= selectedClass === 'CHUA_CO_LOP' ? 'Chưa có lớp' : selectedClass %><% } %>
       </h3>
 
       <div class="table-wrap">
@@ -118,24 +252,27 @@
               <th>NGÀY SINH</th>
               <th>ĐỊA CHỈ</th>
               <th>EMAIL</th>
+              <% if (permissions.canManageClasses) { %>
+                <th style="width:120px; text-align:center;">THAO TÁC</th>
+              <% } %>
             </tr>
           </thead>
           <tbody>
             <% if (!selectedClass) { %>
               <tr>
-                <td colspan="7" class="text-center muted">
+                <td colspan="<%= permissions.canManageClasses ? 8 : 7 %>" class="text-center muted">
                   Vui lòng chọn lớp để xem danh sách học sinh.
                 </td>
               </tr>
             <% } else if (!studentsInClass || studentsInClass.length === 0) { %>
               <tr>
-                <td colspan="7" class="text-center muted">
+                <td colspan="<%= permissions.canManageClasses ? 8 : 7 %>" class="text-center muted">
                   Không có học sinh trong lớp này.
                 </td>
               </tr>
             <% } else { %>
               <% studentsInClass.forEach((st, idx) => { %>
-                <tr>
+                <tr data-mahocsinh="<%= st.MaHocSinh %>">
                   <td><%= idx + 1 %></td>
                   <td><%= st.HoTen %></td>
                   <td><%= st.MaHocSinh %></td>
@@ -145,6 +282,17 @@
                   </td>
                   <td><%= st.DiaChi || '' %></td>
                   <td><%= st.Email || '' %></td>
+                  <% if (permissions.canManageClasses) { %>
+                    <td style="text-align:center;">
+                      <button class="btn btn-sm btn-primary btn-transfer" 
+                              data-mahocsinh="<%= st.MaHocSinh %>" 
+                              data-hoten="<%= st.HoTen %>"
+                              data-malop="<%= selectedClass %>"
+                              style="padding: 6px 12px; font-size: 13px;">
+                        🔄 Chuyển lớp
+                      </button>
+                    </td>
+                  <% } %>
                 </tr>
               <% }) %>
             <% } %>
@@ -157,14 +305,457 @@
 </div>
 
 <script>
-document.getElementById("btn-view").addEventListener("click", function () {
-  const lop = document.getElementById("select-class").value;
-  if (!lop) {
-    alert("Vui lòng chọn lớp!");
-    return;
-  }
-  window.location.href = `/class/view?lop=${lop}`;
-});
+  // Đợi DOM load xong
+  document.addEventListener('DOMContentLoaded', function() {
+    // Hàm đóng tất cả modal/overlay và enable lại UI
+    function closeAllModalsAndEnableUI() {
+      // Force close delete modal
+      const deleteModal = document.getElementById('delete-confirm-modal');
+      if (deleteModal) {
+        deleteModal.style.display = 'none';
+        deleteModal.style.pointerEvents = '';
+        deleteModal.style.zIndex = '';
+        if (typeof window.hideDeleteConfirm === 'function') {
+          try {
+            window.hideDeleteConfirm();
+          } catch(e) {}
+        }
+      }
+      
+      // Đóng overlay thêm/sửa/chuyển lớp
+      const overlayAdd = document.getElementById('class-overlay');
+      const overlayEdit = document.getElementById('class-edit-overlay');
+      const overlayTransfer = document.getElementById('transfer-student-overlay');
+      
+      if (overlayAdd) {
+        overlayAdd.style.display = 'none';
+        overlayAdd.style.pointerEvents = '';
+        overlayAdd.style.zIndex = '';
+        const form = overlayAdd.querySelector('form');
+        if (form) form.reset();
+      }
+      if (overlayEdit) {
+        overlayEdit.style.display = 'none';
+        overlayEdit.style.pointerEvents = '';
+        overlayEdit.style.zIndex = '';
+        const form = overlayEdit.querySelector('form');
+        if (form) {
+          form.reset();
+          const editKhoiLopDisplay = document.getElementById('editKhoiLop');
+          if (editKhoiLopDisplay) editKhoiLopDisplay.value = '';
+        }
+      }
+      if (overlayTransfer) {
+        overlayTransfer.style.display = 'none';
+        overlayTransfer.style.pointerEvents = '';
+        overlayTransfer.style.zIndex = '';
+        const form = overlayTransfer.querySelector('form');
+        if (form) form.reset();
+      }
+      
+      // Xóa các form động còn sót lại
+      const dynamicForms = document.querySelectorAll('form[action="/class/delete"]');
+      dynamicForms.forEach(form => {
+        if (form.parentNode) {
+          form.parentNode.removeChild(form);
+        }
+      });
+      
+      // Enable lại tất cả button và input
+      const allButtons = document.querySelectorAll('button, input, select, a');
+      allButtons.forEach(btn => {
+        if (btn && !btn.closest('.sp-overlay')) {
+          btn.disabled = false;
+          btn.style.pointerEvents = 'auto';
+          btn.style.opacity = '1';
+        }
+      });
+      
+      // Đảm bảo body không bị block
+      document.body.style.overflow = 'auto';
+      document.body.style.pointerEvents = 'auto';
+    }
+
+    // Đóng overlay sau khi có success/error (notification sẽ tự hiển thị từ partial)
+    <% if (typeof success !== 'undefined' && success) { %>
+      // Đóng tất cả modal/overlay ngay lập tức
+      closeAllModalsAndEnableUI();
+      
+      // Thêm listener để đóng modal khi click vào notification OK
+      setTimeout(function() {
+        const notificationOk = document.getElementById('notification-ok');
+        if (notificationOk) {
+          // Remove old listeners và thêm mới để tránh duplicate
+          const newOkBtn = notificationOk.cloneNode(true);
+          notificationOk.parentNode.replaceChild(newOkBtn, notificationOk);
+          newOkBtn.addEventListener('click', function() {
+            closeAllModalsAndEnableUI();
+            if (typeof closeNotification === 'function') {
+              closeNotification();
+            }
+          });
+        }
+      }, 200);
+    <% } %>
+    <% if (typeof error !== 'undefined' && error) { %>
+      // Hàm đóng tất cả modal/overlay (trừ notification - nó sẽ tự hiển thị)
+      function closeAllModalsExceptNotification() {
+        // Force close delete modal
+        const deleteModal = document.getElementById('delete-confirm-modal');
+        if (deleteModal) {
+          deleteModal.style.display = 'none';
+          deleteModal.style.pointerEvents = '';
+          deleteModal.style.zIndex = '';
+          if (typeof window.hideDeleteConfirm === 'function') {
+            try {
+              window.hideDeleteConfirm();
+            } catch(e) {}
+          }
+        }
+        
+        // Đóng overlay thêm/sửa
+        const overlayAdd = document.getElementById('class-overlay');
+        const overlayEdit = document.getElementById('class-edit-overlay');
+        if (overlayAdd) {
+          overlayAdd.style.display = 'none';
+          overlayAdd.style.pointerEvents = '';
+          overlayAdd.style.zIndex = '';
+          const form = overlayAdd.querySelector('form');
+          if (form) form.reset();
+        }
+        if (overlayEdit) {
+          overlayEdit.style.display = 'none';
+          overlayEdit.style.pointerEvents = '';
+          overlayEdit.style.zIndex = '';
+          const form = overlayEdit.querySelector('form');
+          if (form) {
+            form.reset();
+            const editKhoiLopDisplay = document.getElementById('editKhoiLop');
+            if (editKhoiLopDisplay) editKhoiLopDisplay.value = '';
+          }
+        }
+        
+        // Xóa các form động còn sót lại
+        const dynamicForms = document.querySelectorAll('form[action="/class/delete"]');
+        dynamicForms.forEach(form => {
+          if (form.parentNode) {
+            form.parentNode.removeChild(form);
+          }
+        });
+      }
+      
+      // Đóng tất cả modal ngay lập tức
+      closeAllModalsExceptNotification();
+    <% } %>
+
+    // View class students
+    const btnView = document.getElementById("btn-view");
+    if (btnView) {
+      btnView.addEventListener("click", function () {
+        const lop = document.getElementById("select-class").value;
+        if (!lop) {
+          alert("Vui lòng chọn lớp!");
+          return;
+        }
+        window.location.href = `/class/view?lop=${lop}`;
+      });
+    }
+
+    // Add class overlay
+    const overlayAdd = document.getElementById('class-overlay');
+    const btnAdd = document.getElementById('btn-add');
+    const btnCancelAdd = document.getElementById('btn-cancel-add');
+
+    function openAdd() {
+      if (overlayAdd) {
+        overlayAdd.style.display = 'grid';
+        const form = overlayAdd.querySelector('form');
+        if (form) {
+          form.reset();
+          // Reset select về giá trị mặc định
+          const khoiLopSelect = form.querySelector('select[name="KhoiLop"]');
+          if (khoiLopSelect) khoiLopSelect.value = '';
+        }
+      }
+    }
+    function closeAdd() {
+      if (overlayAdd) {
+        overlayAdd.style.display = 'none';
+        const form = overlayAdd.querySelector('form');
+        if (form) form.reset();
+      }
+    }
+    if (btnAdd) btnAdd.addEventListener('click', openAdd);
+    if (btnCancelAdd) btnCancelAdd.addEventListener('click', closeAdd);
+    if (overlayAdd) overlayAdd.addEventListener('click', e => {
+      if (e.target === overlayAdd) closeAdd();
+    });
+
+    // Edit class overlay
+    const overlayEdit = document.getElementById('class-edit-overlay');
+    const btnCancelEdit = document.getElementById('btn-cancel-edit');
+    const editMaLopInput = document.getElementById('editMaLop');
+    const editKhoiLopDisplay = document.getElementById('editKhoiLop');
+
+    function openEdit() {
+      if (overlayEdit) {
+        overlayEdit.style.display = 'grid';
+        // Đảm bảo form được reset khi mở
+        const form = overlayEdit.querySelector('form');
+        if (form && !form.dataset.initialized) {
+          form.dataset.initialized = 'true';
+        }
+      }
+    }
+    function closeEdit() {
+      if (overlayEdit) {
+        overlayEdit.style.display = 'none';
+        // Reset form khi đóng
+        const form = overlayEdit.querySelector('form');
+        if (form) {
+          form.reset();
+          form.dataset.initialized = 'false';
+        }
+        if (editKhoiLopDisplay) editKhoiLopDisplay.value = '';
+        if (editMaLopInput) editMaLopInput.value = '';
+        const editOldMaLop = document.getElementById('editOldMaLop');
+        if (editOldMaLop) editOldMaLop.value = '';
+      }
+    }
+    if (btnCancelEdit) btnCancelEdit.addEventListener('click', closeEdit);
+    if (overlayEdit) overlayEdit.addEventListener('click', e => {
+      if (e.target === overlayEdit) closeEdit();
+    });
+
+    // Tự động tính khối lớp khi nhập mã lớp trong form sửa (chỉ gắn 1 lần)
+    if (editMaLopInput) {
+      editMaLopInput.addEventListener('input', function() {
+        const newMaLop = this.value.trim();
+        if (newMaLop.match(/^1[0-2][A-Z][0-9]+$/)) {
+          const khoi = parseInt(newMaLop.substring(0, 2));
+          if (editKhoiLopDisplay && khoi >= 10 && khoi <= 12) {
+            editKhoiLopDisplay.value = 'Khối ' + khoi;
+          }
+        } else {
+          if (editKhoiLopDisplay) editKhoiLopDisplay.value = '';
+        }
+      });
+    }
+
+    // Gắn event cho nút sửa và xóa (sử dụng event delegation - chỉ gắn 1 lần)
+    const tableClasses = document.getElementById('tbl-classes');
+    if (tableClasses) {
+      // Gắn event listener một lần duy nhất (event delegation tự động hoạt động với các phần tử mới)
+      tableClasses.addEventListener('click', function(e) {
+        // Xử lý nút sửa
+        if (e.target.closest('.btn-edit')) {
+          e.preventDefault();
+          e.stopPropagation();
+          const btn = e.target.closest('.btn-edit');
+          const tr = btn.closest('tr');
+          if (!tr) return;
+          
+          const maLop = tr.getAttribute('data-malop') || '';
+          const khoiLop = tr.getAttribute('data-khoilop') || '';
+          const editOldMaLop = document.getElementById('editOldMaLop');
+          const editMaLop = document.getElementById('editMaLop');
+          const editKhoiLop = document.getElementById('editKhoiLop');
+          
+          if (editOldMaLop) editOldMaLop.value = maLop;
+          if (editMaLop) {
+            editMaLop.value = maLop;
+            // Tự động tính khối lớp
+            const khoi = parseInt(maLop.substring(0, 2));
+            if (editKhoiLop && khoi >= 10 && khoi <= 12) {
+              editKhoiLop.value = 'Khối ' + khoi;
+            }
+          }
+          openEdit();
+          return;
+        }
+        
+        // Xử lý nút xóa
+        if (e.target.closest('.btn-delete')) {
+          e.preventDefault();
+          e.stopPropagation();
+          const btn = e.target.closest('.btn-delete');
+          const tr = btn.closest('tr');
+          if (!tr) return;
+          
+          const maLop = tr.getAttribute('data-malop') || '';
+          const khoiLop = tr.getAttribute('data-khoilop') || '';
+          
+          if (typeof showDeleteConfirm === 'function') {
+            showDeleteConfirm(
+              `Bạn có chắc chắn muốn xóa lớp học "${maLop}" (Khối ${khoiLop})?`,
+              '⚠️ Hành động này không thể hoàn tác! Tất cả học sinh, thời khóa biểu và dữ liệu liên quan có thể bị ảnh hưởng.',
+              function() {
+                // Tạo form và submit
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '/class/delete';
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'MaLop';
+                input.value = maLop;
+                form.appendChild(input);
+                document.body.appendChild(form);
+                
+                // Đảm bảo modal đóng trước khi submit
+                const deleteModal = document.getElementById('delete-confirm-modal');
+                if (deleteModal) {
+                  deleteModal.style.display = 'none';
+                }
+                
+                // Submit form
+                form.submit();
+                
+                // Remove form sau một chút (nếu submit không redirect ngay)
+                setTimeout(() => {
+                  if (form.parentNode) {
+                    form.parentNode.removeChild(form);
+                  }
+                }, 100);
+              }
+            );
+          } else {
+            if (confirm(`Bạn có chắc chắn muốn xóa lớp học "${maLop}" (Khối ${khoiLop})?`)) {
+              const form = document.createElement('form');
+              form.method = 'POST';
+              form.action = '/class/delete';
+              const input = document.createElement('input');
+              input.type = 'hidden';
+              input.name = 'MaLop';
+              input.value = maLop;
+              form.appendChild(input);
+              document.body.appendChild(form);
+              form.submit();
+              
+              // Remove form sau một chút
+              setTimeout(() => {
+                if (form.parentNode) {
+                  form.parentNode.removeChild(form);
+                }
+              }, 100);
+            }
+          }
+          return;
+        }
+      });
+    }
+
+    // Validate form trước khi submit
+    const editClassForm = document.getElementById('editClassForm');
+    if (editClassForm) {
+      editClassForm.addEventListener('submit', function(e) {
+        const maLopInput = document.getElementById('editMaLop');
+        const oldMaLopInput = document.getElementById('editOldMaLop');
+        const maLop = maLopInput?.value?.trim();
+        const oldMaLop = oldMaLopInput?.value?.trim();
+        
+        console.log('Form submit - maLop:', maLop);
+        console.log('Form submit - oldMaLop:', oldMaLop);
+        
+        if (!maLop) {
+          e.preventDefault();
+          alert('Vui lòng nhập mã lớp!');
+          return false;
+        }
+        
+        if (!maLop.match(/^1[0-2][A-Z][0-9]+$/)) {
+          e.preventDefault();
+          alert('Mã lớp không đúng định dạng! (ví dụ: 10A1, 11A2, 12A5)');
+          return false;
+        }
+        
+        if (!oldMaLop) {
+          e.preventDefault();
+          alert('Lỗi: Không tìm thấy mã lớp cũ!');
+          return false;
+        }
+        
+        // Đảm bảo giá trị được set đúng
+        if (maLopInput) maLopInput.value = maLop;
+        if (oldMaLopInput) oldMaLopInput.value = oldMaLop;
+        
+        // Không preventDefault nếu validation thành công - cho phép form submit
+        // Form sẽ submit và redirect, nếu có lỗi sẽ hiển thị notification và đóng overlay
+      });
+    }
+    
+    // Xử lý form thêm lớp - đảm bảo không block sau khi submit
+    const addClassForm = overlayAdd?.querySelector('form');
+    if (addClassForm) {
+      addClassForm.addEventListener('submit', function(e) {
+        // Không preventDefault - cho phép form submit bình thường
+        // Nếu có lỗi, server sẽ redirect với error và overlay sẽ được đóng ở phần notification handling
+      });
+    }
+
+    // Transfer student overlay
+    const overlayTransfer = document.getElementById('transfer-student-overlay');
+    const btnCancelTransfer = document.getElementById('btn-cancel-transfer');
+
+    function openTransfer(maHocSinh, hoTen, currentMaLop) {
+      if (overlayTransfer) {
+        overlayTransfer.style.display = 'grid';
+        const maHocSinhInput = document.getElementById('transferMaHocSinh');
+        const hoTenInput = document.getElementById('transferHoTen');
+        const currentClassInput = document.getElementById('transferCurrentClass');
+        const oldMaLopInput = document.getElementById('transferOldMaLop');
+        const newMaLopSelect = document.getElementById('transferNewMaLop');
+        
+        if (maHocSinhInput) maHocSinhInput.value = maHocSinh;
+        if (hoTenInput) hoTenInput.value = hoTen;
+        if (currentClassInput) currentClassInput.value = currentMaLop;
+        if (oldMaLopInput) oldMaLopInput.value = currentMaLop;
+        if (newMaLopSelect) {
+          newMaLopSelect.value = '';
+          // Loại bỏ lớp hiện tại khỏi danh sách
+          Array.from(newMaLopSelect.options).forEach(option => {
+            if (option.value === currentMaLop) {
+              option.style.display = 'none';
+            } else {
+              option.style.display = 'block';
+            }
+          });
+        }
+      }
+    }
+
+    function closeTransfer() {
+      if (overlayTransfer) {
+        overlayTransfer.style.display = 'none';
+        const form = overlayTransfer.querySelector('form');
+        if (form) form.reset();
+      }
+    }
+
+    if (btnCancelTransfer) btnCancelTransfer.addEventListener('click', closeTransfer);
+    if (overlayTransfer) overlayTransfer.addEventListener('click', e => {
+      if (e.target === overlayTransfer) closeTransfer();
+    });
+
+    // Gắn event cho nút chuyển lớp (sử dụng event delegation)
+    const tableStudents = document.getElementById('tbl-students');
+    if (tableStudents) {
+      tableStudents.addEventListener('click', function(e) {
+        if (e.target.closest('.btn-transfer')) {
+          e.preventDefault();
+          e.stopPropagation();
+          const btn = e.target.closest('.btn-transfer');
+          const maHocSinh = btn.getAttribute('data-mahocsinh') || '';
+          const hoTen = btn.getAttribute('data-hoten') || '';
+          const currentMaLop = btn.getAttribute('data-malop') || '';
+          
+          if (maHocSinh && hoTen && currentMaLop) {
+            openTransfer(maHocSinh, hoTen, currentMaLop);
+          }
+        }
+      });
+    }
+
+  }); // End DOMContentLoaded
 </script>
 
 </body>

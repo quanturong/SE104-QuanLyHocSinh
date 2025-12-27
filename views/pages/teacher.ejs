@@ -82,13 +82,19 @@
                 <% teachers.forEach(function(t, index) { %>
                   <tr
                     data-name="<%= (t.HoTen || '').toLowerCase() %>"
-                    data-subject="<%= (t.TenMonHoc || t.MaMonGiangDay || '').toLowerCase() %>"
+                    data-subject="<%= ((t.MonHocs && t.MonHocs.length > 0) ? t.MonHocs.map(m => m.TenMonHoc || m.MaMonHoc).join(', ') : (t.TenMonHoc || t.MaMonGiangDay || '')).toLowerCase() %>"
                     data-contact="<%= (t.Email || '').toLowerCase() %>"
                     data-address="<%= (t.DiaChi || '').toLowerCase() %>"
                   >
                     <td class="text-center"><%= index + 1 %></td>
                     <td><strong><%= t.HoTen || '' %></strong></td>
-                    <td><%= t.TenMonHoc || t.MaMonGiangDay || '' %></td>
+                    <td>
+                      <% if (t.MonHocs && t.MonHocs.length > 0) { %>
+                        <%= t.MonHocs.map(m => m.TenMonHoc || m.MaMonHoc).join(', ') %>
+                      <% } else { %>
+                        <%= t.TenMonHoc || t.MaMonGiangDay || '' %>
+                      <% } %>
+                    </td>
                     <td><%= t.Email || '' %></td>
                     <td><%= t.DiaChi || '' %></td>
                     <td style="text-align:center; white-space:nowrap;">
@@ -107,6 +113,7 @@
                             data-diachi="<%= t.DiaChi || '' %>"
                             data-email="<%= t.Email || '' %>"
                             data-mamon="<%= t.MaMonGiangDay || '' %>"
+                            data-monhocs="<%= t.MonHocs ? JSON.stringify(t.MonHocs.map(m => m.MaMonHoc)) : '[]' %>"
                             style="padding:6px 12px; font-size:13px;"
                           >
                             Sửa
@@ -145,7 +152,8 @@
         <div class="sp-modal">
           <h2 class="sp-title">Sửa thông tin giáo viên</h2>
           
-          <form class="sp-form" id="form-edit-teacher">
+          <form class="sp-form" id="form-edit-teacher" method="POST" action="/teacher/edit">
+            <input type="hidden" name="MaGiaoVien" id="edit-gv-magv-hidden" />
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
               <div class="sp-field">
                 <label>Mã giáo viên</label>
@@ -158,28 +166,32 @@
               </div>
 
               <div class="sp-field">
-                <label>Bộ môn giảng dạy</label>
-                <select id="edit-gv-mon">
+                <label>Bộ môn giảng dạy <span style="color:#64748b; font-size:12px;">(có thể chọn nhiều)</span></label>
+                <div id="edit-gv-mon-container" style="max-height:200px; overflow-y:auto; border:1px solid #cbd5e1; border-radius:6px; padding:8px; background:#fff;">
                   <% if (subjects && subjects.length) { %>
                     <% subjects.forEach(function(sub){ %>
-                      <option value="<%= sub.MaMonHoc %>"><%= sub.TenMonHoc %></option>
+                      <label style="display:flex; align-items:center; gap:8px; padding:6px; cursor:pointer; border-radius:4px; transition:background 0.2s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">
+                        <input type="checkbox" name="MonHocs" value="<%= sub.MaMonHoc %>" class="edit-gv-mon-checkbox" style="cursor:pointer;" />
+                        <span><%= sub.TenMonHoc %> (<%= sub.MaMonHoc %>)</span>
+                      </label>
                     <% }) %>
                   <% } else { %>
-                    <option value="">Chưa có môn học</option>
+                    <p style="color:#94a3b8; padding:8px;">Chưa có môn học</p>
                   <% } %>
-                </select>
+                </div>
+                <input type="hidden" name="MaMonGiangDay" id="edit-gv-mon" />
               </div>
             </div>
 
             <div class="sp-field">
               <label>Họ tên</label>
-              <input type="text" id="edit-gv-hoten" />
+              <input type="text" name="HoTen" id="edit-gv-hoten" required />
             </div>
 
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
               <div class="sp-field">
                 <label>Giới tính</label>
-                <select id="edit-gv-gioitinh">
+                <select name="GioiTinh" id="edit-gv-gioitinh">
                   <option value="">-- Chọn --</option>
                   <option value="Nam">Nam</option>
                   <option value="Nữ">Nữ</option>
@@ -189,18 +201,18 @@
 
               <div class="sp-field">
                 <label>Ngày sinh</label>
-                <input type="date" id="edit-gv-ngaysinh" />
+                <input type="date" name="NgaySinh" id="edit-gv-ngaysinh" />
               </div>
             </div>
 
             <div class="sp-field">
               <label>Email</label>
-              <input type="email" id="edit-gv-email" />
+              <input type="email" name="Email" id="edit-gv-email" required />
             </div>
 
             <div class="sp-field">
               <label>Địa chỉ</label>
-              <input type="text" id="edit-gv-diachi" />
+              <input type="text" name="DiaChi" id="edit-gv-diachi" />
             </div>
 
             <div class="sp-actions">
@@ -299,15 +311,20 @@
               </div>
 
               <div class="sp-field">
-                <label>Bộ môn giảng dạy</label>
-                <select name="MaMonGiangDay" id="add-gv-mon" required>
-                  <option value="">-- Chọn bộ môn --</option>
+                <label>Bộ môn giảng dạy <span style="color:#64748b; font-size:12px;">(có thể chọn nhiều)</span></label>
+                <div style="max-height:200px; overflow-y:auto; border:1px solid #cbd5e1; border-radius:6px; padding:8px; background:#fff;">
                   <% if (subjects && subjects.length) { %>
                     <% subjects.forEach(function(sub){ %>
-                      <option value="<%= sub.MaMonHoc %>"><%= sub.TenMonHoc %></option>
+                      <label style="display:flex; align-items:center; gap:8px; padding:6px; cursor:pointer; border-radius:4px; transition:background 0.2s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">
+                        <input type="checkbox" name="MonHocs" value="<%= sub.MaMonHoc %>" style="cursor:pointer;" />
+                        <span><%= sub.TenMonHoc %> (<%= sub.MaMonHoc %>)</span>
+                      </label>
                     <% }) %>
+                  <% } else { %>
+                    <p style="color:#94a3b8; padding:8px;">Chưa có môn học</p>
                   <% } %>
-                </select>
+                </div>
+                <input type="hidden" name="MaMonGiangDay" id="add-gv-mon" />
               </div>
             </div>
 
@@ -353,83 +370,6 @@
               </button>
               <button type="submit" class="sp-btn">
                 Thêm giáo viên
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-      <div class="sp-overlay" id="modal-edit-teacher" style="display:none;">
-        <div class="sp-modal">
-          <h2 class="sp-title">Sửa thông tin giáo viên</h2>
-          
-          <form class="sp-form" id="form-edit-teacher">
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
-              <div class="sp-field">
-                <label>Mã giáo viên</label>
-                <input
-                  type="text"
-                  id="edit-gv-magv"
-                  readonly
-                  style="background:#f1f5f9; cursor:not-allowed;"
-                />
-              </div>
-
-              <div class="sp-field">
-                <label>Bộ môn giảng dạy</label>
-                <select id="edit-gv-mon">
-                  <% if (subjects && subjects.length) { %>
-                    <% subjects.forEach(function(sub){ %>
-                      <option value="<%= sub.MaMonHoc %>"><%= sub.TenMonHoc %></option>
-                    <% }) %>
-                  <% } else { %>
-                    <option value="">Chưa có môn học</option>
-                  <% } %>
-                </select>
-              </div>
-            </div>
-
-            <div class="sp-field">
-              <label>Họ tên</label>
-              <input type="text" id="edit-gv-hoten" />
-            </div>
-
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
-              <div class="sp-field">
-                <label>Giới tính</label>
-                <select id="edit-gv-gioitinh">
-                  <option value="">-- Chọn --</option>
-                  <option value="Nam">Nam</option>
-                  <option value="Nữ">Nữ</option>
-                  <option value="Khác">Khác</option>
-                </select>
-              </div>
-
-              <div class="sp-field">
-                <label>Ngày sinh</label>
-                <input type="date" id="edit-gv-ngaysinh" />
-              </div>
-            </div>
-
-            <div class="sp-field">
-              <label>Email</label>
-              <input type="email" id="edit-gv-email" />
-            </div>
-
-            <div class="sp-field">
-              <label>Địa chỉ</label>
-              <input type="text" id="edit-gv-diachi" />
-            </div>
-
-            <div class="sp-actions">
-              <button
-                type="button"
-                class="sp-btn sp-btn--ghost"
-                onclick="closeEditTeacherModal()"
-              >
-                Đóng
-              </button>
-              <button type="submit" class="sp-btn">
-                Lưu thay đổi
               </button>
             </div>
           </form>
@@ -565,7 +505,52 @@
       }
     });
 
-    // Form sẽ submit bình thường đến /teacher
+    // Xử lý submit form add
+    document.getElementById('form-add-teacher')?.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const form = e.target;
+      
+      // Lấy tất cả các checkbox đã chọn
+      const monHocs = Array.from(form.querySelectorAll('input[name="MonHocs"]:checked')).map(cb => cb.value);
+      if (monHocs.length === 0) {
+        alert('Vui lòng chọn ít nhất một môn học');
+        return;
+      }
+      
+      // Tạo object dữ liệu
+      const formData = new FormData(form);
+      const data = {
+        MaGiaoVien: formData.get('MaGiaoVien') || '',
+        HoTen: formData.get('HoTen') || '',
+        GioiTinh: formData.get('GioiTinh') || '',
+        NgaySinh: formData.get('NgaySinh') || '',
+        DiaChi: formData.get('DiaChi') || '',
+        Email: formData.get('Email') || '',
+        MaMonGiangDay: monHocs[0] || '',
+        MonHocs: monHocs
+      };
+      
+      // Submit form với JSON
+      fetch('/teacher', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
+      })
+      .then(res => {
+        if (res.ok) {
+          window.location.href = '/teacher?success=' + encodeURIComponent('Thêm giáo viên thành công');
+        } else {
+          return res.text().then(text => {
+            throw new Error(text || 'Có lỗi xảy ra');
+          });
+        }
+      })
+      .catch(err => {
+        alert('Lỗi: ' + (err.message || 'Không thêm được giáo viên'));
+      });
+    });
 
     // ========== MODAL SỬA GIÁO VIÊN ==========
     function openEditTeacherModal(btn) {
@@ -608,10 +593,25 @@
       const emailInput = document.getElementById('edit-gv-email');
       if (emailInput) emailInput.value = email;
 
-      const monSelect = document.getElementById('edit-gv-mon');
-      if (monSelect && maMon) {
-        monSelect.value = maMon;
+      // Xử lý môn học (nhiều môn)
+      const monHocsJson = btn.getAttribute('data-monhocs') || '[]';
+      let monHocs = [];
+      try {
+        monHocs = JSON.parse(monHocsJson);
+      } catch(e) {
+        // Fallback về maMon nếu không có data-monhocs
+        if (maMon) monHocs = [maMon];
       }
+      
+      // Check các checkbox tương ứng
+      const checkboxes = document.querySelectorAll('.edit-gv-mon-checkbox');
+      checkboxes.forEach(cb => {
+        cb.checked = monHocs.includes(cb.value);
+      });
+      
+      // Cập nhật hidden field
+      const monHidden = document.getElementById('edit-gv-mon');
+      if (monHidden) monHidden.value = monHocs[0] || maMon || '';
 
       modal.style.display = 'grid';
       console.log('Modal displayed');
@@ -628,7 +628,56 @@
       }
     });
 
-    // Form sẽ submit bình thường đến /teacher/edit
+    // Xử lý submit form edit
+    document.getElementById('form-edit-teacher')?.addEventListener('submit', (e) => {
+      e.preventDefault();
+      
+      // Lấy tất cả các checkbox đã chọn
+      const monHocs = Array.from(document.querySelectorAll('.edit-gv-mon-checkbox:checked')).map(cb => cb.value);
+      if (monHocs.length === 0) {
+        alert('Vui lòng chọn ít nhất một môn học');
+        return;
+      }
+      
+      // Tạo object dữ liệu
+      const maGV = document.getElementById('edit-gv-magv-hidden')?.value || document.getElementById('edit-gv-magv')?.value;
+      if (!maGV) {
+        alert('Lỗi: Không tìm thấy mã giáo viên');
+        return;
+      }
+      
+      const data = {
+        MaGiaoVien: maGV,
+        HoTen: document.getElementById('edit-gv-hoten')?.value || '',
+        GioiTinh: document.getElementById('edit-gv-gioitinh')?.value || '',
+        NgaySinh: document.getElementById('edit-gv-ngaysinh')?.value || '',
+        Email: document.getElementById('edit-gv-email')?.value || '',
+        DiaChi: document.getElementById('edit-gv-diachi')?.value || '',
+        MaMonGiangDay: monHocs[0] || '', // Tương thích ngược
+        MonHocs: monHocs
+      };
+      
+      // Submit form với JSON
+      fetch('/teacher/edit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
+      })
+      .then(res => {
+        if (res.ok) {
+          window.location.href = '/teacher?success=' + encodeURIComponent('Cập nhật giáo viên thành công');
+        } else {
+          return res.text().then(text => {
+            throw new Error(text || 'Có lỗi xảy ra');
+          });
+        }
+      })
+      .catch(err => {
+        alert('Lỗi: ' + (err.message || 'Không cập nhật được giáo viên'));
+      });
+    });
 
     // Xóa giáo viên
     document.addEventListener('click', (e) => {
@@ -640,17 +689,17 @@
           `Bạn có chắc chắn muốn xóa giáo viên "${hoTen}" (Mã: ${maGV})?`,
           '⚠️ Hành động này không thể hoàn tác!',
           function() {
-            const form = document.createElement('form');
-            form.method = 'POST';
-            form.action = '/teacher/delete';
-            const input = document.createElement('input');
-            input.type = 'hidden';
-            input.name = 'MaGiaoVien';
-            input.value = maGV;
-            form.appendChild(input);
-            document.body.appendChild(form);
-            form.submit();
-          }
+          const form = document.createElement('form');
+          form.method = 'POST';
+          form.action = '/teacher/delete';
+          const input = document.createElement('input');
+          input.type = 'hidden';
+          input.name = 'MaGiaoVien';
+          input.value = maGV;
+          form.appendChild(input);
+          document.body.appendChild(form);
+          form.submit();
+        }
         );
       }
     });

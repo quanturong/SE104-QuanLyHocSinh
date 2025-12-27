@@ -36,7 +36,22 @@ class GiaoVienController {
 
   async createTeacher(req, res) {
     try {
-      const { MaGiaoVien, HoTen, GioiTinh, NgaySinh, DiaChi, Email, MaMonGiangDay } = req.body;
+      // Hỗ trợ cả JSON và form-data
+      let body = req.body;
+      if (Object.keys(body).length === 0 && req.headers['content-type']?.includes('application/json')) {
+        body = JSON.parse(JSON.stringify(req.body));
+      }
+      
+      const { MaGiaoVien, HoTen, GioiTinh, NgaySinh, DiaChi, Email, MaMonGiangDay, MonHocs } = body;
+      
+      // Xử lý MonHocs: có thể là array hoặc string (từ form)
+      let monHocsArray = [];
+      if (MonHocs) {
+        monHocsArray = Array.isArray(MonHocs) ? MonHocs : [MonHocs].filter(Boolean);
+      } else if (MaMonGiangDay) {
+        monHocsArray = [MaMonGiangDay];
+      }
+      
       await giaoVienService.createGiaoVien({
         MaGiaoVien,
         HoTen,
@@ -44,7 +59,8 @@ class GiaoVienController {
         NgaySinh,
         DiaChi,
         Email,
-        MaMonGiangDay,
+        MaMonGiangDay: monHocsArray[0] || MaMonGiangDay, // Tương thích ngược
+        MonHocs: monHocsArray,
       });
       return res.redirect("/teacher");
     } catch (err) {
@@ -55,14 +71,35 @@ class GiaoVienController {
 
   async updateTeacher(req, res) {
     try {
-      const { MaGiaoVien, HoTen, GioiTinh, NgaySinh, DiaChi, Email, MaMonGiangDay } = req.body;
+      // Hỗ trợ cả JSON và form-data
+      let body = req.body;
+      if (Object.keys(body).length === 0 && req.headers['content-type']?.includes('application/json')) {
+        // Nếu body rỗng nhưng có JSON header, có thể cần parse lại
+        body = JSON.parse(JSON.stringify(req.body));
+      }
+      
+      const { MaGiaoVien, HoTen, GioiTinh, NgaySinh, DiaChi, Email, MaMonGiangDay, MonHocs } = body;
+      
+      if (!MaGiaoVien) {
+        return res.status(400).send("Thiếu mã giáo viên");
+      }
+      
+      // Xử lý MonHocs: có thể là array hoặc string (từ form)
+      let monHocsArray = [];
+      if (MonHocs) {
+        monHocsArray = Array.isArray(MonHocs) ? MonHocs : [MonHocs].filter(Boolean);
+      } else if (MaMonGiangDay) {
+        monHocsArray = [MaMonGiangDay];
+      }
+      
       await giaoVienService.updateGiaoVien(MaGiaoVien, {
         HoTen,
         GioiTinh,
         NgaySinh,
         DiaChi,
         Email,
-        MaMonGiangDay,
+        MaMonGiangDay: monHocsArray[0] || MaMonGiangDay, // Tương thích ngược
+        MonHocs: monHocsArray,
       });
       return res.redirect("/teacher");
     } catch (err) {

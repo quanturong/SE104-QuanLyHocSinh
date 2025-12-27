@@ -60,8 +60,9 @@ function showNotification(message, type) {
     modal.classList.add('info');
   }
   
-  // Show modal with animation
-  modal.style.display = 'grid';
+  // Show modal with animation (toast style - không block UI)
+  modal.style.display = 'flex';
+  // pointer-events và z-index được set trong CSS của notification-modal.ejs
   
   // Remove error/success from URL
   const url = new URL(window.location);
@@ -74,6 +75,23 @@ function closeNotification() {
   const modal = document.getElementById('notification-modal');
   if (modal) {
     modal.style.display = 'none';
+    // Reset về CSS thay vì set giá trị cố định
+    modal.style.pointerEvents = '';
+    modal.style.zIndex = '';
+    
+    // Enable lại tất cả button/input sau khi đóng notification
+    const allButtons = document.querySelectorAll('button, input, select, a');
+    allButtons.forEach(btn => {
+      if (btn && !btn.closest('.sp-overlay')) {
+        btn.disabled = false;
+        btn.style.pointerEvents = 'auto';
+        btn.style.opacity = '1';
+      }
+    });
+    
+    // Đảm bảo body không bị block
+    document.body.style.overflow = 'auto';
+    document.body.style.pointerEvents = 'auto';
   }
 }
 

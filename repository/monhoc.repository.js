@@ -51,11 +51,16 @@ class MonHocRepository {
 
   async isUsedInTeachers(maMonHoc) {
     const { sequelize } = require("../models");
-    const [result] = await sequelize.query(
+    // Kiểm tra cả trong GiaoVien (tương thích ngược) và PhanCongGiangDay
+    const [result1] = await sequelize.query(
       "SELECT COUNT(*) AS cnt FROM GiaoVien WHERE MaMonGiangDay = ?",
       { replacements: [maMonHoc] }
     );
-    return result[0].cnt > 0;
+    const [result2] = await sequelize.query(
+      "SELECT COUNT(*) AS cnt FROM PhanCongGiangDay WHERE MaMonHoc = ?",
+      { replacements: [maMonHoc] }
+    );
+    return (result1[0].cnt > 0) || (result2[0].cnt > 0);
   }
 }
 

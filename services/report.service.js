@@ -1,5 +1,6 @@
 const sequelize = require('../config/db');
 const { BaoCaoTongKetMon, BaoCaoTongKetHK } = require('../models');
+const quyDinhService = require('./quydinh.service');
 
 /**
  * Get subject report rows and aggregated totals
@@ -55,6 +56,9 @@ async function getSubjectReport(year, semester, subject) {
  */
 async function calculateSubjectReports(year = null, semester = null) {
   try {
+    // Lấy quy định điểm đạt môn từ database
+    const diemDatMon = await quyDinhService.getGiaTriQuyDinh("DIEM_DAT_MON", 5.0);
+
     const where = [];
     const replacements = {};
     
@@ -76,23 +80,25 @@ async function calculateSubjectReports(year = null, semester = null) {
         MaMonHoc,
         MaLop,
         COUNT(DISTINCT MaHocSinh) AS SiSo,
-        SUM(CASE WHEN DiemTBMon >= 5.0 THEN 1 ELSE 0 END) AS SoLuongDat
+        SUM(CASE WHEN DiemTBMon >= :diemDatMon THEN 1 ELSE 0 END) AS SoLuongDat
       FROM (
         SELECT 
           bdm.NamHoc,
           bdm.HocKy,
           bdm.MaMonHoc,
-          hs.MaLop,
+          hln.MaLop,
           bdm.MaHocSinh,
           MAX(bdm.DiemTBMon) AS DiemTBMon
         FROM BangDiemMonHoc bdm
         INNER JOIN HoSoHocSinh hs ON bdm.MaHocSinh = hs.MaHocSinh
+        INNER JOIN HocSinh_LopNamHoc hln ON hs.MaHocSinh = hln.MaHocSinh 
+          AND hln.MaNamHoc = bdm.NamHoc AND hln.TrangThai = 'DangHoc'
         ${whereSQL}
-        GROUP BY bdm.NamHoc, bdm.HocKy, bdm.MaMonHoc, hs.MaLop, bdm.MaHocSinh
+        GROUP BY bdm.NamHoc, bdm.HocKy, bdm.MaMonHoc, hln.MaLop, bdm.MaHocSinh
       ) AS StudentScores
       GROUP BY NamHoc, HocKy, MaMonHoc, MaLop
       HAVING COUNT(DISTINCT MaHocSinh) > 0
-    `, { replacements });
+    `, { replacements: { ...replacements, diemDatMon } });
 
     let updatedCount = 0;
     let createdCount = 0;
@@ -149,6 +155,9 @@ async function calculateSubjectReports(year = null, semester = null) {
  */
 async function calculateSemesterReports(year = null, semester = null) {
   try {
+    // Lấy quy định điểm đạt môn từ database
+    const diemDatMon = await quyDinhService.getGiaTriQuyDinh("DIEM_DAT_MON", 5.0);
+
     const where = [];
     const replacements = {};
     
@@ -169,22 +178,24 @@ async function calculateSemesterReports(year = null, semester = null) {
         HocKy,
         MaLop,
         COUNT(DISTINCT MaHocSinh) AS SiSo,
-        SUM(CASE WHEN DiemTBHK >= 5.0 THEN 1 ELSE 0 END) AS SoLuongDat
+        SUM(CASE WHEN DiemTBHK >= :diemDatMon THEN 1 ELSE 0 END) AS SoLuongDat
       FROM (
         SELECT 
           bdm.MaHocSinh,
           bdm.NamHoc,
           bdm.HocKy,
-          hs.MaLop,
+          hln.MaLop,
           AVG(bdm.DiemTBMon) AS DiemTBHK
         FROM BangDiemMonHoc bdm
         INNER JOIN HoSoHocSinh hs ON bdm.MaHocSinh = hs.MaHocSinh
+        INNER JOIN HocSinh_LopNamHoc hln ON hs.MaHocSinh = hln.MaHocSinh 
+          AND hln.MaNamHoc = bdm.NamHoc AND hln.TrangThai = 'DangHoc'
         ${whereSQL}
-        GROUP BY bdm.MaHocSinh, bdm.NamHoc, bdm.HocKy, hs.MaLop
+        GROUP BY bdm.MaHocSinh, bdm.NamHoc, bdm.HocKy, hln.MaLop
         HAVING COUNT(bdm.MaMonHoc) > 0
       ) AS StudentSemesterAvg
       GROUP BY NamHoc, HocKy, MaLop
-    `, { replacements });
+    `, { replacements: { ...replacements, diemDatMon } });
 
     let updatedCount = 0;
     let createdCount = 0;

@@ -194,17 +194,17 @@
             `Bạn có chắc chắn muốn xóa môn học "${tenMonHoc}" (${maMonHoc})?`,
             '⚠️ Hành động này không thể hoàn tác! Tất cả điểm số và thời khóa biểu liên quan có thể bị ảnh hưởng.',
             function() {
-              const form = document.createElement('form');
-              form.method = 'POST';
-              form.action = '/subject/delete';
-              const input = document.createElement('input');
-              input.type = 'hidden';
-              input.name = 'MaMonHoc';
-              input.value = maMonHoc;
-              form.appendChild(input);
-              document.body.appendChild(form);
-              form.submit();
-            }
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '/subject/delete';
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'MaMonHoc';
+            input.value = maMonHoc;
+            form.appendChild(input);
+            document.body.appendChild(form);
+            form.submit();
+          }
           );
         });
       });

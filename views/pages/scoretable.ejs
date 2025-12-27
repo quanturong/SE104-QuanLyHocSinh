@@ -106,7 +106,7 @@
                                     <tr>
                                         <td class="text-center"><%= index + 1 %></td>
                                         <td><%= student.HoTen %></td>
-                                        <td><%= student.MaLop %></td>
+                                        <td><%= student.MaLop === 'CHUA_CO_LOP' ? 'Chưa có lớp' : (student.MaLop || '') %></td>
                                         <td class="score-cell"><span class="score score-<%= student.TB_HK1_Style %>"><%= (typeof student.TB_HK1 === 'number') ? student.TB_HK1.toFixed(1) : '0.0' %></span></td>
                                         <td class="score-cell"><span class="score score-<%= student.TB_HK2_Style %>"><%= (typeof student.TB_HK2 === 'number') ? student.TB_HK2.toFixed(1) : '0.0' %></span></td>
                                         <td class="score-cell"><span class="score score-<%= student.TB_CN_Style %>"><%= (typeof student.TB_CN === 'number') ? student.TB_CN.toFixed(1) : '0.0' %></span></td>

@@ -1,16 +1,37 @@
 const { GiaoVien } = require("../models");
 const { sequelize } = require("../models");
+const phanCongRepository = require("./phancong.repository");
 
 class GiaoVienRepository {
   async findAll() {
-    return await sequelize.query(`
-      SELECT gv.MaGiaoVien, gv.HoTen, gv.GioiTinh, gv.NgaySinh,
-             gv.DiaChi, gv.Email, gv.MaMonGiangDay,
-             mh.TenMonHoc
+    const [teachers] = await sequelize.query(`
+      SELECT DISTINCT gv.MaGiaoVien, gv.HoTen, gv.GioiTinh, gv.NgaySinh,
+             gv.DiaChi, gv.Email, gv.MaMonGiangDay
       FROM GiaoVien gv
-      LEFT JOIN MonHoc mh ON gv.MaMonGiangDay = mh.MaMonHoc
       ORDER BY gv.MaGiaoVien ASC;
     `);
+    
+    // Lấy danh sách môn học cho mỗi giáo viên từ PhanCongGiangDay
+    for (const teacher of teachers) {
+      const monHocs = await phanCongRepository.getMonHocByGiaoVien(teacher.MaGiaoVien);
+      teacher.MonHocs = monHocs;
+      // Giữ lại MaMonGiangDay và TenMonHoc để tương thích ngược
+      if (monHocs.length > 0) {
+        teacher.MaMonGiangDay = monHocs[0].MaMonHoc; // Môn đầu tiên
+        // Loại bỏ trùng lặp khi hiển thị (chỉ lấy tên môn duy nhất)
+        const uniqueMonHocs = [...new Set(monHocs.map(m => m.TenMonHoc || m.MaMonHoc))];
+        teacher.TenMonHoc = uniqueMonHocs.join(', '); // Tất cả môn (không trùng)
+      } else if (teacher.MaMonGiangDay) {
+        // Fallback về MaMonGiangDay cũ nếu chưa có trong PhanCongGiangDay
+        const [monHoc] = await sequelize.query(
+          'SELECT TenMonHoc FROM MonHoc WHERE MaMonHoc = ?',
+          { replacements: [teacher.MaMonGiangDay] }
+        );
+        teacher.TenMonHoc = monHoc[0]?.TenMonHoc || teacher.MaMonGiangDay;
+      }
+    }
+    
+    return [teachers];
   }
 
   async findById(maGiaoVien) {
@@ -54,16 +75,25 @@ class GiaoVienRepository {
         }
       );
 
-      // 2. Set NULL cho MaGVChuNhiem trong LopHoc
+      // 2. Set NULL cho MaGVChuNhiem trong Lop_NamHoc (đã chuyển từ LopHoc)
       await sequelize.query(
-        "UPDATE LopHoc SET MaGVChuNhiem = NULL WHERE MaGVChuNhiem = ?",
+        "UPDATE Lop_NamHoc SET MaGVChuNhiem = NULL WHERE MaGVChuNhiem = ?",
         { 
           replacements: [maGiaoVien],
           transaction 
         }
       );
 
-      // 3. Xóa giáo viên bằng raw SQL để tránh foreign key constraint
+      // 3. Xóa phân công giảng dạy (CASCADE sẽ tự động xóa, nhưng để chắc chắn)
+      await sequelize.query(
+        "DELETE FROM PhanCongGiangDay WHERE MaGiaoVien = ?",
+        { 
+          replacements: [maGiaoVien],
+          transaction 
+        }
+      );
+
+      // 4. Xóa giáo viên bằng raw SQL để tránh foreign key constraint
       await sequelize.query(
         "DELETE FROM GiaoVien WHERE MaGiaoVien = ?",
         { 
@@ -84,7 +114,7 @@ class GiaoVienRepository {
 
   async isChuNhiemLop(maGiaoVien) {
     const [result] = await sequelize.query(
-      "SELECT COUNT(*) AS cnt FROM LopHoc WHERE MaGVChuNhiem = ?",
+      "SELECT COUNT(*) AS cnt FROM Lop_NamHoc WHERE MaGVChuNhiem = ?",
       { replacements: [maGiaoVien] }
     );
     return result[0].cnt > 0;
@@ -101,7 +131,7 @@ class GiaoVienRepository {
   async getUsageInfo(maGiaoVien) {
     try {
       const [lopHoc] = await sequelize.query(
-        "SELECT COUNT(*) AS cnt, GROUP_CONCAT(MaLop) AS classes FROM LopHoc WHERE MaGVChuNhiem = ?",
+        "SELECT COUNT(*) AS cnt, GROUP_CONCAT(MaLop) AS classes FROM Lop_NamHoc WHERE MaGVChuNhiem = ?",
         { replacements: [maGiaoVien] }
       );
       const [timetable] = await sequelize.query(
@@ -138,12 +168,13 @@ class GiaoVienRepository {
   }
 
   async getHomeroomClass(maGiaoVien) {
+    // Lấy lớp chủ nhiệm từ năm học hiện tại (mới nhất)
     const [result] = await sequelize.query(`
-      SELECT l.MaLop, COUNT(hs.MaHocSinh) AS SiSo
-      FROM LopHoc l
-      LEFT JOIN HoSoHocSinh hs ON l.MaLop = hs.MaLop
-      WHERE l.MaGVChuNhiem = ?
-      GROUP BY l.MaLop;
+      SELECT ln.MaLop, ln.SiSo
+      FROM Lop_NamHoc ln
+      WHERE ln.MaGVChuNhiem = ?
+      ORDER BY ln.MaNamHoc DESC
+      LIMIT 1;
     `, { replacements: [maGiaoVien] });
     return result[0] || null;
   }

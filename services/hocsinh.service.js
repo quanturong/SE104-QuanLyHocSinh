@@ -1,5 +1,6 @@
 
 const hocSinhRepo = require("../repository/hocsinh.repository");
+const quyDinhService = require("./quydinh.service");
 
 function tinhTuoi(ngaySinhStr) {
   const today = new Date();
@@ -31,9 +32,13 @@ class HocSinhService {
       }
     }
 
+    // Lấy quy định tuổi từ database
+    const tuoiToiThieu = await quyDinhService.getGiaTriQuyDinh("TUOI_TOI_THIEU", 15);
+    const tuoiToiDa = await quyDinhService.getGiaTriQuyDinh("TUOI_TOI_DA", 20);
+
     const age = tinhTuoi(data.NgaySinh);
-    if (age < 15 || age > 20) {
-      throw new Error("Tuổi học sinh phải từ 15 đến 20 (QĐ1)");
+    if (age < tuoiToiThieu || age > tuoiToiDa) {
+      throw new Error(`Tuổi học sinh phải từ ${tuoiToiThieu} đến ${tuoiToiDa} (QĐ1)`);
     }
 
     return await hocSinhRepo.create(data);
@@ -41,9 +46,13 @@ class HocSinhService {
 
   async updateStudent(id, data) {
     if (data.NgaySinh) {
+      // Lấy quy định tuổi từ database
+      const tuoiToiThieu = await quyDinhService.getGiaTriQuyDinh("TUOI_TOI_THIEU", 15);
+      const tuoiToiDa = await quyDinhService.getGiaTriQuyDinh("TUOI_TOI_DA", 20);
+
       const age = tinhTuoi(data.NgaySinh);
-      if (age < 15 || age > 20) {
-        throw new Error("Tuổi học sinh phải từ 15 đến 20 (QĐ1)");
+      if (age < tuoiToiThieu || age > tuoiToiDa) {
+        throw new Error(`Tuổi học sinh phải từ ${tuoiToiThieu} đến ${tuoiToiDa} (QĐ1)`);
       }
     }
 

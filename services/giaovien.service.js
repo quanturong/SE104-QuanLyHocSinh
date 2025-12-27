@@ -1,4 +1,5 @@
 const giaoVienRepository = require("../repository/giaovien.repository");
+const phanCongRepository = require("../repository/phancong.repository");
 
 class GiaoVienService {
   async getAllGiaoVien() {
@@ -23,10 +24,20 @@ class GiaoVienService {
   }
 
   async createGiaoVien(data) {
-    const { MaGiaoVien, HoTen, GioiTinh, NgaySinh, DiaChi, Email, MaMonGiangDay } = data;
+    const { MaGiaoVien, HoTen, GioiTinh, NgaySinh, DiaChi, Email, MaMonGiangDay, MonHocs } = data;
 
-    if (!HoTen || !MaMonGiangDay || !Email) {
+    if (!HoTen || !Email) {
       throw new Error("Vui lòng nhập đầy đủ thông tin bắt buộc");
+    }
+
+    // Nếu có danh sách môn học mới (MonHocs), ưu tiên dùng nó
+    // Nếu không, dùng MaMonGiangDay (tương thích ngược)
+    const monHocsToAssign = MonHocs && Array.isArray(MonHocs) && MonHocs.length > 0 
+      ? MonHocs 
+      : (MaMonGiangDay ? [MaMonGiangDay] : []);
+
+    if (monHocsToAssign.length === 0) {
+      throw new Error("Vui lòng chọn ít nhất một môn học");
     }
 
     const existing = await giaoVienRepository.findById(MaGiaoVien);
@@ -34,22 +45,43 @@ class GiaoVienService {
       throw new Error(`Mã giáo viên "${MaGiaoVien}" đã tồn tại`);
     }
 
-    return await giaoVienRepository.create({
+    // Tạo giáo viên (giữ MaMonGiangDay để tương thích ngược)
+    const giaoVien = await giaoVienRepository.create({
       MaGiaoVien,
       HoTen,
       GioiTinh: GioiTinh || null,
       NgaySinh: NgaySinh || null,
       DiaChi: DiaChi || null,
       Email,
-      MaMonGiangDay,
+      MaMonGiangDay: monHocsToAssign[0], // Giữ môn đầu tiên để tương thích
     });
+
+    // Tạo phân công cho các môn học
+    for (const maMonHoc of monHocsToAssign) {
+      await phanCongRepository.create({
+        MaGiaoVien: MaGiaoVien,
+        MaMonHoc: maMonHoc,
+      });
+    }
+
+    return giaoVien;
   }
 
   async updateGiaoVien(maGiaoVien, data) {
-    const { HoTen, GioiTinh, NgaySinh, DiaChi, Email, MaMonGiangDay } = data;
+    const { HoTen, GioiTinh, NgaySinh, DiaChi, Email, MaMonGiangDay, MonHocs } = data;
 
-    if (!HoTen || !MaMonGiangDay || !Email) {
+    if (!HoTen || !Email) {
       throw new Error("Vui lòng nhập đầy đủ thông tin bắt buộc");
+    }
+
+    // Nếu có danh sách môn học mới (MonHocs), ưu tiên dùng nó
+    // Nếu không, dùng MaMonGiangDay (tương thích ngược)
+    const monHocsToAssign = MonHocs && Array.isArray(MonHocs) && MonHocs.length > 0 
+      ? MonHocs 
+      : (MaMonGiangDay ? [MaMonGiangDay] : []);
+
+    if (monHocsToAssign.length === 0) {
+      throw new Error("Vui lòng chọn ít nhất một môn học");
     }
 
     const giaoVien = await giaoVienRepository.update(maGiaoVien, {
@@ -58,10 +90,23 @@ class GiaoVienService {
       NgaySinh: NgaySinh || null,
       DiaChi: DiaChi || null,
       Email,
-      MaMonGiangDay,
+      MaMonGiangDay: monHocsToAssign[0], // Giữ môn đầu tiên để tương thích
     });
 
     if (!giaoVien) throw new Error("Không tìm thấy giáo viên");
+
+    // Cập nhật phân công môn học
+    // Xóa tất cả phân công cũ
+    await phanCongRepository.deleteByGiaoVien(maGiaoVien);
+    
+    // Tạo phân công mới
+    for (const maMonHoc of monHocsToAssign) {
+      await phanCongRepository.create({
+        MaGiaoVien: maGiaoVien,
+        MaMonHoc: maMonHoc,
+      });
+    }
+
     return giaoVien;
   }
 
