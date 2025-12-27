@@ -196,7 +196,7 @@
                                 <% // Dữ liệu D6 (Danh sách điểm môn học chi tiết) %>
                                 <% if (subjectScores && subjectScores.length > 0) { %>
                                     <% subjectScores.forEach((score, index) => { %>
-                                    <tr data-id="<%= score.MaHocSinh %>" data-ho-ten="<%= score.HoTen %>" data-diem15p="<%= (typeof score.Diem15p === 'number') ? score.Diem15p.toFixed(1) : '' %>" data-diem1tiet="<%= (typeof score.Diem1Tiet === 'number') ? score.Diem1Tiet.toFixed(1) : '' %>" data-diemck="<%= (typeof score.DiemCK === 'number') ? score.DiemCK.toFixed(1) : '' %>">
+                                    <tr data-id="<%= String(score.MaHocSinh || '') %>" data-ho-ten="<%= score.HoTen || '' %>" data-diem15p="<%= (typeof score.Diem15p === 'number') ? score.Diem15p.toFixed(1) : '' %>" data-diem1tiet="<%= (typeof score.Diem1Tiet === 'number') ? score.Diem1Tiet.toFixed(1) : '' %>" data-diemck="<%= (typeof score.DiemCK === 'number') ? score.DiemCK.toFixed(1) : '' %>">
                                         <td class="text-center"><%= index + 1 %></td>
                                         <td><%= score.HoTen %></td>
                                         <td class="score-cell"><span class="score score-<%= score.Diem15p_Style %>"><%= (typeof score.Diem15p === 'number') ? score.Diem15p.toFixed(1) : '0.0' %></span></td>
@@ -205,8 +205,8 @@
                                         <td class="score-cell"><span class="score score-<%= score.DiemTB_Style %>"><%= (typeof score.DiemTB === 'number') ? score.DiemTB.toFixed(1) : '0.0' %></span></td>
                                         <% if (!isStudentFlag) { %>
                                         <td class="action-cell">
-                                            <button class="btn btn-sm btn-ghost" onclick="openEditModal(<%= score.MaHocSinh %>)">Sửa</button>
-                                            <button class="btn btn-sm btn-danger" onclick="openDeleteConfirm(<%= score.MaHocSinh %>)">Xóa</button>
+                                            <button class="btn btn-sm btn-ghost btn-edit-score" data-student-id="<%= String(score.MaHocSinh || '') %>">Sửa</button>
+                                            <button class="btn btn-sm btn-danger btn-delete-score" data-student-id="<%= String(score.MaHocSinh || '') %>">Xóa</button>
                                         </td>
                                         <% } %>
                                     </tr>
@@ -287,10 +287,54 @@
             });
         })();
 
+        // Gắn event listener cho các nút Sửa và Xóa (sử dụng event delegation để hoạt động với dynamic content)
+        (function() {
+            // Sử dụng event delegation trên document để bắt sự kiện từ các button được render động
+            document.addEventListener('click', function(e) {
+                // Xử lý nút Sửa
+                if (e.target.classList.contains('btn-edit-score')) {
+                    e.preventDefault();
+                    const studentId = e.target.getAttribute('data-student-id');
+                    if (studentId) {
+                        openEditModal(studentId);
+                    }
+                }
+                // Xử lý nút Xóa
+                if (e.target.classList.contains('btn-delete-score')) {
+                    e.preventDefault();
+                    const studentId = e.target.getAttribute('data-student-id');
+                    if (studentId) {
+                        openDeleteConfirm(studentId);
+                    }
+                }
+            });
+        })();
+
         // Hàm mở modal Sửa điểm: đọc data- attributes từ hàng và hiển thị modal
         function openEditModal(studentId) {
-            const row = document.querySelector(`#tbl-subject tr[data-id='${studentId}']`);
-            if (!row) return alert('Không tìm thấy hàng học sinh.');
+            // Đảm bảo studentId là string để so sánh chính xác (loại bỏ quotes nếu có)
+            const studentIdStr = String(studentId).replace(/^['"]|['"]$/g, '');
+            // Thử nhiều cách tìm row
+            let row = document.querySelector(`#tbl-subject tr[data-id='${studentIdStr}']`);
+            if (!row) {
+                // Thử tìm bằng cách so sánh tất cả các row
+                const allRows = document.querySelectorAll('#tbl-subject tbody tr');
+                for (let r of allRows) {
+                    const rowId = r.getAttribute('data-id');
+                    if (rowId && String(rowId) === studentIdStr) {
+                        row = r;
+                        break;
+                    }
+                }
+            }
+            if (!row) {
+                console.error('Không tìm thấy hàng với studentId:', studentId, 'type:', typeof studentId);
+                console.log('Tất cả các row có data-id:');
+                document.querySelectorAll('#tbl-subject tbody tr').forEach((r, idx) => {
+                    console.log(`Row ${idx}: data-id="${r.getAttribute('data-id')}"`);
+                });
+                return alert('Không tìm thấy hàng học sinh.');
+            }
 
             const hoTen = row.getAttribute('data-ho-ten') || '';
             const d15 = row.getAttribute('data-diem15p') || '';
@@ -347,8 +391,25 @@
 
         // Hàm xác nhận xóa: sử dụng form ẩn để POST tới endpoint xóa
         function openDeleteConfirm(studentId) {
-            const row = document.querySelector(`#tbl-subject tr[data-id='${studentId}']`);
-            if (!row) return alert('Không tìm thấy học sinh.');
+            // Đảm bảo studentId là string để so sánh chính xác (loại bỏ quotes nếu có)
+            const studentIdStr = String(studentId).replace(/^['"]|['"]$/g, '');
+            // Thử nhiều cách tìm row
+            let row = document.querySelector(`#tbl-subject tr[data-id='${studentIdStr}']`);
+            if (!row) {
+                // Thử tìm bằng cách so sánh tất cả các row
+                const allRows = document.querySelectorAll('#tbl-subject tbody tr');
+                for (let r of allRows) {
+                    const rowId = r.getAttribute('data-id');
+                    if (rowId && String(rowId) === studentIdStr) {
+                        row = r;
+                        break;
+                    }
+                }
+            }
+            if (!row) {
+                console.error('Không tìm thấy hàng với studentId:', studentId, 'type:', typeof studentId);
+                return alert('Không tìm thấy học sinh.');
+            }
             const hoTen = row.getAttribute('data-ho-ten') || '';
             if (!confirm(`Bạn có chắc muốn xóa tất cả điểm môn của học sinh "${hoTen}" không?`)) return;
 

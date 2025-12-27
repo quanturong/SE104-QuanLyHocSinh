@@ -107,7 +107,8 @@
               </div>
               <div class="sp-field">
                 <label>Giá trị</label>
-                <input type="number" name="GiaTri" id="edit-rule-giatri" step="0.01" required />
+                <input type="number" name="GiaTri" id="edit-rule-giatri" step="0.01" min="0" max="100" required />
+                <small id="edit-rule-hint" style="color: #64748b; font-size: 12px; margin-top: 4px; display: none;"></small>
               </div>
               <div class="sp-actions">
                 <button type="button" class="sp-btn sp-btn--ghost" onclick="closeEditRuleValueModal()">Đóng</button>
@@ -120,12 +121,47 @@
           function openEditRuleValueModal(ten, giatri) {
             document.getElementById('edit-rule-ten').value = ten;
             document.getElementById('edit-rule-ten-display').value = ten;
-            document.getElementById('edit-rule-giatri').value = giatri;
+            const giatriInput = document.getElementById('edit-rule-giatri');
+            const hintElement = document.getElementById('edit-rule-hint');
+            
+            // Nếu là quy định CHI_SUA_HOC_KY_HIEN_TAI, chỉ cho phép 0 hoặc 1
+            if (ten === 'CHI_SUA_HOC_KY_HIEN_TAI') {
+              giatriInput.min = 0;
+              giatriInput.max = 1;
+              giatriInput.step = 1;
+              hintElement.textContent = 'Chỉ cho phép giá trị 0 (Tắt) hoặc 1 (Bật)';
+              hintElement.style.display = 'block';
+              hintElement.style.color = '#0ea5e9';
+            } else {
+              giatriInput.min = 0;
+              giatriInput.max = 100;
+              giatriInput.step = 0.01;
+              hintElement.style.display = 'none';
+            }
+            
+            giatriInput.value = giatri;
             document.getElementById('modal-edit-rule-value').style.display = 'grid';
           }
+          
           function closeEditRuleValueModal() {
             document.getElementById('modal-edit-rule-value').style.display = 'none';
+            document.getElementById('edit-rule-hint').style.display = 'none';
           }
+          
+          // Validation khi submit form
+          document.querySelector('form[action="/rules/update"]')?.addEventListener('submit', function(e) {
+            const ten = document.getElementById('edit-rule-ten').value;
+            const giatri = parseFloat(document.getElementById('edit-rule-giatri').value);
+            
+            if (ten === 'CHI_SUA_HOC_KY_HIEN_TAI') {
+              if (giatri !== 0 && giatri !== 1) {
+                e.preventDefault();
+                alert('Quy định "CHI_SUA_HOC_KY_HIEN_TAI" chỉ cho phép giá trị 0 (Tắt) hoặc 1 (Bật)');
+                return false;
+              }
+            }
+          });
+          
           document.querySelectorAll('.btn-edit-rule').forEach(btn => {
             btn.addEventListener('click', function() {
               const ten = this.getAttribute('data-ten');

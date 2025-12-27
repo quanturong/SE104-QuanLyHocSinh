@@ -13,6 +13,15 @@ class ThoiKhoaBieuController {
         return res.status(403).json({ error: "Bạn không có quyền chỉnh sửa thời khóa biểu" });
       }
 
+      // Kiểm tra quy định chỉ cho phép sửa học kỳ hiện tại
+      if (NamHoc && HocKy) {
+        const quyDinhService = require('../services/quydinh.service');
+        const canEditSemester = await quyDinhService.checkCanEditSemester(NamHoc, HocKy);
+        if (!canEditSemester.allowed) {
+          return res.redirect(`/timetable?year=${encodeURIComponent(NamHoc || '')}&semester=${encodeURIComponent(HocKy || '1')}&class=${encodeURIComponent(MaLop || '')}&error=${encodeURIComponent(canEditSemester.message || 'Không được phép chỉnh sửa dữ liệu của học kỳ này')}`);
+        }
+      }
+
       // Nếu không có MaMonHoc hoặc MaGiaoVien, xóa slot
       if (!MaMonHoc || !MaGiaoVien) {
         if (!MaLop || !NamHoc || !Thu || !TietHoc) {
@@ -56,6 +65,15 @@ class ThoiKhoaBieuController {
         return res.status(400).json({ error: "Thiếu thông tin bắt buộc: MaLop, NamHoc, Thu, TietHoc" });
       }
 
+      // Kiểm tra quy định chỉ cho phép sửa học kỳ hiện tại
+      if (NamHoc && HocKy) {
+        const quyDinhService = require('../services/quydinh.service');
+        const canEditSemester = await quyDinhService.checkCanEditSemester(NamHoc, HocKy);
+        if (!canEditSemester.allowed) {
+          return res.status(403).json({ error: canEditSemester.message || 'Không được phép chỉnh sửa dữ liệu của học kỳ này' });
+        }
+      }
+
       const hocKyValue = HocKy !== undefined && HocKy !== null ? parseInt(HocKy, 10) : 1;
       await thoikhoabieuService.deleteTimetable(MaLop, NamHoc, hocKyValue, Thu, TietHoc);
 
@@ -78,6 +96,15 @@ class ThoiKhoaBieuController {
       
       if (!MaLop || !NamHoc) {
         return res.status(400).json({ error: "Thiếu thông tin lớp học hoặc năm học" });
+      }
+
+      // Kiểm tra quy định chỉ cho phép sửa học kỳ hiện tại
+      if (NamHoc && HocKy) {
+        const quyDinhService = require('../services/quydinh.service');
+        const canEditSemester = await quyDinhService.checkCanEditSemester(NamHoc, HocKy);
+        if (!canEditSemester.allowed) {
+          return res.redirect(`/timetable?year=${encodeURIComponent(NamHoc || '')}&semester=${encodeURIComponent(HocKy || '1')}&class=${encodeURIComponent(MaLop || '')}&error=${encodeURIComponent(canEditSemester.message || 'Không được phép chỉnh sửa dữ liệu của học kỳ này')}`);
+        }
       }
 
       const hocKyValue = HocKy !== undefined && HocKy !== null ? parseInt(HocKy, 10) : null;

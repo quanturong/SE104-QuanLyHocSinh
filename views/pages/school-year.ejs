@@ -80,6 +80,37 @@
         </div>
       </div>
 
+      <!-- Overlay sửa học kỳ -->
+      <div id="semester-edit-overlay" class="sp-overlay" style="display:none;">
+        <div class="sp-modal">
+          <h2 class="sp-title">Sửa học kỳ</h2>
+          <form class="sp-form" method="POST" action="/school-year/semester/edit" id="form-edit-semester">
+            <input type="hidden" name="MaNamHoc" id="editSemesterMaNamHoc" />
+            <input type="hidden" name="HocKy" id="editSemesterHocKy" />
+            <div class="sp-field">
+              <label>Năm học</label>
+              <input type="text" id="editSemesterMaNamHocDisplay" readonly style="background: #f5f5f5;" />
+            </div>
+            <div class="sp-field">
+              <label>Học kỳ</label>
+              <input type="text" id="editSemesterHocKyDisplay" readonly style="background: #f5f5f5;" />
+            </div>
+            <div class="sp-field">
+              <label>Ngày bắt đầu <span style="color: #c33;">*</span></label>
+              <input type="date" name="NgayBatDau" id="editSemesterNgayBatDau" required />
+            </div>
+            <div class="sp-field">
+              <label>Ngày kết thúc <span style="color: #c33;">*</span></label>
+              <input type="date" name="NgayKetThuc" id="editSemesterNgayKetThuc" required />
+            </div>
+            <div class="sp-actions">
+              <button type="button" class="sp-btn sp-btn--ghost" id="btn-cancel-edit-semester">Đóng</button>
+              <button type="submit" class="sp-btn">Lưu thay đổi</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
       <div class="page-header">
         <h1 class="page-title">Quản lý năm học</h1>
         <p class="page-desc">Khai báo và quản lý các năm học trong hệ thống.</p>
@@ -119,6 +150,7 @@
                 <th style="width:200px;">MÃ NĂM HỌC</th>
                 <th style="width:180px;">NGÀY BẮT ĐẦU</th>
                 <th style="width:180px;">NGÀY KẾT THÚC</th>
+                <th style="width:300px;">HỌC KỲ</th>
                 <% if (canManage) { %>
                   <th style="width:150px;">THAO TÁC</th>
                 <% } %>
@@ -126,12 +158,51 @@
             </thead>
             <tbody>
               <% if (schoolYears && schoolYears.length) { %>
-                <% schoolYears.forEach(function(sy, index) { %>
+                <% schoolYears.forEach(function(sy, index) { 
+                  const semesters = typeof semestersMap !== 'undefined' && semestersMap[sy.MaNamHoc] ? semestersMap[sy.MaNamHoc] : [];
+                  const hocKy1 = semesters.find(s => s.HocKy === 1);
+                  const hocKy2 = semesters.find(s => s.HocKy === 2);
+                %>
                   <tr data-manamhoc="<%= sy.MaNamHoc %>" data-ngaybatdau="<%= sy.NgayBatDau %>" data-ngayketthuc="<%= sy.NgayKetThuc %>">
                     <td class="text-center"><%= index + 1 %></td>
                     <td><strong><%= sy.MaNamHoc %></strong></td>
                     <td><%= sy.NgayBatDau ? new Date(sy.NgayBatDau).toLocaleDateString('vi-VN') : '' %></td>
                     <td><%= sy.NgayKetThuc ? new Date(sy.NgayKetThuc).toLocaleDateString('vi-VN') : '' %></td>
+                    <td>
+                      <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <% if (hocKy1) { %>
+                          <div style="display: flex; align-items: center; gap: 8px;">
+                            <span style="font-weight: 600;">Học kỳ 1:</span>
+                            <span><%= new Date(hocKy1.NgayBatDau).toLocaleDateString('vi-VN') %> - <%= new Date(hocKy1.NgayKetThuc).toLocaleDateString('vi-VN') %></span>
+                            <% if (canManage) { %>
+                              <button class="btn btn-xs btn-ghost btn-edit-semester" 
+                                      data-manamhoc="<%= sy.MaNamHoc %>" 
+                                      data-hocky="1"
+                                      data-ngaybatdau="<%= hocKy1.NgayBatDau %>"
+                                      data-ngayketthuc="<%= hocKy1.NgayKetThuc %>"
+                                      style="padding: 2px 6px; font-size: 11px;">Sửa</button>
+                            <% } %>
+                          </div>
+                        <% } %>
+                        <% if (hocKy2) { %>
+                          <div style="display: flex; align-items: center; gap: 8px;">
+                            <span style="font-weight: 600;">Học kỳ 2:</span>
+                            <span><%= new Date(hocKy2.NgayBatDau).toLocaleDateString('vi-VN') %> - <%= new Date(hocKy2.NgayKetThuc).toLocaleDateString('vi-VN') %></span>
+                            <% if (canManage) { %>
+                              <button class="btn btn-xs btn-ghost btn-edit-semester" 
+                                      data-manamhoc="<%= sy.MaNamHoc %>" 
+                                      data-hocky="2"
+                                      data-ngaybatdau="<%= hocKy2.NgayBatDau %>"
+                                      data-ngayketthuc="<%= hocKy2.NgayKetThuc %>"
+                                      style="padding: 2px 6px; font-size: 11px;">Sửa</button>
+                            <% } %>
+                          </div>
+                        <% } %>
+                        <% if (!hocKy1 && !hocKy2) { %>
+                          <span class="muted">Chưa có học kỳ</span>
+                        <% } %>
+                      </div>
+                    </td>
                     <% if (canManage) { %>
                       <td class="text-center">
                         <button class="btn btn-sm btn-edit" type="button">Sửa</button>
@@ -142,7 +213,7 @@
                 <% }) %>
               <% } else { %>
                 <tr>
-                  <td colspan="<%= canManage ? 5 : 4 %>" class="text-center muted">Chưa có năm học trong hệ thống.</td>
+                  <td colspan="<%= canManage ? 6 : 5 %>" class="text-center muted">Chưa có năm học trong hệ thống.</td>
                 </tr>
               <% } %>
             </tbody>
@@ -298,6 +369,26 @@
         if (e.target === overlayEdit) closeEdit();
       });
 
+      // Xử lý sửa học kỳ
+      document.querySelectorAll('.btn-edit-semester').forEach(btn => {
+        btn.addEventListener('click', function() {
+          const maNamHoc = this.getAttribute('data-manamhoc');
+          const hocKy = this.getAttribute('data-hocky');
+          const ngayBatDau = this.getAttribute('data-ngaybatdau');
+          const ngayKetThuc = this.getAttribute('data-ngayketthuc');
+
+          document.getElementById('editSemesterMaNamHoc').value = maNamHoc;
+          document.getElementById('editSemesterMaNamHocDisplay').value = maNamHoc;
+          document.getElementById('editSemesterHocKy').value = hocKy;
+          document.getElementById('editSemesterHocKyDisplay').value = `Học kỳ ${hocKy}`;
+          document.getElementById('editSemesterNgayBatDau').value = ngayBatDau;
+          document.getElementById('editSemesterNgayKetThuc').value = ngayKetThuc;
+
+          const overlaySemester = document.getElementById('semester-edit-overlay');
+          if (overlaySemester) overlaySemester.style.display = 'grid';
+        });
+      });
+
       const formEdit = document.getElementById('form-edit-school-year');
       const inputEditMaNamHoc = document.getElementById('editMaNamHoc');
 
@@ -371,6 +462,26 @@
           openEdit();
         });
       });
+
+      // Xử lý sửa học kỳ
+      document.querySelectorAll('.btn-edit-semester').forEach(btn => {
+        btn.addEventListener('click', function() {
+          const maNamHoc = this.getAttribute('data-manamhoc');
+          const hocKy = this.getAttribute('data-hocky');
+          const ngayBatDau = this.getAttribute('data-ngaybatdau');
+          const ngayKetThuc = this.getAttribute('data-ngayketthuc');
+
+          document.getElementById('editSemesterMaNamHoc').value = maNamHoc;
+          document.getElementById('editSemesterMaNamHocDisplay').value = maNamHoc;
+          document.getElementById('editSemesterHocKy').value = hocKy;
+          document.getElementById('editSemesterHocKyDisplay').value = `Học kỳ ${hocKy}`;
+          document.getElementById('editSemesterNgayBatDau').value = ngayBatDau;
+          document.getElementById('editSemesterNgayKetThuc').value = ngayKetThuc;
+
+          const overlaySemester = document.getElementById('semester-edit-overlay');
+          if (overlaySemester) overlaySemester.style.display = 'grid';
+        });
+      });
     })();
 
     (function () {
@@ -396,6 +507,21 @@
             }
           );
         });
+      });
+    })();
+
+    // Xử lý modal sửa học kỳ
+    (function() {
+      const overlaySemester = document.getElementById('semester-edit-overlay');
+      const btnCancelEditSemester = document.getElementById('btn-cancel-edit-semester');
+
+      function closeEditSemester() {
+        if (overlaySemester) overlaySemester.style.display = 'none';
+      }
+
+      btnCancelEditSemester && btnCancelEditSemester.addEventListener('click', closeEditSemester);
+      overlaySemester && overlaySemester.addEventListener('click', e => {
+        if (e.target === overlaySemester) closeEditSemester();
       });
     })();
   </script>

@@ -10,6 +10,7 @@ const HoSoHocSinh = sequelize.define("HoSoHocSinh", {
   NgaySinh: { type: DataTypes.STRING },
   DiaChi: { type: DataTypes.STRING },
   Email: { type: DataTypes.STRING },
+  TrangThai: { type: DataTypes.STRING, defaultValue: 'DangHoc' }, // DangHoc, ChuyenLop, ThoiHoc, TotNghiep
   // MaLop đã được chuyển sang HocSinh_LopNamHoc để quản lý theo năm học
 }, {
   tableName: 'HoSoHocSinh', 

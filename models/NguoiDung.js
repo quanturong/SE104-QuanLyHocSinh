@@ -11,6 +11,8 @@ const NguoiDung = sequelize.define(
       type: DataTypes.ENUM("Admin", "GiaoVien", "HocSinh", "BGH", "GiaoVu"),
       allowNull: false,
     },
+    MaHocSinh: { type: DataTypes.STRING, allowNull: true },
+    MaGiaoVien: { type: DataTypes.STRING, allowNull: true },
   },
   {
     freezeTableName: true,

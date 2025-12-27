@@ -46,10 +46,37 @@ class ClassService {
       throw new Error(`Mã lớp "${MaLop}" đã tồn tại`);
     }
 
-    return await lopHocRepository.create({
+    // Tạo lớp trong bảng LopHoc
+    const lopHoc = await lopHocRepository.create({
       MaLop,
       KhoiLop: khoi,
     });
+
+    // Tự động thêm lớp vào Lop_NamHoc của năm học hiện tại (nếu có)
+    const { sequelize } = require("../models");
+    const [currentYearRow] = await sequelize.query(
+      "SELECT MaNamHoc FROM NamHoc ORDER BY MaNamHoc DESC LIMIT 1"
+    );
+    const currentYear = currentYearRow[0]?.MaNamHoc || null;
+
+    if (currentYear) {
+      // Kiểm tra xem lớp đã có trong Lop_NamHoc chưa
+      const [existingInYear] = await sequelize.query(
+        "SELECT COUNT(*) AS count FROM Lop_NamHoc WHERE MaLop = ? AND MaNamHoc = ?",
+        { replacements: [MaLop, currentYear] }
+      );
+
+      if (existingInYear[0].count === 0) {
+        // Thêm lớp vào Lop_NamHoc của năm học hiện tại
+        await sequelize.query(
+          "INSERT INTO Lop_NamHoc (MaLop, MaNamHoc, SiSo, MaGVChuNhiem) VALUES (?, ?, 0, NULL)",
+          { replacements: [MaLop, currentYear] }
+        );
+        console.log(`✅ Đã tự động thêm lớp ${MaLop} vào năm học ${currentYear}`);
+      }
+    }
+
+    return lopHoc;
   }
 
   async updateClass(oldMaLop, data) {
@@ -57,7 +84,7 @@ class ClassService {
     console.log("updateClass service - oldMaLop:", oldMaLop);
     console.log("updateClass service - data:", JSON.stringify(data));
     
-    const { MaLop } = data || {};
+    const { MaLop, MaGVChuNhiem } = data || {};
 
     console.log("updateClass service - MaLop extracted:", MaLop);
 
@@ -148,6 +175,36 @@ class ClassService {
       });
 
       if (!lopHoc) throw new Error("Không tìm thấy lớp học");
+      
+      // Cập nhật giáo viên chủ nhiệm trong Lop_NamHoc
+      const { sequelize } = require("../models");
+      const [currentYearRow] = await sequelize.query(
+        "SELECT MaNamHoc FROM NamHoc ORDER BY MaNamHoc DESC LIMIT 1"
+      );
+      const currentYear = currentYearRow[0]?.MaNamHoc || null;
+      
+      if (currentYear) {
+        // Kiểm tra xem đã có record trong Lop_NamHoc chưa
+        const [existingLopNamHoc] = await sequelize.query(
+          "SELECT * FROM Lop_NamHoc WHERE MaLop = ? AND MaNamHoc = ?",
+          { replacements: [oldMaLop, currentYear] }
+        );
+        
+        if (existingLopNamHoc.length > 0) {
+          // Cập nhật record hiện có
+          await sequelize.query(
+            "UPDATE Lop_NamHoc SET MaGVChuNhiem = ? WHERE MaLop = ? AND MaNamHoc = ?",
+            { replacements: [MaGVChuNhiem || null, oldMaLop, currentYear] }
+          );
+        } else {
+          // Tạo record mới nếu chưa có
+          await sequelize.query(
+            "INSERT INTO Lop_NamHoc (MaLop, MaNamHoc, MaGVChuNhiem) VALUES (?, ?, ?)",
+            { replacements: [oldMaLop, currentYear, MaGVChuNhiem || null] }
+          );
+        }
+      }
+      
       return lopHoc;
     }
   }
@@ -192,7 +249,7 @@ class ClassService {
       if (studentsInClass.length > 0) {
         // Cập nhật lớp cũ: set TrangThai = 'ChuyenLop'
         await sequelize.query(
-          "UPDATE HocSinh_LopNamHoc SET TrangThai = 'ChuyenLop', NgayChuyenLop = date('now') WHERE MaLop = ? AND MaNamHoc = ? AND TrangThai = 'DangHoc'",
+          "UPDATE HocSinh_LopNamHoc SET TrangThai = 'ChuyenLop' WHERE MaLop = ? AND MaNamHoc = ? AND TrangThai = 'DangHoc'",
           { replacements: [maLop, currentYear], transaction }
         );
 
@@ -209,7 +266,7 @@ class ClassService {
 
           if (existing[0].cnt === 0) {
             await sequelize.query(
-              "INSERT INTO HocSinh_LopNamHoc (MaHocSinh, MaLop, MaNamHoc, TrangThai, NgayGhiDanh) VALUES (?, 'CHUA_CO_LOP', ?, 'DangHoc', date('now'))",
+              "INSERT INTO HocSinh_LopNamHoc (MaHocSinh, MaLop, MaNamHoc, TrangThai) VALUES (?, 'CHUA_CO_LOP', ?, 'DangHoc')",
               { replacements: [student.MaHocSinh, currentYear], transaction }
             );
             transferredCount++;

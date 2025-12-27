@@ -153,7 +153,7 @@
                       <td class="text-center"><%= r.SoLuongDat || r.SoDat || 0 %></td>
                       <td class="text-center">
                         <span class="rate-badge rate-excellent">
-                          <%= r.TiLe || r.TiLeDat || 0 %>%
+                          <%= (r.TiLe || r.TiLeDat || 0).toFixed(2) %>%
                         </span>
                       </td>
                       <td class="text-center"><%= r.SoGioi || '' %></td>
@@ -321,7 +321,7 @@
                       <td class="text-center"><%= r.SoLuongDat || r.SoDat || 0 %></td>
                       <td class="text-center">
                         <span class="rate-badge rate-excellent">
-                          <%= r.TiLe || r.TiLeDat || 0 %>%
+                          <%= (r.TiLe || r.TiLeDat || 0).toFixed(2) %>%
                         </span>
                       </td>
                       <td class="text-center"><%= r.SoGioi || '' %></td>

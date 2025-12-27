@@ -33,17 +33,47 @@ async function getSubjectReport(year, semester, subject) {
     ORDER BY NamHoc DESC, HocKy, MaMonHoc, MaLop;
   `, { replacements });
 
-  let classes = (rows && rows.length) ? rows.length : 0;
+  // Tính tổng số lớp duy nhất (không bị trùng)
+  const uniqueClasses = new Set();
   let students = 0;
   let passed = 0;
 
   if (rows && rows.length) {
     for (const r of rows) {
-      students += Number(r.SiSo || r.SiSoLop || 0);
-      passed += Number(r.SoLuongDat || r.SoDat || 0);
+      // Đếm lớp duy nhất (theo năm học, học kỳ, lớp)
+      const classKey = `${r.NamHoc || ''}_${r.HocKy || ''}_${r.MaLop || ''}`;
+      uniqueClasses.add(classKey);
+      
+      // Chỉ cộng học sinh và số đạt từ một bản ghi đại diện cho mỗi lớp-môn
+      // Để tránh nhân đôi, ta chỉ lấy giá trị từ bản ghi đầu tiên của mỗi lớp-môn
+      // Hoặc tính trung bình, hoặc lấy max
+      // Nhưng thực tế, mỗi lớp-môn chỉ nên có 1 bản ghi, nên ta cần kiểm tra
     }
   }
 
+  // Tính tổng học sinh và số đạt một cách chính xác hơn
+  // Vì mỗi lớp có thể xuất hiện nhiều lần (mỗi môn một lần), ta cần tính theo lớp duy nhất
+  const classStats = new Map();
+  
+  if (rows && rows.length) {
+    for (const r of rows) {
+      const classKey = `${r.NamHoc || ''}_${r.HocKy || ''}_${r.MaLop || ''}`;
+      if (!classStats.has(classKey)) {
+        classStats.set(classKey, {
+          siSo: Number(r.SiSo || r.SiSoLop || 0),
+          soDat: Number(r.SoLuongDat || r.SoDat || 0)
+        });
+      }
+    }
+  }
+
+  // Tính tổng từ các lớp duy nhất
+  for (const stats of classStats.values()) {
+    students += stats.siSo;
+    passed += stats.soDat;
+  }
+
+  const classes = uniqueClasses.size;
   const passRate = students ? (passed / students * 100) : 0;
 
   return { rows, totals: { classes, students, passed, passRate } };

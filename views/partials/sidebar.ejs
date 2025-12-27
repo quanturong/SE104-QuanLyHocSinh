@@ -18,7 +18,7 @@
     const isGiaoVien = role === 'GiaoVien';
     const isHocSinh = role === 'HocSinh';
     const isStaff = !isHocSinh; // Tất cả trừ học sinh
-    const canManageSubjects = isAdmin || isBGH || isGiaoVu;
+    const canManageSubjects = isAdmin || isBGH; // Chỉ Admin và BGH mới quản lý môn học
   %>
 
   <nav class="nav">
@@ -35,17 +35,23 @@
       <a class="<%= title === 'Danh sách lớp' ? 'active' : '' %>" href="/class">
         Lớp học
       </a>
-      <a class="<%= title === 'Điểm danh' ? 'active' : '' %>" href="/attendance">
-        Điểm danh
-      </a>
+      <!-- Chỉ Admin, BGH, GiaoVu (không phải giáo viên) -->
+      <% if (isAdmin || isBGH || isGiaoVu) { %>
+        <a class="<%= title === 'Điểm danh' ? 'active' : '' %>" href="/attendance">
+          Điểm danh
+        </a>
+      <% } %>
       <a class="<%= title === 'Báo cáo' ? 'active' : '' %>" href="/report">
         Báo cáo
       </a>
+    <% } %>
+
+    <!-- Chỉ nhân viên (không phải học sinh) -->
+    <% if (isStaff) { %>
       <a class="<%= title === 'Tra cứu' ? 'active' : '' %>" href="/find">
         Tra cứu
       </a>
     <% } %>
-
     <!-- Tất cả người dùng đều thấy -->
     <a class="<%= title === 'Bảng điểm' ? 'active' : '' %>" href="/scoretable">
       Điểm số

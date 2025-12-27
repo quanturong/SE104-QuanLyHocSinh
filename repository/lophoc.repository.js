@@ -5,6 +5,7 @@ class LopHocRepository {
   async findAll() {
     return await LopHoc.findAll({
       order: [["KhoiLop", "ASC"], ["MaLop", "ASC"]],
+      raw: true, // Trả về plain object thay vì Sequelize instance
     });
   }
 

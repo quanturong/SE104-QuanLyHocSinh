@@ -159,6 +159,12 @@
               <%   });
                  } %>
             </select>
+            <select class="select" id="filter-status">
+              <option value="">Tất cả trạng thái</option>
+              <option value="DangHoc">Đang học</option>
+              <option value="TotNghiep">Tốt nghiệp</option>
+              <option value="ThoiHoc">Nghỉ học</option>
+            </select>
 
             <!-- Year filter added: chọn Năm học để tính toán TB/HK/Xếp loại -->
             <select class="select" id="filter-year">
@@ -192,6 +198,7 @@
                 <th style="width:220px;">ĐỊA CHỈ</th>
                 <th style="width:160px;">EMAIL</th>
                 <th style="width:80px;">LỚP</th>
+                <th style="width:120px;">TRẠNG THÁI</th>
                 <!-- Thêm cột điểm và đánh giá -->
                 <th style="width:90px;">TB HK1</th>
                 <th style="width:90px;">TB HK2</th>
@@ -210,6 +217,7 @@
                     data-name="<%= ((st.HoTen || '') + ' ' + (st.MaHocSinh || '')).toLowerCase() %>"
                     data-gender="<%= (st.GioiTinh || '').toLowerCase() %>"
                     data-class="<%= (st.MaLop || '').toLowerCase() %>"
+                    data-status="<%= ((st.TrangThai || 'DangHoc').toLowerCase()) %>"
                     data-mahs="<%= st.MaHocSinh %>"
                     data-hoten="<%= st.HoTen %>"
                     data-gioitinh="<%= st.GioiTinh || '' %>"
@@ -231,6 +239,27 @@
                     <td><%= st.DiaChi || '' %></td>
                     <td><%= st.Email || '' %></td>
                     <td><%= st.MaLop === 'CHUA_CO_LOP' ? 'Chưa có lớp' : (st.MaLop || '') %></td>
+                    <td class="text-center">
+                      <% 
+                        const trangThai = st.TrangThai || 'DangHoc';
+                        let trangThaiText = '';
+                        let trangThaiClass = '';
+                        if (trangThai === 'DangHoc') {
+                          trangThaiText = 'Đang học';
+                          trangThaiClass = 'b-success';
+                        } else if (trangThai === 'TotNghiep') {
+                          trangThaiText = 'Tốt nghiệp';
+                          trangThaiClass = 'b-info';
+                        } else if (trangThai === 'ThoiHoc') {
+                          trangThaiText = 'Nghỉ học';
+                          trangThaiClass = 'b-warn';
+                        } else {
+                          trangThaiText = trangThai;
+                          trangThaiClass = 'b-secondary';
+                        }
+                      %>
+                      <span class="badge <%= trangThaiClass %>"><%= trangThaiText %></span>
+                    </td>
 
                     <!-- TB HK1 -->
                     <td class="text-center score-cell">
@@ -281,7 +310,7 @@
                 <% }) %>
               <% } else { %>
                 <tr>
-                  <td colspan="<%= (permissions && permissions.canManageStudents) ? 9 : 8 %>" class="text-center muted">
+                  <td colspan="<%= (permissions && permissions.canManageStudents) ? 12 : 11 %>" class="text-center muted">
                     Chưa có dữ liệu học sinh trong hệ thống.
                   </td>
                 </tr>
@@ -304,24 +333,28 @@
   const searchInput  = document.getElementById('search-name');
   const filterGender = document.getElementById('filter-gender');
   const filterClass  = document.getElementById('filter-class');
+  const filterStatus = document.getElementById('filter-status');
   const rows         = document.querySelectorAll('#tbl-students tbody tr[data-mahs]');
 
   function applyFilter(){
     const q  = (searchInput.value || '').toLowerCase();
     const g  = (filterGender.value || '').toLowerCase();
     const cl = (filterClass.value  || '').toLowerCase();
+    const st = (filterStatus?.value || '').toLowerCase();
 
     let visibleCount = 0;
     rows.forEach(tr => {
       const name   = tr.getAttribute('data-name')   || '';
       const gender = tr.getAttribute('data-gender') || '';
       const clazz  = tr.getAttribute('data-class')  || '';
+      const status = tr.getAttribute('data-status') || 'danghoc';
 
       const okQ  = !q  || name.includes(q);
       const okG  = !g  || gender === g;
       const okCl = !cl || clazz === cl;
+      const okSt = !st || status === st;
 
-      if (okQ && okG && okCl) {
+      if (okQ && okG && okCl && okSt) {
         tr.style.display = '';
         visibleCount++;
       } else {
@@ -333,6 +366,7 @@
   searchInput && searchInput.addEventListener('input', applyFilter);
   filterGender && filterGender.addEventListener('change', applyFilter);
   filterClass && filterClass.addEventListener('change', applyFilter);
+  filterStatus && filterStatus.addEventListener('change', applyFilter);
 
   // Khi đổi năm học, reload page để tính toán lại TB/HK/Xếp loại dựa trên Năm học
   const filterYear = document.getElementById('filter-year');

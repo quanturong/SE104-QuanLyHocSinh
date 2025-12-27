@@ -6,9 +6,6 @@ const HocSinh_LopNamHoc = sequelize.define("HocSinh_LopNamHoc", {
   MaLop: { type: DataTypes.STRING, primaryKey: true, allowNull: false },
   MaNamHoc: { type: DataTypes.STRING, primaryKey: true, allowNull: false },
   TrangThai: { type: DataTypes.STRING, defaultValue: 'DangHoc' }, // DangHoc, ChuyenLop, ThoiHoc, TotNghiep
-  NgayGhiDanh: { type: DataTypes.STRING, allowNull: true },
-  NgayChuyenLop: { type: DataTypes.STRING, allowNull: true },
-  GhiChu: { type: DataTypes.TEXT, allowNull: true },
 }, {
   tableName: 'HocSinh_LopNamHoc', 
   freezeTableName: true, 

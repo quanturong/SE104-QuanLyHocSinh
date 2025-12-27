@@ -60,6 +60,22 @@
             <input type="text" id="editKhoiLop" readonly style="padding: 12px 16px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px; background-color: #f1f5f9; color: #64748b; width: 100%;" />
             <small style="color: #64748b; font-size: 12px; margin-top: 4px; display: block;">Khối lớp sẽ tự động được tính từ mã lớp</small>
           </div>
+          <div class="sp-field">
+            <label style="font-weight: 600; color: #334155; margin-bottom: 8px;">Giáo viên chủ nhiệm</label>
+            <select name="MaGVChuNhiem" id="editMaGVChuNhiem" style="padding: 12px 16px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px; transition: border-color 0.2s; width: 100%;" onfocus="this.style.borderColor='#3b82f6'" onblur="this.style.borderColor='#e2e8f0'">
+              <option value="">-- Chưa có --</option>
+              <% if (typeof teachers !== 'undefined' && teachers && Array.isArray(teachers) && teachers.length > 0) { %>
+                <% teachers.forEach(gv => { 
+                  const maGV = gv.MaGiaoVien || gv.dataValues?.MaGiaoVien || '';
+                  const hoTen = gv.HoTen || gv.dataValues?.HoTen || '';
+                  if (maGV && hoTen) { %>
+                  <option value="<%= maGV %>"><%= hoTen %></option>
+                <% } 
+                }) %>
+              <% } %>
+            </select>
+            <small style="color: #64748b; font-size: 12px; margin-top: 4px; display: block;">Chọn giáo viên chủ nhiệm cho lớp học</small>
+          </div>
           <div class="sp-actions" style="margin-top: 24px; gap: 12px;">
             <button type="button" class="sp-btn sp-btn--ghost" id="btn-cancel-edit" style="padding: 12px 24px; border-radius: 8px; font-weight: 600;">Đóng</button>
             <button type="submit" class="sp-btn" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; padding: 12px 24px; border-radius: 8px; font-weight: 600; box-shadow: 0 4px 6px rgba(59, 130, 246, 0.3);">💾 Lưu thay đổi</button>
@@ -150,11 +166,26 @@
         <div class="class-info-item">
           <label class="class-label">Năm học</label>
           <select class="select class-select" id="select-year">
-            <% namHocs.forEach((nh, idx) => { %>
-              <option value="<%= nh.MaNamHoc %>" <%= idx === 0 ? 'selected' : '' %>>
-                <%= nh.MaNamHoc %>
-              </option>
-            <% }) %>
+            <% if (typeof namHocs !== 'undefined' && namHocs && Array.isArray(namHocs)) { %>
+              <% 
+                // Xác định năm học được chọn
+                let finalSelectedYear = null;
+                if (typeof selectedYear !== 'undefined' && selectedYear) {
+                  finalSelectedYear = selectedYear;
+                } else if (namHocs.length > 0) {
+                  finalSelectedYear = namHocs[0].MaNamHoc || namHocs[0].dataValues?.MaNamHoc || null;
+                }
+              %>
+              <% namHocs.forEach((nh) => { %>
+                <% 
+                  const nhValue = nh.MaNamHoc || nh.dataValues?.MaNamHoc || '';
+                  const isSelected = (finalSelectedYear && finalSelectedYear === nhValue);
+                %>
+                <option value="<%= nhValue %>" <%= isSelected ? 'selected' : '' %>>
+                  <%= nhValue %>
+                </option>
+              <% }) %>
+            <% } %>
           </select>
         </div>
 
@@ -163,15 +194,29 @@
           <div style="display:flex; gap:10px;">
             <select class="select class-select" id="select-class">
               <option value="">-- Chọn lớp --</option>
-              <% classes.forEach(cls => { %>
-                <% if (cls.MaLop !== 'CHUA_CO_LOP') { %>
-                  <option value="<%= cls.MaLop %>">
-                    <%= cls.KhoiLop %> - <%= cls.MaLop %>
-                  </option>
-                <% } else { %>
-                  <option value="CHUA_CO_LOP">Chưa có lớp</option>
-                <% } %>
-              <% }) %>
+              <% if (typeof classes !== 'undefined' && classes && classes.length > 0) { %>
+                <% 
+                  let hasChuaCoLop = false;
+                  classes.forEach(cls => { 
+                    const maLop = cls.MaLop || cls.dataValues?.MaLop || '';
+                    const khoiLop = cls.KhoiLop || cls.dataValues?.KhoiLop || '';
+                    
+                    if (maLop === 'CHUA_CO_LOP') {
+                      hasChuaCoLop = true; %>
+                      <option value="CHUA_CO_LOP">Chưa có lớp</option>
+                    <% } else if (maLop) { %>
+                      <option value="<%= maLop %>">
+                        <%= khoiLop %> - <%= maLop %>
+                      </option>
+                    <% }
+                  });
+                  
+                  // Thêm CHUA_CO_LOP nếu chưa có trong danh sách
+                  if (!hasChuaCoLop) { %>
+                    <option value="CHUA_CO_LOP">Chưa có lớp</option>
+                  <% }
+                %>
+              <% } %>
             </select>
 
             <button id="btn-view" class="btn btn-sm">
@@ -202,7 +247,7 @@
           <tbody>
             <% if (classes && classes.length) { %>
               <% classes.forEach((cls, index) => { %>
-                <tr data-malop="<%= cls.MaLop %>" data-khoilop="<%= cls.KhoiLop %>" style="border-bottom: 1px solid #e2e8f0; transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='#f8fafc'" onmouseout="this.style.backgroundColor=''">
+                <tr data-malop="<%= cls.MaLop %>" data-khoilop="<%= cls.KhoiLop %>" data-magvcn="<%= cls.MaGVChuNhiem || '' %>" style="border-bottom: 1px solid #e2e8f0; transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='#f8fafc'" onmouseout="this.style.backgroundColor=''">
                   <td class="text-center" style="padding: 12px; color: #64748b; font-weight: 600;"><%= index + 1 %></td>
                   <td style="padding: 12px;">
                     <strong style="color: #1e40af; font-size: 14px; background: #dbeafe; padding: 4px 10px; border-radius: 6px; display: inline-block;"><%= cls.MaLop === 'CHUA_CO_LOP' ? 'Chưa có lớp' : cls.MaLop %></strong>
@@ -216,7 +261,7 @@
                         <button class="btn btn-sm btn-edit" type="button" style="background: #3b82f6; color: white; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 600; margin-right: 6px; border: none; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='#2563eb'; this.style.transform='translateY(-1px)'" onmouseout="this.style.background='#3b82f6'; this.style.transform='translateY(0)'">✏️ Sửa</button>
                         <button class="btn btn-sm btn-delete" type="button" style="background: #ef4444; color: white; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 600; border: none; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='#dc2626'; this.style.transform='translateY(-1px)'" onmouseout="this.style.background='#ef4444'; this.style.transform='translateY(0)'">🗑️ Xóa</button>
                       <% } else { %>
-                        <span style="color: #94a3b8; font-size: 12px; font-style: italic;">Lớp đặc biệt</span>
+                        <span style="color: #94a3b8; font-size: 12px; font-style: italic;"></span>
                       <% } %>
                     </td>
                   <% } %>
@@ -457,7 +502,15 @@
           alert("Vui lòng chọn lớp!");
           return;
         }
-        window.location.href = `/class/view?lop=${lop}`;
+        // Lấy năm học được chọn từ dropdown
+        const selectedYear = document.getElementById("select-year")?.value || null;
+        // Truyền cả lớp và năm học
+        let url = `/class/view?lop=${encodeURIComponent(lop)}`;
+        if (selectedYear) {
+          url += `&namHoc=${encodeURIComponent(selectedYear)}`;
+        }
+        console.log('[Frontend] Xem lớp:', lop, 'Năm học:', selectedYear);
+        window.location.href = url;
       });
     }
 
@@ -491,6 +544,60 @@
       if (e.target === overlayAdd) closeAdd();
     });
 
+    // Load teachers list for dropdown
+    async function loadTeachers() {
+      const select = document.getElementById('editMaGVChuNhiem');
+      if (!select) return;
+      
+      // Kiểm tra xem đã có options (trừ "-- Chưa có --") chưa
+      const hasTeachers = select.options.length > 1;
+      if (hasTeachers) return; // Đã có danh sách rồi
+      
+      try {
+        const response = await fetch('/api/teachers');
+        if (!response.ok) throw new Error('Failed to load teachers');
+        const teachers = await response.json();
+        
+        // Xóa option "Đang tải..." nếu có
+        while (select.options.length > 1) {
+          select.remove(1);
+        }
+        
+        // Thêm danh sách giáo viên
+        if (teachers && Array.isArray(teachers) && teachers.length > 0) {
+          teachers.forEach(gv => {
+            const option = document.createElement('option');
+            option.value = gv.MaGiaoVien || '';
+            option.textContent = gv.HoTen || '';
+            select.appendChild(option);
+          });
+        }
+      } catch (err) {
+        console.error('Lỗi khi tải danh sách giáo viên:', err);
+      }
+    }
+    
+    // Load teachers khi mở form sửa hoặc khi focus vào dropdown
+    const editMaGVCNSelect = document.getElementById('editMaGVChuNhiem');
+    if (editMaGVCNSelect) {
+      editMaGVCNSelect.addEventListener('focus', loadTeachers);
+    }
+
+    // Xử lý khi chọn năm học khác - reload trang với năm học mới
+    const selectYear = document.getElementById('select-year');
+    if (selectYear) {
+      selectYear.addEventListener('change', function() {
+        const selectedYear = this.value;
+        console.log('Năm học được chọn:', selectedYear);
+        if (selectedYear) {
+          // Reload trang với query parameter namHoc
+          const newUrl = '/class?namHoc=' + encodeURIComponent(selectedYear);
+          console.log('Chuyển đến URL:', newUrl);
+          window.location.href = newUrl;
+        }
+      });
+    }
+
     // Edit class overlay
     const overlayEdit = document.getElementById('class-edit-overlay');
     const btnCancelEdit = document.getElementById('btn-cancel-edit');
@@ -500,6 +607,8 @@
     function openEdit() {
       if (overlayEdit) {
         overlayEdit.style.display = 'grid';
+        // Load teachers khi mở form
+        loadTeachers();
         // Đảm bảo form được reset khi mở
         const form = overlayEdit.querySelector('form');
         if (form && !form.dataset.initialized) {
@@ -557,9 +666,11 @@
           
           const maLop = tr.getAttribute('data-malop') || '';
           const khoiLop = tr.getAttribute('data-khoilop') || '';
+          const maGVCN = tr.getAttribute('data-magvcn') || '';
           const editOldMaLop = document.getElementById('editOldMaLop');
           const editMaLop = document.getElementById('editMaLop');
           const editKhoiLop = document.getElementById('editKhoiLop');
+          const editMaGVCN = document.getElementById('editMaGVChuNhiem');
           
           if (editOldMaLop) editOldMaLop.value = maLop;
           if (editMaLop) {
@@ -569,6 +680,10 @@
             if (editKhoiLop && khoi >= 10 && khoi <= 12) {
               editKhoiLop.value = 'Khối ' + khoi;
             }
+          }
+          // Set giáo viên chủ nhiệm hiện tại
+          if (editMaGVCN) {
+            editMaGVCN.value = maGVCN || '';
           }
           openEdit();
           return;

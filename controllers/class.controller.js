@@ -23,7 +23,14 @@ class ClassController {
       const currentYear = currentYearRow[0]?.MaNamHoc || null;
       
       // Tính sĩ số cho từng lớp (bao gồm CHUA_CO_LOP)
-      const classesWithSiSo = await Promise.all(classes.map(async (cls) => {
+      // Đảm bảo classes là plain objects
+      const classesPlain = classes.map(cls => {
+        const maLop = cls.MaLop || cls.dataValues?.MaLop || '';
+        const khoiLop = cls.KhoiLop || cls.dataValues?.KhoiLop || 0;
+        return { MaLop: maLop, KhoiLop: khoiLop };
+      });
+      
+      const classesWithSiSo = await Promise.all(classesPlain.map(async (cls) => {
         if (currentYear) {
           const [siSoResult] = await sequelize.query(
             "SELECT COUNT(*) AS SiSo FROM HocSinh_LopNamHoc WHERE MaLop = ? AND MaNamHoc = ? AND TrangThai = 'DangHoc'",
@@ -69,10 +76,18 @@ class ClassController {
       console.log('[showClassPage] Tổng số lớp sau khi xử lý:', classesWithSiSo.length);
       console.log('[showClassPage] CHUA_CO_LOP có trong danh sách:', classesWithSiSo.some(c => c.MaLop === 'CHUA_CO_LOP'));
 
+      // Lấy danh sách giáo viên để hiển thị trong dropdown
+      const [teachers] = await sequelize.query(`
+        SELECT MaGiaoVien, HoTen
+        FROM GiaoVien
+        ORDER BY HoTen ASC;
+      `);
+
       res.render("pages/class", {
         title: "Danh sách lớp",
         user: req.session.user,
         classes: classesWithSiSo,
+        teachers: teachers || [],
         permissions: {
           canManageClasses,
         },
@@ -96,11 +111,12 @@ class ClassController {
 
   async updateClass(req, res) {
     try {
-      const { OldMaLop, MaLop } = req.body;
+      const { OldMaLop, MaLop, MaGVChuNhiem } = req.body;
       
       // Debug log
       console.log("updateClass - OldMaLop:", OldMaLop);
       console.log("updateClass - MaLop:", MaLop);
+      console.log("updateClass - MaGVChuNhiem:", MaGVChuNhiem);
       console.log("updateClass - req.body:", JSON.stringify(req.body));
       
       if (!OldMaLop || !MaLop) {
@@ -108,7 +124,7 @@ class ClassController {
       }
       
       // Khối lớp sẽ được tự động tính từ mã lớp trong service
-      await classService.updateClass(OldMaLop, { MaLop });
+      await classService.updateClass(OldMaLop, { MaLop, MaGVChuNhiem: MaGVChuNhiem || null });
       return res.redirect("/class?success=" + encodeURIComponent("Đã sửa lớp học thành công"));
     } catch (err) {
       console.error("Lỗi updateClass:", err);

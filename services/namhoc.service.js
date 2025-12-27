@@ -91,11 +91,50 @@ class NamHocService {
       throw new Error(`Năm học "${MaNamHoc}" đã tồn tại`);
     }
 
-    return await namHocRepository.create({
+    // Tạo năm học
+    const namHoc = await namHocRepository.create({
       MaNamHoc,
       NgayBatDau,
       NgayKetThuc,
     });
+
+    // Tự động tạo 2 học kỳ cho năm học mới
+    const { sequelize } = require("../models");
+    const NamHoc_HocKy = require("../models/NamHoc_HocKy");
+
+    // Tính toán ngày cho học kỳ 1 và học kỳ 2
+    // Học kỳ 1: từ ngày bắt đầu năm học đến 31/12
+    // Học kỳ 2: từ 1/1 năm sau đến ngày kết thúc năm học
+    const ngayBatDauDate = new Date(NgayBatDau);
+    const ngayKetThucDate = new Date(NgayKetThuc);
+    const namBatDau = ngayBatDauDate.getFullYear();
+    const namKetThuc = ngayKetThucDate.getFullYear();
+
+    // Học kỳ 1: từ ngày bắt đầu đến 31/12
+    const hocKy1NgayBatDau = NgayBatDau;
+    const hocKy1NgayKetThuc = `${namBatDau}-12-31`;
+
+    // Học kỳ 2: từ 1/1 năm sau đến ngày kết thúc
+    const hocKy2NgayBatDau = `${namKetThuc}-01-01`;
+    const hocKy2NgayKetThuc = NgayKetThuc;
+
+    // Tạo học kỳ 1
+    await NamHoc_HocKy.create({
+      MaNamHoc,
+      HocKy: 1,
+      NgayBatDau: hocKy1NgayBatDau,
+      NgayKetThuc: hocKy1NgayKetThuc,
+    });
+
+    // Tạo học kỳ 2
+    await NamHoc_HocKy.create({
+      MaNamHoc,
+      HocKy: 2,
+      NgayBatDau: hocKy2NgayBatDau,
+      NgayKetThuc: hocKy2NgayKetThuc,
+    });
+
+    return namHoc;
   }
 
   async updateNamHoc(oldMaNamHoc, data) {
@@ -147,9 +186,84 @@ class NamHocService {
   }
 
   async deleteNamHoc(maNamHoc) {
-    const ok = await namHocRepository.delete(maNamHoc);
-    if (!ok) throw new Error("Không tìm thấy năm học");
-    return ok;
+    const { sequelize } = require("../models");
+    const transaction = await sequelize.transaction();
+
+    try {
+      // Kiểm tra năm học có tồn tại không
+      const namHoc = await namHocRepository.findById(maNamHoc);
+      if (!namHoc) {
+        await transaction.rollback();
+        throw new Error("Không tìm thấy năm học");
+      }
+
+      // Xóa tất cả dữ liệu liên quan đến năm học này (theo thứ tự để tránh foreign key constraint)
+      
+      // 1. Xóa học kỳ
+      await sequelize.query(
+        `DELETE FROM NamHoc_HocKy WHERE MaNamHoc = ?`,
+        { replacements: [maNamHoc], transaction }
+      );
+
+      // 2. Xóa báo cáo tổng kết học kỳ
+      await sequelize.query(
+        `DELETE FROM BaoCaoTongKetHK WHERE NamHoc = ?`,
+        { replacements: [maNamHoc], transaction }
+      );
+
+      // 3. Xóa báo cáo tổng kết môn
+      await sequelize.query(
+        `DELETE FROM BaoCaoTongKetMon WHERE NamHoc = ?`,
+        { replacements: [maNamHoc], transaction }
+      );
+
+      // 4. Xóa phân công giảng dạy (nếu có)
+      await sequelize.query(
+        `DELETE FROM PhanCongGiangDay WHERE NamHoc = ?`,
+        { replacements: [maNamHoc], transaction }
+      ).catch(() => {}); // Bỏ qua nếu bảng không tồn tại
+
+      // 5. Xóa thời khóa biểu
+      await sequelize.query(
+        `DELETE FROM ThoiKhoaBieu WHERE NamHoc = ?`,
+        { replacements: [maNamHoc], transaction }
+      );
+
+      // 6. Xóa điểm số
+      await sequelize.query(
+        `DELETE FROM BangDiemMonHoc WHERE NamHoc = ?`,
+        { replacements: [maNamHoc], transaction }
+      );
+
+      // 7. Xóa học sinh - lớp - năm học
+      await sequelize.query(
+        `DELETE FROM HocSinh_LopNamHoc WHERE MaNamHoc = ?`,
+        { replacements: [maNamHoc], transaction }
+      );
+
+      // 8. Xóa lớp - năm học
+      await sequelize.query(
+        `DELETE FROM Lop_NamHoc WHERE MaNamHoc = ?`,
+        { replacements: [maNamHoc], transaction }
+      );
+
+      // 9. Cuối cùng, xóa năm học (sử dụng raw query với transaction)
+      const [deleteResult] = await sequelize.query(
+        `DELETE FROM NamHoc WHERE MaNamHoc = ?`,
+        { replacements: [maNamHoc], transaction }
+      );
+
+      if (deleteResult.changes === 0) {
+        await transaction.rollback();
+        throw new Error("Không tìm thấy năm học để xóa");
+      }
+
+      await transaction.commit();
+      return true;
+    } catch (error) {
+      await transaction.rollback();
+      throw error;
+    }
   }
 }
 

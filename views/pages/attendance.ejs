@@ -403,13 +403,27 @@ if (CAN_EDIT) {
 
           rows.forEach(row => {
             const maHS = row.getAttribute('data-student');
+            if (!maHS) {
+              console.warn('Bỏ qua hàng không có data-student');
+              return;
+            }
+            
             const cells = row.querySelectorAll('td.att-cell');
             
             cells.forEach((cell, dayIdx) => {
               const day = dayIdx + 1;
-              const status = cell.getAttribute('data-status') || '';
+              // Lấy status từ attribute hoặc từ text content nếu attribute rỗng
+              let status = cell.getAttribute('data-status') || '';
+              if (!status) {
+                // Nếu không có data-status, thử lấy từ text content
+                const text = cell.textContent.trim();
+                if (text === 'P' || text === 'A' || text === 'E' || text === 'L') {
+                  status = text;
+                }
+              }
               
-              if (status) {
+              // Chỉ gửi nếu có status hợp lệ
+              if (status && (status === 'P' || status === 'A' || status === 'E' || status === 'L')) {
                 const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
                 data.push({
                   MaHocSinh: maHS,
@@ -419,6 +433,18 @@ if (CAN_EDIT) {
               }
             });
           });
+
+          console.log(`Đã thu thập ${data.length} bản ghi điểm danh để gửi`);
+          if (data.length > 0) {
+            console.log(`Mẫu dữ liệu đầu tiên:`, JSON.stringify(data[0], null, 2));
+          }
+          
+          if (data.length === 0) {
+            alert('Không có dữ liệu điểm danh để lưu. Vui lòng đánh dấu điểm danh trước khi lưu.');
+            btnSave.disabled = false;
+            btnSave.textContent = '💾 Lưu điểm danh';
+            return;
+          }
 
           const response = await fetch('/attendance/save', {
             method: 'POST',

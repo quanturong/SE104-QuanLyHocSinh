@@ -209,11 +209,6 @@
           </div>
 
           <div class="sp-field">
-            <label>Phòng học</label>
-            <input type="text" id="edit-phong-hoc" name="PhongHoc" placeholder="VD: A101, B202..." />
-          </div>
-
-          <div class="sp-field">
             <label>Ghi chú</label>
             <textarea id="edit-ghi-chu-tkb" name="GhiChu" rows="2" placeholder="Ghi chú thêm (nếu có)..."></textarea>
           </div>
@@ -239,6 +234,10 @@
     const SELECTED_YEAR = '<%= typeof selectedYear !== 'undefined' ? selectedYear : '' %>';
     const SELECTED_SEMESTER = '<%= typeof selectedSemester !== 'undefined' ? selectedSemester : '1' %>';
     const SELECTED_CLASS = '<%= typeof selectedClass !== 'undefined' ? selectedClass : '' %>';
+    
+    // Lưu danh sách đầy đủ để filter
+    const ALL_SUBJECTS = <%- typeof subjects !== 'undefined' ? JSON.stringify(subjects) : '[]' %>;
+    const ALL_TEACHERS = <%- typeof teachers !== 'undefined' ? JSON.stringify(teachers) : '[]' %>;
 
     const ttbYearSel     = document.getElementById('ttb-year');
     const ttbSemesterSel = document.getElementById('ttb-semester');
@@ -365,9 +364,6 @@
       document.getElementById('modal-edit-timetable').style.display = 'grid';
     }
 
-    function closeEditTimetableModal() {
-      document.getElementById('modal-edit-timetable').style.display = 'none';
-    }
     document.getElementById('modal-edit-timetable')?.addEventListener('click', (e) => {
       if (e.target.classList.contains('sp-overlay')) {
         closeEditTimetableModal();
@@ -410,19 +406,121 @@
       if (item) {
         document.getElementById('edit-mon-hoc-tkb').value = item.MaMonHoc || '';
         document.getElementById('edit-giao-vien-tkb').value = item.MaGiaoVien || '';
-        // optionally set room/note if available
-        document.getElementById('edit-phong-hoc').value = item.PhongHoc || '';
         document.getElementById('edit-ghi-chu-tkb').value = item.GhiChu || '';
       } else {
         document.getElementById('edit-mon-hoc-tkb').value = '';
         document.getElementById('edit-giao-vien-tkb').value = '';
-        document.getElementById('edit-phong-hoc').value = '';
         document.getElementById('edit-ghi-chu-tkb').value = '';
       }
     }
 
     document.getElementById('edit-thu')?.addEventListener('change', fillModalFromData);
     document.getElementById('edit-tiet')?.addEventListener('change', fillModalFromData);
+
+    // Filter logic: Khi chọn giáo viên, filter môn học
+    const editGiaoVienSelect = document.getElementById('edit-giao-vien-tkb');
+    const editMonHocSelect = document.getElementById('edit-mon-hoc-tkb');
+    
+    async function filterSubjectsByTeacher(teacherId) {
+      if (!teacherId) {
+        // Nếu không chọn giáo viên, hiển thị tất cả môn học
+        populateSubjects(ALL_SUBJECTS);
+        return;
+      }
+      
+      try {
+        const response = await fetch(`/api/subjects-by-teacher?teacherId=${encodeURIComponent(teacherId)}`);
+        const subjects = await response.json();
+        populateSubjects(subjects);
+      } catch (err) {
+        console.error('Lỗi khi lấy môn học theo giáo viên:', err);
+        populateSubjects(ALL_SUBJECTS);
+      }
+    }
+    
+    async function filterTeachersBySubject(subjectId) {
+      if (!subjectId) {
+        // Nếu không chọn môn học, hiển thị tất cả giáo viên
+        populateTeachers(ALL_TEACHERS);
+        return;
+      }
+      
+      try {
+        const response = await fetch(`/api/teachers-by-subject?subjectId=${encodeURIComponent(subjectId)}`);
+        const teachers = await response.json();
+        populateTeachers(teachers);
+      } catch (err) {
+        console.error('Lỗi khi lấy giáo viên theo môn học:', err);
+        populateTeachers(ALL_TEACHERS);
+      }
+    }
+    
+    function populateSubjects(subjects) {
+      const currentValue = editMonHocSelect.value;
+      editMonHocSelect.innerHTML = '<option value="">(Không chọn)</option>';
+      
+      subjects.forEach(s => {
+        const option = document.createElement('option');
+        option.value = s.MaMonHoc;
+        option.textContent = s.TenMonHoc;
+        editMonHocSelect.appendChild(option);
+      });
+      
+      // Giữ lại giá trị đã chọn nếu còn trong danh sách
+      if (currentValue && Array.from(editMonHocSelect.options).some(opt => opt.value === currentValue)) {
+        editMonHocSelect.value = currentValue;
+      }
+    }
+    
+    function populateTeachers(teachers) {
+      const currentValue = editGiaoVienSelect.value;
+      editGiaoVienSelect.innerHTML = '<option value="">(Không chọn)</option>';
+      
+      teachers.forEach(t => {
+        const option = document.createElement('option');
+        option.value = t.MaGiaoVien;
+        option.textContent = t.HoTen;
+        editGiaoVienSelect.appendChild(option);
+      });
+      
+      // Giữ lại giá trị đã chọn nếu còn trong danh sách
+      if (currentValue && Array.from(editGiaoVienSelect.options).some(opt => opt.value === currentValue)) {
+        editGiaoVienSelect.value = currentValue;
+      }
+    }
+    
+    // Event listeners cho filter
+    editGiaoVienSelect?.addEventListener('change', async (e) => {
+      const teacherId = e.target.value;
+      const currentSubject = editMonHocSelect.value;
+      
+      await filterSubjectsByTeacher(teacherId);
+      
+      // Nếu đã chọn môn học, kiểm tra xem môn học đó có trong danh sách mới không
+      if (currentSubject) {
+        const subjectStillAvailable = Array.from(editMonHocSelect.options).some(opt => opt.value === currentSubject);
+        if (!subjectStillAvailable) {
+          // Môn học không còn trong danh sách, xóa nó
+          editMonHocSelect.value = '';
+        }
+      }
+    });
+    
+    editMonHocSelect?.addEventListener('change', async (e) => {
+      const subjectId = e.target.value;
+      const currentTeacher = editGiaoVienSelect.value;
+      
+      await filterTeachersBySubject(subjectId);
+      
+      // Nếu đã chọn giáo viên, kiểm tra xem giáo viên đó có trong danh sách mới không
+      if (currentTeacher) {
+        const teacherStillAvailable = Array.from(editGiaoVienSelect.options).some(opt => opt.value === currentTeacher);
+        if (!teacherStillAvailable) {
+          // Giáo viên không còn trong danh sách, xóa nó
+          editGiaoVienSelect.value = '';
+        }
+      }
+    });
 
     const btnEdit = document.getElementById('btn-edit-tkb');
     if (btnEdit) {
@@ -432,13 +530,34 @@
         document.getElementById('edit-hoc-ky-tkb').value = ttbSemesterSel.value || '1';
         document.getElementById('edit-thu').value = '2';
         document.getElementById('edit-tiet').value = '1';
-        document.getElementById('edit-phong-hoc').value = 'A101';
+
+        // Reset dropdowns về trạng thái ban đầu - LUÔN hiển thị tất cả
+        populateSubjects(ALL_SUBJECTS);
+        populateTeachers(ALL_TEACHERS);
+        editMonHocSelect.value = '';
+        editGiaoVienSelect.value = '';
 
         // Prefill subject/teacher if data exists for defaults
         fillModalFromData();
+        
+        // KHÔNG tự động filter khi mở modal
+        // Chỉ filter khi người dùng thực sự chọn một giá trị
+        // Điều này cho phép người dùng chọn tự do khi bắt đầu
 
         openEditTimetableModal();
       });
+    }
+    
+    // Đảm bảo khi đóng modal, reset về trạng thái ban đầu
+    function closeEditTimetableModal() {
+      document.getElementById('modal-edit-timetable').style.display = 'none';
+      // Reset dropdowns về trạng thái hiển thị tất cả
+      if (typeof populateSubjects === 'function' && typeof populateTeachers === 'function') {
+        populateSubjects(ALL_SUBJECTS);
+        populateTeachers(ALL_TEACHERS);
+        if (editMonHocSelect) editMonHocSelect.value = '';
+        if (editGiaoVienSelect) editGiaoVienSelect.value = '';
+      }
     }
   </script>
 </body>
