@@ -90,6 +90,48 @@
             </select>
           </div>
 
+          <div id="student-select-wrapper" style="margin-bottom: 20px; display: none;">
+            <label class="class-label" for="MaHocSinh">
+              Chọn học sinh <span style="color: #c33;">*</span>
+            </label>
+            <select
+              id="MaHocSinh"
+              name="MaHocSinh"
+              class="select class-select"
+              style="width: 100%;"
+            >
+              <option value="">-- Chọn học sinh --</option>
+              <% if (typeof students !== 'undefined' && students && students.length) { %>
+                <% students.forEach(function(stu) { %>
+                  <option value="<%= stu.MaHocSinh %>" <%= formData && formData.MaHocSinh === stu.MaHocSinh ? 'selected' : '' %>>
+                    <%= stu.MaHocSinh %> - <%= stu.HoTen %>
+                  </option>
+                <% }) %>
+              <% } %>
+            </select>
+          </div>
+
+          <div id="teacher-select-wrapper" style="margin-bottom: 20px; display: none;">
+            <label class="class-label" for="MaGiaoVien">
+              Chọn giáo viên <span style="color: #c33;">*</span>
+            </label>
+            <select
+              id="MaGiaoVien"
+              name="MaGiaoVien"
+              class="select class-select"
+              style="width: 100%;"
+            >
+              <option value="">-- Chọn giáo viên --</option>
+              <% if (typeof teachers !== 'undefined' && teachers && teachers.length) { %>
+                <% teachers.forEach(function(teacher) { %>
+                  <option value="<%= teacher.MaGiaoVien %>" <%= formData && formData.MaGiaoVien === String(teacher.MaGiaoVien) ? 'selected' : '' %>>
+                    GV<%= String(teacher.MaGiaoVien).padStart(3, '0') %> - <%= teacher.HoTen %>
+                  </option>
+                <% }) %>
+              <% } %>
+            </select>
+          </div>
+
           <div style="display: flex; gap: 12px;">
             <button type="submit" class="btn" style="flex: 1;">
               ➕ Tạo tài khoản
@@ -303,6 +345,44 @@
     window.deleteUser = deleteUser;
 
     loadUsers();
+
+    // Hiển thị/ẩn dropdown học sinh/giáo viên dựa trên vai trò
+    function toggleStudentTeacherDropdowns() {
+      const vaiTro = document.getElementById('VaiTro').value;
+      const studentWrapper = document.getElementById('student-select-wrapper');
+      const teacherWrapper = document.getElementById('teacher-select-wrapper');
+      const studentSelect = document.getElementById('MaHocSinh');
+      const teacherSelect = document.getElementById('MaGiaoVien');
+
+      if (vaiTro === 'HocSinh') {
+        studentWrapper.style.display = 'block';
+        studentSelect.required = true;
+        teacherWrapper.style.display = 'none';
+        teacherSelect.required = false;
+        teacherSelect.value = '';
+      } else if (vaiTro === 'GiaoVien') {
+        studentWrapper.style.display = 'none';
+        studentSelect.required = false;
+        studentSelect.value = '';
+        teacherWrapper.style.display = 'block';
+        teacherSelect.required = true;
+      } else {
+        studentWrapper.style.display = 'none';
+        studentSelect.required = false;
+        studentSelect.value = '';
+        teacherWrapper.style.display = 'none';
+        teacherSelect.required = false;
+        teacherSelect.value = '';
+      }
+    }
+
+    document.getElementById('VaiTro')?.addEventListener('change', toggleStudentTeacherDropdowns);
+    
+    // Khởi tạo khi trang load
+    const initialVaiTro = '<%= formData && formData.VaiTro ? formData.VaiTro : "" %>';
+    if (initialVaiTro) {
+      toggleStudentTeacherDropdowns();
+    }
   </script>
 </body>
 </html>

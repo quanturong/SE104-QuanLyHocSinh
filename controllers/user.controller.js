@@ -10,12 +10,36 @@ class UserController {
         return res.redirect("/tablecontrol");
       }
 
+      const { sequelize } = require("../models");
+
+      const [students] = await sequelize.query(`
+        SELECT hs.MaHocSinh, hs.HoTen
+        FROM HoSoHocSinh hs
+        WHERE NOT EXISTS (
+          SELECT 1 FROM NguoiDung nd 
+          WHERE nd.MaHocSinh = hs.MaHocSinh
+        )
+        ORDER BY hs.MaHocSinh ASC;
+      `);
+
+      const [teachers] = await sequelize.query(`
+        SELECT gv.MaGiaoVien, gv.HoTen
+        FROM GiaoVien gv
+        WHERE NOT EXISTS (
+          SELECT 1 FROM NguoiDung nd 
+          WHERE nd.MaGiaoVien = CAST(gv.MaGiaoVien AS TEXT)
+        )
+        ORDER BY gv.MaGiaoVien ASC;
+      `);
+
       res.render("pages/create-user", {
         title: "Tạo tài khoản",
         user: user,
         error: null,
         success: null,
         formData: {},
+        students: students || [],
+        teachers: teachers || [],
       });
     } catch (error) {
       console.error("Lỗi khi hiển thị form tạo tài khoản:", error);
@@ -30,25 +54,67 @@ class UserController {
         return res.redirect("/tablecontrol");
       }
 
-      const { TenDangNhap, MatKhau, VaiTro } = req.body;
+      const { TenDangNhap, MatKhau, VaiTro, MaHocSinh, MaGiaoVien } = req.body;
 
       if (!TenDangNhap || !MatKhau || !VaiTro) {
+        const { sequelize } = require("../models");
+        const [students] = await sequelize.query(`
+          SELECT hs.MaHocSinh, hs.HoTen
+          FROM HoSoHocSinh hs
+          WHERE NOT EXISTS (
+            SELECT 1 FROM NguoiDung nd 
+            WHERE nd.MaHocSinh = hs.MaHocSinh
+          )
+          ORDER BY hs.MaHocSinh ASC;
+        `);
+        const [teachers] = await sequelize.query(`
+          SELECT gv.MaGiaoVien, gv.HoTen
+          FROM GiaoVien gv
+          WHERE NOT EXISTS (
+            SELECT 1 FROM NguoiDung nd 
+            WHERE nd.MaGiaoVien = CAST(gv.MaGiaoVien AS TEXT)
+          )
+          ORDER BY gv.MaGiaoVien ASC;
+        `);
         return res.render("pages/create-user", {
           title: "Tạo tài khoản",
           user: user,
           error: "Vui lòng điền đầy đủ thông tin",
           success: null,
           formData: req.body,
+          students: students || [],
+          teachers: teachers || [],
         });
       }
 
       if (MatKhau.length < 6) {
+        const { sequelize } = require("../models");
+        const [students] = await sequelize.query(`
+          SELECT hs.MaHocSinh, hs.HoTen
+          FROM HoSoHocSinh hs
+          WHERE NOT EXISTS (
+            SELECT 1 FROM NguoiDung nd 
+            WHERE nd.MaHocSinh = hs.MaHocSinh
+          )
+          ORDER BY hs.MaHocSinh ASC;
+        `);
+        const [teachers] = await sequelize.query(`
+          SELECT gv.MaGiaoVien, gv.HoTen
+          FROM GiaoVien gv
+          WHERE NOT EXISTS (
+            SELECT 1 FROM NguoiDung nd 
+            WHERE nd.MaGiaoVien = CAST(gv.MaGiaoVien AS TEXT)
+          )
+          ORDER BY gv.MaGiaoVien ASC;
+        `);
         return res.render("pages/create-user", {
           title: "Tạo tài khoản",
           user: user,
           error: "Mật khẩu phải có ít nhất 6 ký tự",
           success: null,
           formData: req.body,
+          students: students || [],
+          teachers: teachers || [],
         });
       }
 
@@ -56,7 +122,29 @@ class UserController {
         TenDangNhap: TenDangNhap.trim(),
         MatKhau,
         VaiTro,
+        MaHocSinh: MaHocSinh || null,
+        MaGiaoVien: MaGiaoVien || null,
       });
+
+      const { sequelize } = require("../models");
+      const [students] = await sequelize.query(`
+        SELECT hs.MaHocSinh, hs.HoTen
+        FROM HoSoHocSinh hs
+        WHERE NOT EXISTS (
+          SELECT 1 FROM NguoiDung nd 
+          WHERE nd.MaHocSinh = hs.MaHocSinh
+        )
+        ORDER BY hs.MaHocSinh ASC;
+      `);
+      const [teachers] = await sequelize.query(`
+        SELECT gv.MaGiaoVien, gv.HoTen
+        FROM GiaoVien gv
+        WHERE NOT EXISTS (
+          SELECT 1 FROM NguoiDung nd 
+          WHERE nd.MaGiaoVien = CAST(gv.MaGiaoVien AS TEXT)
+        )
+        ORDER BY gv.MaGiaoVien ASC;
+      `);
 
       res.render("pages/create-user", {
         title: "Tạo tài khoản",
@@ -64,15 +152,46 @@ class UserController {
         error: null,
         success: `Tạo tài khoản "${newUser.TenDangNhap}" thành công!`,
         formData: {},
+        students: students || [],
+        teachers: teachers || [],
       });
     } catch (error) {
       console.error("Lỗi khi tạo tài khoản:", error);
+      const { sequelize } = require("../models");
+      let students = [];
+      let teachers = [];
+      try {
+        const [studentsRows] = await sequelize.query(`
+          SELECT hs.MaHocSinh, hs.HoTen
+          FROM HoSoHocSinh hs
+          WHERE NOT EXISTS (
+            SELECT 1 FROM NguoiDung nd 
+            WHERE nd.MaHocSinh = hs.MaHocSinh
+          )
+          ORDER BY hs.MaHocSinh ASC;
+        `);
+        const [teachersRows] = await sequelize.query(`
+          SELECT gv.MaGiaoVien, gv.HoTen
+          FROM GiaoVien gv
+          WHERE NOT EXISTS (
+            SELECT 1 FROM NguoiDung nd 
+            WHERE nd.MaGiaoVien = CAST(gv.MaGiaoVien AS TEXT)
+          )
+          ORDER BY gv.MaGiaoVien ASC;
+        `);
+        students = studentsRows || [];
+        teachers = teachersRows || [];
+      } catch (err) {
+        console.error("Lỗi khi lấy danh sách học sinh/giáo viên:", err);
+      }
       res.render("pages/create-user", {
         title: "Tạo tài khoản",
         user: req.session.user,
         error: error.message || "Có lỗi xảy ra khi tạo tài khoản",
         success: null,
         formData: req.body,
+        students: students,
+        teachers: teachers,
       });
     }
   }
@@ -84,6 +203,26 @@ class UserController {
         return res.redirect("/tablecontrol");
       }
 
+      const { sequelize } = require("../models");
+      const [students] = await sequelize.query(`
+        SELECT hs.MaHocSinh, hs.HoTen
+        FROM HoSoHocSinh hs
+        WHERE NOT EXISTS (
+          SELECT 1 FROM NguoiDung nd 
+          WHERE nd.MaHocSinh = hs.MaHocSinh
+        )
+        ORDER BY hs.MaHocSinh ASC;
+      `);
+      const [teachers] = await sequelize.query(`
+        SELECT gv.MaGiaoVien, gv.HoTen
+        FROM GiaoVien gv
+        WHERE NOT EXISTS (
+          SELECT 1 FROM NguoiDung nd 
+          WHERE nd.MaGiaoVien = CAST(gv.MaGiaoVien AS TEXT)
+        )
+        ORDER BY gv.MaGiaoVien ASC;
+      `);
+
       if (!req.file) {
         return res.render("pages/create-user", {
           title: "Tạo tài khoản",
@@ -91,6 +230,8 @@ class UserController {
           error: "Vui lòng chọn file CSV",
           success: null,
           formData: {},
+          students: students || [],
+          teachers: teachers || [],
         });
       }
 
@@ -151,15 +292,46 @@ class UserController {
         error: errorMessage,
         success: successMessage,
         formData: {},
+        students: students || [],
+        teachers: teachers || [],
       });
     } catch (error) {
       console.error("Lỗi khi import CSV:", error);
+      const { sequelize } = require("../models");
+      let students = [];
+      let teachers = [];
+      try {
+        const [studentsRows] = await sequelize.query(`
+          SELECT hs.MaHocSinh, hs.HoTen
+          FROM HoSoHocSinh hs
+          WHERE NOT EXISTS (
+            SELECT 1 FROM NguoiDung nd 
+            WHERE nd.MaHocSinh = hs.MaHocSinh
+          )
+          ORDER BY hs.MaHocSinh ASC;
+        `);
+        const [teachersRows] = await sequelize.query(`
+          SELECT gv.MaGiaoVien, gv.HoTen
+          FROM GiaoVien gv
+          WHERE NOT EXISTS (
+            SELECT 1 FROM NguoiDung nd 
+            WHERE nd.MaGiaoVien = CAST(gv.MaGiaoVien AS TEXT)
+          )
+          ORDER BY gv.MaGiaoVien ASC;
+        `);
+        students = studentsRows || [];
+        teachers = teachersRows || [];
+      } catch (err) {
+        console.error("Lỗi khi lấy danh sách học sinh/giáo viên:", err);
+      }
       res.render("pages/create-user", {
         title: "Tạo tài khoản",
         user: req.session.user,
         error: error.message || "Có lỗi xảy ra khi import CSV",
         success: null,
         formData: {},
+        students: students,
+        teachers: teachers,
       });
     }
   }
