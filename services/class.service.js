@@ -300,12 +300,8 @@ class ClassService {
         );
         console.log(`[deleteClass] Đã xóa tất cả ThoiKhoaBieu của lớp ${maLop}`);
 
-        // 3. Xóa tất cả PhanCongGiangDay
-        await sequelize.query(
-          "DELETE FROM PhanCongGiangDay WHERE MaLop = ?",
-          { replacements: [maLop], transaction }
-        );
-        console.log(`[deleteClass] Đã xóa tất cả PhanCongGiangDay của lớp ${maLop}`);
+        // 3. Xóa tất cả PhanCongGiangDay (không còn cột MaLop, bỏ qua)
+        // PhanCongGiangDay không còn liên kết trực tiếp với lớp qua MaLop
 
         // 4. Xóa tất cả BaoCaoTongKetMon
         await sequelize.query(

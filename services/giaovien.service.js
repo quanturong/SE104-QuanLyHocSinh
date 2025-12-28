@@ -1,6 +1,8 @@
 const giaoVienRepository = require("../repository/giaovien.repository");
 const phanCongRepository = require("../repository/phancong.repository");
 const quyDinhService = require("./quydinh.service");
+const lookupService = require("./lookup.service");
+const { sequelize } = require("../models");
 
 function tinhTuoi(ngaySinhStr) {
   if (!ngaySinhStr) return null;
@@ -88,10 +90,23 @@ class GiaoVienService {
 
     const createdMaGiaoVien = giaoVien.MaGiaoVien || giaoVien.dataValues?.MaGiaoVien;
 
+    // Lấy năm học và học kỳ hiện tại
+    const currentYear = await lookupService.getCurrentSchoolYear(true);
+    const currentSemester = await lookupService.getCurrentSemester(true);
+    
+    if (!currentYear) {
+      console.warn("⚠️ Không tìm thấy năm học hiện tại, tạo PhanCongGiangDay không có NamHoc");
+    }
+    if (!currentSemester) {
+      console.warn("⚠️ Không tìm thấy học kỳ hiện tại, tạo PhanCongGiangDay không có HocKy");
+    }
+
     for (const maMonHoc of monHocsToAssign) {
       await phanCongRepository.create({
         MaGiaoVien: createdMaGiaoVien,
         MaMonHoc: maMonHoc,
+        NamHoc: currentYear || null,
+        HocKy: currentSemester?.HocKy || null,
       });
     }
 
@@ -132,12 +147,25 @@ class GiaoVienService {
 
     if (!giaoVien) throw new Error("Không tìm thấy giáo viên");
 
+    // Lấy năm học và học kỳ hiện tại
+    const currentYear = await lookupService.getCurrentSchoolYear(true);
+    const currentSemester = await lookupService.getCurrentSemester(true);
+    
+    if (!currentYear) {
+      console.warn("⚠️ Không tìm thấy năm học hiện tại, tạo PhanCongGiangDay không có NamHoc");
+    }
+    if (!currentSemester) {
+      console.warn("⚠️ Không tìm thấy học kỳ hiện tại, tạo PhanCongGiangDay không có HocKy");
+    }
+
     await phanCongRepository.deleteByGiaoVien(maGiaoVien);
     
     for (const maMonHoc of monHocsToAssign) {
       await phanCongRepository.create({
         MaGiaoVien: maGiaoVien,
         MaMonHoc: maMonHoc,
+        NamHoc: currentYear || null,
+        HocKy: currentSemester?.HocKy || null,
       });
     }
 

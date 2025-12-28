@@ -6,7 +6,6 @@ class PhanCongRepository {
     const where = {};
     if (filters.MaGiaoVien) where.MaGiaoVien = filters.MaGiaoVien;
     if (filters.MaMonHoc) where.MaMonHoc = filters.MaMonHoc;
-    if (filters.MaLop) where.MaLop = filters.MaLop;
     if (filters.NamHoc) where.NamHoc = filters.NamHoc;
     if (filters.HocKy !== undefined) where.HocKy = filters.HocKy;
 

@@ -19,14 +19,6 @@ const PhanCongGiangDay = sequelize.define("PhanCongGiangDay", {
       key: 'MaMonHoc'
     }
   },
-  MaLop: {
-    type: DataTypes.STRING,
-    allowNull: true,
-    references: {
-      model: 'LopHoc',
-      key: 'MaLop'
-    }
-  },
   NamHoc: { type: DataTypes.STRING, allowNull: true },
   HocKy: { type: DataTypes.INTEGER, allowNull: true },
 }, {

@@ -153,17 +153,6 @@ body.auth{
   margin-right: 6px;
 }
 
-.btn-view {
-  background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
-  color: #ffffff;
-  box-shadow: 0 2px 8px rgba(14, 165, 233, 0.3);
-}
-
-.btn-view:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(14, 165, 233, 0.4);
-}
-
 .btn-edit-green {
   background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   color: #ffffff;
@@ -492,6 +481,13 @@ background:var(--accent-gradient);box-shadow:0 4px 12px rgba(14,165,233,.25);tra
   font-weight:800;font-size:12px;color:#fff;background:var(--accent-gradient);box-shadow:0 4px 12px rgba(14,165,233,.25);transition:.25s;
 }
 .btn-edit:hover,[data-edit]:hover{
+  background:linear-gradient(135deg,#0284c7 0%,#0891b2 100%);transform:translateY(-2px);box-shadow:0 6px 16px rgba(14,165,233,.35)
+}
+.btn-view{
+  min-width:60px;border:none;border-radius:999px;padding:6px 14px;display:inline-flex;align-items:center;justify-content:center;
+  font-weight:800;font-size:12px;color:#fff;background:linear-gradient(135deg,#0ea5e9 0%,#0284c7 100%);box-shadow:0 4px 12px rgba(14,165,233,.25);transition:.25s;
+}
+.btn-view:hover{
   background:linear-gradient(135deg,#0284c7 0%,#0891b2 100%);transform:translateY(-2px);box-shadow:0 6px 16px rgba(14,165,233,.35)
 }
 .btn-delete{
