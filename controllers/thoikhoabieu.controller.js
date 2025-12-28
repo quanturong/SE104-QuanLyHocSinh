@@ -6,14 +6,12 @@ class ThoiKhoaBieuController {
     try {
       const { MaLop, Thu, TietHoc, MaMonHoc, MaGiaoVien, NamHoc, HocKy, Tuan } = req.body;
 
-      // Validate quyền
       const role = (req.session?.user?.role || "").trim();
       const canEdit = role === "Admin" || role === "BGH" || role === "GiaoVu";
       if (!canEdit) {
         return res.status(403).json({ error: "Bạn không có quyền chỉnh sửa thời khóa biểu" });
       }
 
-      // Kiểm tra quy định chỉ cho phép sửa học kỳ hiện tại
       if (NamHoc && HocKy) {
         const quyDinhService = require('../services/quydinh.service');
         const canEditSemester = await quyDinhService.checkCanEditSemester(NamHoc, HocKy);
@@ -22,7 +20,6 @@ class ThoiKhoaBieuController {
         }
       }
 
-      // Nếu không có MaMonHoc hoặc MaGiaoVien, xóa slot
       if (!MaMonHoc || !MaGiaoVien) {
         if (!MaLop || !NamHoc || !Thu || !TietHoc) {
           return res.redirect(`/timetable?year=${encodeURIComponent(NamHoc || '')}&semester=${encodeURIComponent(HocKy || '1')}&class=${encodeURIComponent(MaLop || '')}&error=${encodeURIComponent('Thiếu thông tin bắt buộc để xóa')}`);
@@ -65,7 +62,6 @@ class ThoiKhoaBieuController {
         return res.status(400).json({ error: "Thiếu thông tin bắt buộc: MaLop, NamHoc, Thu, TietHoc" });
       }
 
-      // Kiểm tra quy định chỉ cho phép sửa học kỳ hiện tại
       if (NamHoc && HocKy) {
         const quyDinhService = require('../services/quydinh.service');
         const canEditSemester = await quyDinhService.checkCanEditSemester(NamHoc, HocKy);
@@ -98,7 +94,6 @@ class ThoiKhoaBieuController {
         return res.status(400).json({ error: "Thiếu thông tin lớp học hoặc năm học" });
       }
 
-      // Kiểm tra quy định chỉ cho phép sửa học kỳ hiện tại
       if (NamHoc && HocKy) {
         const quyDinhService = require('../services/quydinh.service');
         const canEditSemester = await quyDinhService.checkCanEditSemester(NamHoc, HocKy);

@@ -10,8 +10,25 @@ function showNotification(message, type) {
   // Remove previous type classes
   modal.classList.remove('error', 'success', 'info');
   
+  // Decode HTML entities (fix font encoding issues like &#34; -> ")
+  function decodeHtmlEntities(text) {
+    if (!text) return text;
+    const textarea = document.createElement('textarea');
+    textarea.innerHTML = text;
+    let decoded = textarea.value;
+    // Also handle numeric entities that might not be decoded by textarea
+    decoded = decoded.replace(/&#(\d+);/g, function(match, dec) {
+      return String.fromCharCode(dec);
+    });
+    decoded = decoded.replace(/&#x([0-9a-fA-F]+);/g, function(match, hex) {
+      return String.fromCharCode(parseInt(hex, 16));
+    });
+    return decoded;
+  }
+  
   // Clean message - remove regulation codes like (QĐ1), (QĐ2), etc.
-  const cleanMessage = message.replace(/\s*\(QĐ\d+\)\s*/g, '').trim();
+  const decodedMessage = decodeHtmlEntities(message);
+  const cleanMessage = decodedMessage.replace(/\s*\(QĐ\d+\)\s*/g, '').trim();
   messageEl.textContent = cleanMessage;
   
   // Set title, icon and style based on type

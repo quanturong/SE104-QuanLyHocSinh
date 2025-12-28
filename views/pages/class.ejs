@@ -22,6 +22,7 @@
       <div class="sp-modal" style="max-width: 500px; border-radius: 12px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);">
         <h2 class="sp-title" style="font-size: 22px; color: #1e40af; margin-bottom: 24px;">➕ Thêm lớp học mới</h2>
         <form class="sp-form" method="POST" action="/class">
+          <input type="hidden" name="MaNamHoc" id="addClassMaNamHoc" />
           <div class="sp-field">
             <label style="font-weight: 600; color: #334155; margin-bottom: 8px;">Mã lớp</label>
             <input name="MaLop" placeholder="VD: 10A1, 11A2, 12A3, 12A5" required pattern="^1[0-2][A-Z][0-9]+$" style="padding: 12px 16px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px; transition: border-color 0.2s;" onfocus="this.style.borderColor='#3b82f6'" onblur="this.style.borderColor='#e2e8f0'" />
@@ -528,6 +529,17 @@
           // Reset select về giá trị mặc định
           const khoiLopSelect = form.querySelector('select[name="KhoiLop"]');
           if (khoiLopSelect) khoiLopSelect.value = '';
+          
+          // Tự động lấy năm học được chọn từ dropdown và set vào form
+          const selectYear = document.getElementById('select-year');
+          const maNamHocInput = document.getElementById('addClassMaNamHoc');
+          if (selectYear && maNamHocInput) {
+            const selectedYear = selectYear.value;
+            if (selectedYear) {
+              maNamHocInput.value = selectedYear;
+              console.log('[openAdd] Đã set năm học:', selectedYear);
+            }
+          }
         }
       }
     }
@@ -701,19 +713,31 @@
           const khoiLop = tr.getAttribute('data-khoilop') || '';
           
           if (typeof showDeleteConfirm === 'function') {
+            // Lấy năm học được chọn từ dropdown
+            const selectedYear = document.getElementById('select-year')?.value || null;
             showDeleteConfirm(
-              `Bạn có chắc chắn muốn xóa lớp học "${maLop}" (Khối ${khoiLop})?`,
-              '⚠️ Hành động này không thể hoàn tác! Tất cả học sinh, thời khóa biểu và dữ liệu liên quan có thể bị ảnh hưởng.',
+              `Bạn có chắc chắn muốn xóa lớp học "${maLop}" (Khối ${khoiLop})${selectedYear ? ` khỏi năm học ${selectedYear}` : ''}?`,
+              selectedYear ? '⚠️ Lớp sẽ bị xóa khỏi năm học này. Nếu lớp không còn trong năm học nào, lớp sẽ bị xóa hoàn toàn.' : '⚠️ Hành động này không thể hoàn tác! Tất cả học sinh, thời khóa biểu và dữ liệu liên quan có thể bị ảnh hưởng.',
               function() {
                 // Tạo form và submit
                 const form = document.createElement('form');
                 form.method = 'POST';
                 form.action = '/class/delete';
-                const input = document.createElement('input');
-                input.type = 'hidden';
-                input.name = 'MaLop';
-                input.value = maLop;
-                form.appendChild(input);
+                const inputMaLop = document.createElement('input');
+                inputMaLop.type = 'hidden';
+                inputMaLop.name = 'MaLop';
+                inputMaLop.value = maLop;
+                form.appendChild(inputMaLop);
+                
+                // Thêm năm học nếu có
+                if (selectedYear) {
+                  const inputMaNamHoc = document.createElement('input');
+                  inputMaNamHoc.type = 'hidden';
+                  inputMaNamHoc.name = 'MaNamHoc';
+                  inputMaNamHoc.value = selectedYear;
+                  form.appendChild(inputMaNamHoc);
+                }
+                
                 document.body.appendChild(form);
                 
                 // Đảm bảo modal đóng trước khi submit

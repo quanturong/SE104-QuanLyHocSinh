@@ -5,25 +5,19 @@ class ClassController {
     try {
       const { sequelize } = require("../models");
       
-      // Đảm bảo lớp CHUA_CO_LOP tồn tại
       await classService.ensureChuaCoLopExists();
       
-      // Lấy tất cả các lớp (bao gồm CHUA_CO_LOP)
       const classes = await classService.getAllClasses();
       
-      // Debug: kiểm tra xem CHUA_CO_LOP có trong danh sách không
       console.log('[showClassPage] Tổng số lớp:', classes.length);
       const chuaCoLopInList = classes.find(c => c.MaLop === 'CHUA_CO_LOP');
       console.log('[showClassPage] CHUA_CO_LOP có trong danh sách:', !!chuaCoLopInList);
       
-      // Lấy năm học hiện tại để tính sĩ số
       const [currentYearRow] = await sequelize.query(
         "SELECT MaNamHoc FROM NamHoc ORDER BY MaNamHoc DESC LIMIT 1"
       );
       const currentYear = currentYearRow[0]?.MaNamHoc || null;
       
-      // Tính sĩ số cho từng lớp (bao gồm CHUA_CO_LOP)
-      // Đảm bảo classes là plain objects
       const classesPlain = classes.map(cls => {
         const maLop = cls.MaLop || cls.dataValues?.MaLop || '';
         const khoiLop = cls.KhoiLop || cls.dataValues?.KhoiLop || 0;
@@ -46,10 +40,8 @@ class ClassController {
       const role = (req.session?.user?.role || "").trim();
       const canManageClasses = role === "Admin" || role === "GiaoVu";
 
-      // Đảm bảo CHUA_CO_LOP có trong danh sách và ở cuối
       const chuaCoLopIndex = classesWithSiSo.findIndex(c => c.MaLop === 'CHUA_CO_LOP');
       if (chuaCoLopIndex === -1) {
-        // Thêm CHUA_CO_LOP vào danh sách nếu chưa có
         const [chuaCoLopInfo] = await sequelize.query(`
           SELECT 
             l.MaLop,
@@ -68,7 +60,6 @@ class ClassController {
           classesWithSiSo.push(chuaCoLopInfo[0]);
         }
       } else {
-        // Nếu đã có, di chuyển nó xuống cuối danh sách
         const chuaCoLop = classesWithSiSo.splice(chuaCoLopIndex, 1)[0];
         classesWithSiSo.push(chuaCoLop);
       }
@@ -76,7 +67,6 @@ class ClassController {
       console.log('[showClassPage] Tổng số lớp sau khi xử lý:', classesWithSiSo.length);
       console.log('[showClassPage] CHUA_CO_LOP có trong danh sách:', classesWithSiSo.some(c => c.MaLop === 'CHUA_CO_LOP'));
 
-      // Lấy danh sách giáo viên để hiển thị trong dropdown
       const [teachers] = await sequelize.query(`
         SELECT MaGiaoVien, HoTen
         FROM GiaoVien
@@ -100,12 +90,32 @@ class ClassController {
 
   async createClass(req, res) {
     try {
-      const { MaLop, KhoiLop } = req.body;
-      await classService.createClass({ MaLop, KhoiLop });
-      return res.redirect("/class?success=" + encodeURIComponent("Đã thêm lớp học thành công"));
+      const { MaLop, KhoiLop, MaNamHoc } = req.body;
+      const { sequelize } = require("../models");
+      let targetYear = MaNamHoc;
+      
+      if (!targetYear) {
+        const [currentYearRow] = await sequelize.query(
+          "SELECT MaNamHoc FROM NamHoc ORDER BY MaNamHoc DESC LIMIT 1"
+        );
+        targetYear = currentYearRow[0]?.MaNamHoc || null;
+      }
+      
+      await classService.createClass({ MaLop, KhoiLop, MaNamHoc: targetYear });
+      
+      let redirectUrl = "/class?success=" + encodeURIComponent("Đã thêm lớp học thành công");
+      if (targetYear) {
+        redirectUrl += "&namHoc=" + encodeURIComponent(targetYear);
+      }
+      return res.redirect(redirectUrl);
     } catch (err) {
       console.error("Lỗi createClass:", err);
-      return res.redirect("/class?error=" + encodeURIComponent(err.message || "Không thêm được lớp học"));
+      const { MaNamHoc } = req.body;
+      let redirectUrl = "/class?error=" + encodeURIComponent(err.message || "Không thêm được lớp học");
+      if (MaNamHoc) {
+        redirectUrl += "&namHoc=" + encodeURIComponent(MaNamHoc);
+      }
+      return res.redirect(redirectUrl);
     }
   }
 
@@ -113,7 +123,6 @@ class ClassController {
     try {
       const { OldMaLop, MaLop, MaGVChuNhiem } = req.body;
       
-      // Debug log
       console.log("updateClass - OldMaLop:", OldMaLop);
       console.log("updateClass - MaLop:", MaLop);
       console.log("updateClass - MaGVChuNhiem:", MaGVChuNhiem);
@@ -123,7 +132,6 @@ class ClassController {
         return res.redirect("/class?error=" + encodeURIComponent("Thiếu thông tin: OldMaLop=" + OldMaLop + ", MaLop=" + MaLop));
       }
       
-      // Khối lớp sẽ được tự động tính từ mã lớp trong service
       await classService.updateClass(OldMaLop, { MaLop, MaGVChuNhiem: MaGVChuNhiem || null });
       return res.redirect("/class?success=" + encodeURIComponent("Đã sửa lớp học thành công"));
     } catch (err) {
@@ -134,12 +142,22 @@ class ClassController {
 
   async deleteClass(req, res) {
     try {
-      const { MaLop } = req.body;
-      await classService.deleteClass(MaLop);
-      return res.redirect("/class?success=" + encodeURIComponent("Đã xóa lớp học thành công"));
+      const { MaLop, MaNamHoc } = req.body;
+      await classService.deleteClass(MaLop, MaNamHoc);
+      
+      let redirectUrl = "/class?success=" + encodeURIComponent("Đã xóa lớp học thành công");
+      if (MaNamHoc) {
+        redirectUrl += "&namHoc=" + encodeURIComponent(MaNamHoc);
+      }
+      return res.redirect(redirectUrl);
     } catch (err) {
       console.error("Lỗi deleteClass:", err);
-      return res.redirect("/class?error=" + encodeURIComponent(err.message || "Không xóa được lớp học"));
+      const { MaNamHoc } = req.body;
+      let redirectUrl = "/class?error=" + encodeURIComponent(err.message || "Không xóa được lớp học");
+      if (MaNamHoc) {
+        redirectUrl += "&namHoc=" + encodeURIComponent(MaNamHoc);
+      }
+      return res.redirect(redirectUrl);
     }
   }
 }

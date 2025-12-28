@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Báo cáo — Quản lí học sinh</title>
+  <title>Báo cáo - Quản lí học sinh</title>
   <link rel="stylesheet" href="/css/style.css" />
 </head>
 <body class="page-student">
@@ -131,16 +131,11 @@
             <table class="table" id="tbl-subject-report">
               <thead>
                 <tr>
-                  <th style="width: 60px;">STT</th>
-                  <th style="width: 120px;">Lớp</th>
-                  <th style="width: 100px;">Sĩ số</th>
-                  <th style="width: 120px;">Số lượng đạt</th>
-                  <th style="width: 100px;">Tỉ lệ (%)</th>
-                  <th style="width: 100px;">Giỏi</th>
-                  <th style="width: 100px;">Khá</th>
-                  <th style="width: 100px;">Trung bình</th>
-                  <th style="width: 100px;">Yếu</th>
-                  <th style="width: 120px;">Điểm TB lớp</th>
+                  <th>STT</th>
+                  <th>Lớp</th>
+                  <th>Sĩ số</th>
+                  <th>Số lượng đạt</th>
+                  <th>Tỉ lệ (%)</th>
                 </tr>
               </thead>
               <tbody>
@@ -156,16 +151,11 @@
                           <%= (r.TiLe || r.TiLeDat || 0).toFixed(2) %>%
                         </span>
                       </td>
-                      <td class="text-center"><%= r.SoGioi || '' %></td>
-                      <td class="text-center"><%= r.SoKha || '' %></td>
-                      <td class="text-center"><%= r.SoTrungBinh || '' %></td>
-                      <td class="text-center"><%= r.SoYeu || '' %></td>
-                      <td class="text-center"><strong><%= r.DiemTrungBinhLop || r.DiemTB || '' %></strong></td>
                     </tr>
                   <% }) %>
                 <% } else { %>
                   <tr>
-                    <td colspan="10" class="text-center muted">
+                    <td colspan="5" class="text-center muted">
                       Chưa có dữ liệu báo cáo tổng kết môn học.
                     </td>
                   </tr>
@@ -299,16 +289,11 @@
             <table class="table" id="tbl-semester-report">
               <thead>
                 <tr>
-                  <th style="width: 60px;">STT</th>
-                  <th style="width: 120px;">Lớp</th>
-                  <th style="width: 100px;">Sĩ số</th>
-                  <th style="width: 120px;">Số lượng đạt</th>
-                  <th style="width: 100px;">Tỉ lệ (%)</th>
-                  <th style="width: 100px;">Giỏi</th>
-                  <th style="width: 100px;">Khá</th>
-                  <th style="width: 100px;">Trung bình</th>
-                  <th style="width: 100px;">Yếu</th>
-                  <th style="width: 120px;">Điểm TB chung</th>
+                  <th>STT</th>
+                  <th>Lớp</th>
+                  <th>Sĩ số</th>
+                  <th>Số lượng đạt</th>
+                  <th>Tỉ lệ (%)</th>
                 </tr>
               </thead>
               <tbody>
@@ -324,16 +309,11 @@
                           <%= (r.TiLe || r.TiLeDat || 0).toFixed(2) %>%
                         </span>
                       </td>
-                      <td class="text-center"><%= r.SoGioi || '' %></td>
-                      <td class="text-center"><%= r.SoKha || '' %></td>
-                      <td class="text-center"><%= r.SoTrungBinh || '' %></td>
-                      <td class="text-center"><%= r.SoYeu || '' %></td>
-                      <td class="text-center"><strong><%= r.DiemTrungBinhChung || r.DiemTB || '' %></strong></td>
                     </tr>
                   <% }) %>
                 <% } else { %>
                   <tr>
-                    <td colspan="10" class="text-center muted">
+                    <td colspan="5" class="text-center muted">
                       Chưa có dữ liệu báo cáo tổng kết học kì.
                     </td>
                   </tr>

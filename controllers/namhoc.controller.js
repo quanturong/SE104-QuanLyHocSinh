@@ -5,9 +5,8 @@ class NamHocController {
     try {
       const schoolYears = await namHocService.getAllNamHoc();
       const role = (req.session?.user?.role || "").trim();
-      const canManageSchoolYear = role === "Admin" || role === "BGH" || role === "GiaoVu";
+      const canManageSchoolYear = role === "Admin";
 
-      // Lấy thông tin học kỳ cho mỗi năm học
       const { sequelize } = require("../models");
       const semestersMap = {};
       
@@ -86,7 +85,6 @@ class NamHocController {
         return res.redirect("/school-year?error=" + encodeURIComponent("Vui lòng nhập đầy đủ thông tin"));
       }
 
-      // Validate ngày
       const ngayBatDau = new Date(NgayBatDau);
       const ngayKetThuc = new Date(NgayKetThuc);
 
@@ -97,7 +95,6 @@ class NamHocController {
       const { sequelize } = require("../models");
       const NamHoc_HocKy = require("../models/NamHoc_HocKy");
 
-      // Kiểm tra học kỳ có tồn tại không
       const existing = await NamHoc_HocKy.findOne({
         where: { MaNamHoc, HocKy: parseInt(HocKy, 10) }
       });

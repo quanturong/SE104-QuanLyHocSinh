@@ -66,7 +66,7 @@
           </div>
         </section>
 
-        <section class="grid cols-4" style="margin-bottom:16px;">
+        <section class="grid cols-2" style="margin-bottom:16px;">
           <div class="card stat-mini">
             <div class="stat-mini-label">Điểm TB môn cao nhất</div>
             <div class="stat-mini-value" id="st-best">—</div>
@@ -75,20 +75,28 @@
             <div class="stat-mini-label">Điểm TB môn thấp nhất</div>
             <div class="stat-mini-value" id="st-worst">—</div>
           </div>
-          <div class="card stat-mini">
-            <div class="stat-mini-label">Số buổi vắng</div>
-            <div class="stat-mini-value" id="st-abs">—</div>
-          </div>
-          <div class="card stat-mini">
-            <div class="stat-mini-label">Đánh giá gần nhất</div>
-            <div class="stat-mini-value" id="st-conduct">—</div>
-          </div>
         </section>
 
         <section class="card" style="margin-bottom:16px;">
           <div class="page-header" style="margin-bottom:12px;">
             <h2 class="page-title" style="font-size:18px;">Bảng điểm chi tiết</h2>
             <p class="page-desc">Các cột được lấy trực tiếp từ bảng BangDiemMonHoc trong database.</p>
+          </div>
+          <div class="report-filter-grid" style="margin-bottom:16px;">
+            <div class="class-info-item">
+              <label class="class-label">Năm học</label>
+              <select class="select class-select" id="filter-year">
+                <option value="">-- Tất cả năm học --</option>
+              </select>
+            </div>
+            <div class="class-info-item">
+              <label class="class-label">Học kỳ</label>
+              <select class="select class-select" id="filter-semester">
+                <option value="">-- Tất cả học kỳ --</option>
+                <option value="1">Học kỳ I</option>
+                <option value="2">Học kỳ II</option>
+              </select>
+            </div>
           </div>
           <div class="table-wrap" style="overflow:auto; max-height:520px;">
             <table class="table" id="tbl-scores">
@@ -272,25 +280,47 @@
         document.getElementById('st-worst').textContent = '—';
       }
 
-      const abs = stuAtt.filter(r => {
-        const st = (r.TrangThai || '').toLowerCase();
-        return st && st !== 'có mặt';
-      }).length;
-      document.getElementById('st-abs').textContent = abs || 0;
+    }
 
-      // 'DanhGia' column removed from DB; show placeholder
-      document.getElementById('st-conduct').textContent = '—';
+    function updateYearDropdown(stu){
+      const yearSelect = document.getElementById('filter-year');
+      const stuId = stu.MaHocSinh;
+      const stuScores = SCORES.filter(r => r.MaHocSinh === stuId);
+      
+      const uniqueYears = [...new Set(stuScores.map(r => r.NamHoc).filter(y => y))].sort().reverse();
+      
+      yearSelect.innerHTML = '<option value="">-- Tất cả năm học --</option>';
+      
+      if (uniqueYears.length > 0) {
+        uniqueYears.forEach(year => {
+          const option = document.createElement('option');
+          option.value = year;
+          option.textContent = year;
+          yearSelect.appendChild(option);
+        });
+      }
     }
 
     function renderScores(stu){
       const tbody = document.querySelector('#tbl-scores tbody');
       const stuId = stu.MaHocSinh;
-      const stuScores = SCORES.filter(r => r.MaHocSinh === stuId);
+      const filterYear = document.getElementById('filter-year').value;
+      const filterSemester = document.getElementById('filter-semester').value;
+      
+      let stuScores = SCORES.filter(r => r.MaHocSinh === stuId);
+      
+      if (filterYear) {
+        stuScores = stuScores.filter(r => r.NamHoc === filterYear);
+      }
+      
+      if (filterSemester) {
+        stuScores = stuScores.filter(r => String(r.HocKy) === filterSemester);
+      }
 
       if (!stuScores.length) {
         tbody.innerHTML = `
           <tr>
-            <td colspan="8" class="text-center muted">
+            <td colspan="7" class="text-center muted">
               Chưa có dữ liệu điểm cho học sinh này.
             </td>
           </tr>`;
@@ -319,6 +349,20 @@
 
       tbody.innerHTML = rows;
     }
+    
+    let currentStudent = null;
+    
+    document.getElementById('filter-year').addEventListener('change', function() {
+      if (currentStudent) {
+        renderScores(currentStudent);
+      }
+    });
+    
+    document.getElementById('filter-semester').addEventListener('change', function() {
+      if (currentStudent) {
+        renderScores(currentStudent);
+      }
+    });
 
     function renderAttendance(stu){
       const tbody = document.querySelector('#tbl-attendance tbody');
@@ -383,8 +427,12 @@
       document.getElementById('no-data-student').style.display = 'none';
       document.getElementById('result-student').style.display  = 'block';
 
+      currentStudent = stu;
       fillProfile(stu);
       fillStats(stu);
+      updateYearDropdown(stu);
+      document.getElementById('filter-year').value = '';
+      document.getElementById('filter-semester').value = '';
       renderScores(stu);
       renderAttendance(stu);
     }

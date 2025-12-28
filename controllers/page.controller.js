@@ -6,13 +6,11 @@ class PageController {
       const role = (req.session?.user?.role || "").trim();
       const isStudent = role === "HocSinh";
 
-      // Lấy năm học hiện tại để filter tất cả thông số
       const [currentYearRow] = await sequelize.query(
         "SELECT MaNamHoc FROM NamHoc ORDER BY MaNamHoc DESC LIMIT 1"
       );
       const currentYear = currentYearRow[0]?.MaNamHoc || null;
 
-      // Đếm số học sinh đang học trong năm học hiện tại
       let studentRows;
       if (currentYear) {
         [studentRows] = await sequelize.query(
@@ -27,13 +25,11 @@ class PageController {
       
       let classRows;
       if (currentYear) {
-        // Chỉ đếm lớp có trong năm học hiện tại
         [classRows] = await sequelize.query(
           "SELECT COUNT(DISTINCT MaLop) AS SoLop FROM Lop_NamHoc WHERE MaNamHoc = ? AND MaLop != 'CHUA_CO_LOP'",
           { replacements: [currentYear] }
         );
       } else {
-        // Nếu không có năm học, đếm tất cả lớp
         [classRows] = await sequelize.query(
           "SELECT COUNT(*) AS SoLop FROM LopHoc WHERE MaLop != 'CHUA_CO_LOP'"
         );
@@ -46,7 +42,6 @@ class PageController {
       const SoLop = classRows[0]?.SoLop || 0;
       const SoGiaoVien = teacherRows[0]?.SoGiaoVien || 0;
 
-      // Chỉ tính điểm danh hôm nay nếu không phải học sinh
       let DiemDanhHomNay = 0;
       let attLabels = [];
       let attPercents = [];
@@ -59,7 +54,6 @@ class PageController {
         let TongBuoi = 0;
 
         if (currentYear) {
-          // Đếm số học sinh có mặt (có điểm danh với TrangThai = 'P')
           const [coMatRows] = await sequelize.query(`
             SELECT COUNT(DISTINCT d.MaHocSinh) AS SoCoMat
             FROM DiemDanh d
@@ -73,7 +67,6 @@ class PageController {
               )
           `, { replacements: [currentYear] });
 
-          // Đếm tổng số học sinh đang học trong năm học hiện tại
           const [tongHSRows] = await sequelize.query(`
             SELECT COUNT(DISTINCT MaHocSinh) AS TongHS
             FROM HocSinh_LopNamHoc
@@ -83,7 +76,6 @@ class PageController {
           SoCoMat = coMatRows[0]?.SoCoMat || 0;
           TongBuoi = tongHSRows[0]?.TongHS || 0;
         } else {
-          // Nếu không có năm học, tính theo tất cả điểm danh
           const [attTodayRows] = await sequelize.query(`
             SELECT
               SUM(CASE WHEN TrangThai = 'P' THEN 1 ELSE 0 END) AS SoCoMat,
@@ -99,11 +91,9 @@ class PageController {
           ? Math.round((SoCoMat * 100) / TongBuoi)
           : 0;
 
-        // Điểm danh 7 ngày qua - tính theo tổng số học sinh đang học
         let att7Rows = [];
         
         if (currentYear) {
-          // Lấy tổng số học sinh đang học
           const [tongHSRows] = await sequelize.query(`
             SELECT COUNT(DISTINCT MaHocSinh) AS TongHS
             FROM HocSinh_LopNamHoc
@@ -111,7 +101,6 @@ class PageController {
           `, { replacements: [currentYear] });
           const tongHS = tongHSRows[0]?.TongHS || 0;
 
-          // Lấy điểm danh theo từng ngày
           const [att7Data] = await sequelize.query(`
             SELECT 
               date(d.NgayDiemDanh) AS Ngay,
@@ -130,14 +119,12 @@ class PageController {
             LIMIT 7
           `, { replacements: [currentYear] });
 
-          // Tính phần trăm dựa trên tổng số học sinh
           att7Rows = att7Data.map(r => ({
             Ngay: r.Ngay,
             SoCoMat: r.SoCoMat || 0,
             TongBuoi: tongHS
           }));
         } else {
-          // Nếu không có năm học, tính theo tất cả điểm danh
           const [att7Data] = await sequelize.query(`
             SELECT 
               date(NgayDiemDanh) AS Ngay,
@@ -159,7 +146,6 @@ class PageController {
           return tong ? Math.round((r.SoCoMat * 100) / tong) : 0;
         });
 
-        // Top lớp có sĩ số cao - đã có currentYear từ trên
         let topClassRows;
         if (currentYear) {
           [topClassRows] = await sequelize.query(`
@@ -246,12 +232,12 @@ class PageController {
             HoTen: gv.HoTen,
             VaiTro: role,
             MaSo: gv.MaGiaoVien,
-            LopHienTai: null, // Bảng LopHoc không có cột MaGVChuNhiem
+            LopHienTai: null,
             NgaySinh: gv.NgaySinh,
             GioiTinh: gv.GioiTinh,
             Email: gv.Email,
             DiaChi: gv.DiaChi,
-            LopChuNhiem: null, // Bảng LopHoc không có cột MaGVChuNhiem
+            LopChuNhiem: null,
           };
         }
       }
@@ -286,13 +272,11 @@ class PageController {
 
   async showFindPage(req, res) {
     try {
-      // Lấy năm học hiện tại để hiển thị lớp hiện tại
       const [currentYearRow] = await sequelize.query(`
         SELECT MaNamHoc FROM NamHoc ORDER BY MaNamHoc DESC LIMIT 1
       `);
       const currentYear = currentYearRow[0]?.MaNamHoc || null;
 
-      // Lấy tất cả học sinh, với lớp hiện tại (nếu có)
       const [students] = await sequelize.query(`
         SELECT DISTINCT hs.MaHocSinh, hs.HoTen, hs.GioiTinh, hs.NgaySinh, hs.DiaChi, hs.Email,
                (SELECT hln2.MaLop 
@@ -305,7 +289,6 @@ class PageController {
         ORDER BY hs.HoTen;
       `, { replacements: currentYear ? [currentYear] : [] });
 
-      // Lấy tất cả điểm số của tất cả học sinh
       const [scores] = await sequelize.query(`
         SELECT b.MaDiem,
                b.MaHocSinh,
@@ -323,8 +306,6 @@ class PageController {
         ORDER BY b.NamHoc DESC, b.HocKy, m.TenMonHoc; 
       `);
 
-      // Lấy tất cả điểm danh của tất cả học sinh
-      // Lấy lớp của học sinh dựa trên năm học tương ứng với ngày điểm danh
       const [attendances] = await sequelize.query(`
         SELECT d.MaDiemDanh,
                d.MaHocSinh,
@@ -359,6 +340,10 @@ class PageController {
         ORDER BY t.MaLop, t.Thu, t.TietHoc;
       `);
 
+      const [namHocs] = await sequelize.query(`
+        SELECT MaNamHoc FROM NamHoc ORDER BY MaNamHoc DESC;
+      `);
+
       res.render("pages/find", {
         title: "Tra cứu",
         user: req.session.user,
@@ -367,6 +352,7 @@ class PageController {
         attendances,
         teachers,
         timetables,
+        namHocs,
       });
     } catch (err) {
       console.error("Lỗi /find:", err);
@@ -411,7 +397,6 @@ class PageController {
       const quyDinhService = require("../services/quydinh.service");
       const { TenQuyDinh, GiaTri } = req.body;
       
-      // Validation đặc biệt cho CHI_SUA_HOC_KY_HIEN_TAI
       if (TenQuyDinh === "CHI_SUA_HOC_KY_HIEN_TAI") {
         const numValue = parseFloat(GiaTri);
         if (numValue !== 0 && numValue !== 1) {
@@ -436,29 +421,24 @@ class PageController {
       if (!lop) {
         return res.redirect("/class");
       }
-      // Lấy năm học được chọn từ query parameter, mặc định là năm học mới nhất
       const selectedYearFromQuery = req.query.namHoc ? String(req.query.namHoc).trim() : null;
       console.log('[viewClassStudents] Query parameter namHoc:', req.query.namHoc);
       console.log('[viewClassStudents] selectedYearFromQuery:', selectedYearFromQuery);
       
-      // Lấy năm học mới nhất để làm mặc định
       const [currentYearRow] = await sequelize.query(`
         SELECT MaNamHoc FROM NamHoc ORDER BY MaNamHoc DESC LIMIT 1
       `);
       const defaultYear = currentYearRow[0]?.MaNamHoc || null;
       
-      // Sử dụng năm học từ query nếu có, nếu không thì dùng năm học mới nhất
       const selectedYear = selectedYearFromQuery || defaultYear;
       console.log('[viewClassStudents] defaultYear:', defaultYear);
       console.log('[viewClassStudents] selectedYear (sẽ dùng):', selectedYear);
       
-      // Đảm bảo lớp CHUA_CO_LOP tồn tại
       const classService = require("../services/class.service");
       await classService.ensureChuaCoLopExists();
 
       let classes = [];
       if (selectedYear) {
-        // Lấy danh sách lớp từ Lop_NamHoc của năm học được chọn (giống như route /class)
         const [classesWithYear] = await sequelize.query(`
           SELECT 
             ln.MaLop,
@@ -479,7 +459,6 @@ class PageController {
         classes = classesWithYear;
       }
 
-      // Lấy danh sách học sinh trong lớp theo năm học (bao gồm cả CHUA_CO_LOP nếu được chọn)
       let studentsInClass = [];
       if (selectedYear) {
         const [studentsRows] = await sequelize.query(
@@ -495,7 +474,6 @@ class PageController {
         studentsInClass = studentsRows;
       }
 
-      // Luôn thêm lớp CHUA_CO_LOP vào danh sách classes để hiển thị trong dropdown
       const [chuaCoLopInfo] = await sequelize.query(`
         SELECT 
           l.MaLop,
@@ -511,7 +489,6 @@ class PageController {
       `, { replacements: [selectedYear || defaultYear] });
       
       if (chuaCoLopInfo.length > 0) {
-        // Kiểm tra xem CHUA_CO_LOP đã có trong danh sách chưa
         const exists = classes.find(c => c.MaLop === 'CHUA_CO_LOP');
         if (!exists) {
           classes.push(chuaCoLopInfo[0]);
@@ -524,7 +501,6 @@ class PageController {
         ORDER BY MaNamHoc DESC;
       `);
 
-      // Lấy danh sách giáo viên để hiển thị trong dropdown
       const [teachers] = await sequelize.query(`
         SELECT MaGiaoVien, HoTen
         FROM GiaoVien

@@ -18,20 +18,16 @@ class ThoiKhoaBieuService {
   async saveTimetable(data) {
     const { MaLop, Thu, TietHoc, MaMonHoc, MaGiaoVien, NamHoc, HocKy } = data;
 
-    // Validate required fields
     if (!MaLop || !Thu || !TietHoc || !NamHoc) {
       throw new Error("Thiếu thông tin bắt buộc: MaLop, Thu, TietHoc, NamHoc");
     }
 
-    // Set default HocKy = 1 nếu không có
     const hocKyValue = HocKy !== undefined && HocKy !== null ? parseInt(HocKy, 10) : 1;
 
-    // Nếu không có MaMonHoc và MaGiaoVien, coi như xóa slot này
     if (!MaMonHoc || !MaGiaoVien) {
       return await thoikhoabieuRepo.delete(MaLop, NamHoc, hocKyValue, Thu, TietHoc);
     }
 
-    // Validate MaMonHoc và MaGiaoVien tồn tại
     const [monCheck] = await sequelize.query(
       "SELECT COUNT(*) AS cnt FROM MonHoc WHERE MaMonHoc = ?",
       { replacements: [MaMonHoc] }
@@ -48,7 +44,6 @@ class ThoiKhoaBieuService {
       throw new Error(`Giáo viên mã "${MaGiaoVien}" không tồn tại`);
     }
 
-    // Validate MaLop tồn tại
     const [lopCheck] = await sequelize.query(
       "SELECT COUNT(*) AS cnt FROM LopHoc WHERE MaLop = ?",
       { replacements: [MaLop] }
@@ -57,7 +52,6 @@ class ThoiKhoaBieuService {
       throw new Error(`Lớp "${MaLop}" không tồn tại`);
     }
 
-    // Kiểm tra xem tiết này đã tồn tại chưa (để phân biệt thêm mới hay update)
     const [existingTiet] = await sequelize.query(
       `SELECT COUNT(*) AS cnt FROM ThoiKhoaBieu 
        WHERE MaLop = ? AND NamHoc = ? AND HocKy = ? AND Thu = ? AND TietHoc = ?`,
@@ -65,7 +59,6 @@ class ThoiKhoaBieuService {
     );
     const isUpdate = existingTiet[0]?.cnt > 0;
 
-    // Validate số tiết tối đa trong ngày
     const soTietToiDaNgay = await quyDinhService.getGiaTriQuyDinh("SO_TIET_TOI_DA_NGAY", 5);
     const [tietTrongNgay] = await sequelize.query(
       `SELECT COUNT(*) AS SoTiet FROM ThoiKhoaBieu 
@@ -79,7 +72,6 @@ class ThoiKhoaBieuService {
       throw new Error(`Số tiết trong ngày không được vượt quá ${soTietToiDaNgay} tiết (QĐ)`);
     }
 
-    // Validate số tiết tối đa trong tuần (theo học kỳ)
     const soTietToiDaTuan = await quyDinhService.getGiaTriQuyDinh("SO_TIET_TOI_DA_TUAN", 30);
     const [tietTrongTuan] = await sequelize.query(
       `SELECT COUNT(*) AS SoTiet FROM ThoiKhoaBieu 
@@ -87,13 +79,11 @@ class ThoiKhoaBieuService {
       { replacements: [MaLop, NamHoc, hocKyValue] }
     );
     const soTietTuanHienTai = tietTrongTuan[0]?.SoTiet || 0;
-    // Nếu là thêm mới, cần +1; nếu là update thì giữ nguyên
     const soTietTuanSauKhiThem = isUpdate ? soTietTuanHienTai : soTietTuanHienTai + 1;
     if (soTietTuanSauKhiThem > soTietToiDaTuan) {
       throw new Error(`Số tiết trong tuần không được vượt quá ${soTietToiDaTuan} tiết (QĐ)`);
     }
 
-    // Upsert (create or update)
     return await thoikhoabieuRepo.upsert({
       MaLop,
       NamHoc,

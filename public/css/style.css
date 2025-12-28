@@ -705,3 +705,36 @@ background:var(--accent-gradient);box-shadow:0 4px 12px rgba(14,165,233,.25);tra
 p, span:not(.report-btn-title):not(.page-title):not(.brand) {
   font-weight: 400 !important;
 }
+
+/* FIX lệch cột cho bảng báo cáo */
+#tbl-subject-report,
+#tbl-semester-report{
+  table-layout: fixed;
+  width: 100%;
+}
+
+/* Canh & cố định độ rộng từng cột */
+#tbl-subject-report th:nth-child(1), #tbl-subject-report td:nth-child(1),
+#tbl-semester-report th:nth-child(1), #tbl-semester-report td:nth-child(1){
+  width: 60px; text-align: center;
+}
+
+#tbl-subject-report th:nth-child(2), #tbl-subject-report td:nth-child(2),
+#tbl-semester-report th:nth-child(2), #tbl-semester-report td:nth-child(2){
+  width: 120px; text-align: center;
+}
+
+#tbl-subject-report th:nth-child(3), #tbl-subject-report td:nth-child(3),
+#tbl-semester-report th:nth-child(3), #tbl-semester-report td:nth-child(3){
+  width: 100px; text-align: center;
+}
+
+#tbl-subject-report th:nth-child(4), #tbl-subject-report td:nth-child(4),
+#tbl-semester-report th:nth-child(4), #tbl-semester-report td:nth-child(4){
+  width: 130px; text-align: center;
+}
+
+#tbl-subject-report th:nth-child(5), #tbl-subject-report td:nth-child(5),
+#tbl-semester-report th:nth-child(5), #tbl-semester-report td:nth-child(5){
+  width: 110px; text-align: center;
+}

@@ -187,7 +187,6 @@ router.get(
         return tong ? Math.round((r.SoCoMat * 100) / tong) : 0;
       });
 
-      // Tính sĩ số từ HoSoHocSinh (sĩ số thực tế)
       const [topClassRows] = await sequelize.query(`
         SELECT l.MaLop, COUNT(hs.MaHocSinh) AS SiSo
         FROM LopHoc l
@@ -308,7 +307,6 @@ router.get(
   allowRoles(staffRoles),
   async (req, res) => {
     try {
-      // Lấy năm học hiện tại hoặc năm được chọn
       let years = [];
       try {
         years = await lookupService.getAllSchoolYears() || [];
@@ -316,7 +314,6 @@ router.get(
         console.error("Lỗi khi lấy danh sách năm học:", err);
         years = [];
       }
-      // getAllSchoolYears() trả về mảng các chuỗi MaNamHoc, không phải đối tượng
       const selectedYear = req.query.year || (years && years.length > 0 ? years[0] : null);
 
       let students;
@@ -346,7 +343,6 @@ router.get(
       const role = getRole(req);
       const canManageStudents = role === "Admin" || role === "GiaoVu";
 
-      // selectedYear đã được lấy ở trên
 
       let studentsEnriched = students;
       if (selectedYear) {
@@ -414,7 +410,6 @@ router.post(
         return res.redirect("/student?error=" + encodeURIComponent("Tuổi học sinh phải từ 15 đến 20."));
       }
 
-      // Lấy năm học hiện tại
       const [currentYearRow] = await sequelize.query(`
         SELECT MaNamHoc FROM NamHoc ORDER BY MaNamHoc DESC LIMIT 1
       `);
@@ -424,7 +419,6 @@ router.post(
         return res.redirect("/student?error=" + encodeURIComponent("Chưa có năm học nào được khai báo. Vui lòng tạo năm học trước."));
       }
 
-      // Kiểm tra sĩ số tối đa từ quy định
       const quyDinhService = require("../services/quydinh.service");
       const siSoToiDa = await quyDinhService.getGiaTriQuyDinh("SI_SO_TOI_DA", 40);
       
@@ -436,7 +430,6 @@ router.post(
         return res.redirect("/student?error=" + encodeURIComponent(`Lớp này đã đủ sĩ số tối đa ${siSoToiDa} học sinh. Vui lòng chọn lớp khác.`));
       }
 
-      // Tạo mã học sinh tự động
       const [lastStudent] = await sequelize.query(`
         SELECT MaHocSinh FROM HoSoHocSinh 
         ORDER BY CAST(SUBSTR(MaHocSinh, 3) AS INTEGER) DESC 
@@ -450,7 +443,6 @@ router.post(
 
       await sequelize.query('BEGIN TRANSACTION');
       try {
-        // Thêm học sinh vào HoSoHocSinh (không có MaLop)
         await sequelize.query(
           `
           INSERT INTO HoSoHocSinh (MaHocSinh, HoTen, GioiTinh, NgaySinh, DiaChi, Email)
@@ -468,7 +460,6 @@ router.post(
           }
         );
 
-        // Thêm vào HocSinh_LopNamHoc
         await sequelize.query(
           `
           INSERT INTO HocSinh_LopNamHoc (MaHocSinh, MaLop, MaNamHoc, TrangThai)
@@ -502,7 +493,6 @@ router.post(
     
       await sequelize.query('BEGIN TRANSACTION');
       try {
-        // Xóa từ các bảng liên quan
         await sequelize.query(
           "DELETE FROM DiemDanh WHERE MaHocSinh = ?;",
           { replacements: [MaHocSinh] }
@@ -513,13 +503,11 @@ router.post(
           { replacements: [MaHocSinh] }
         );
 
-        // Xóa từ HocSinh_LopNamHoc (cascade sẽ xử lý)
         await sequelize.query(
           "DELETE FROM HocSinh_LopNamHoc WHERE MaHocSinh = ?;",
           { replacements: [MaHocSinh] }
         );
 
-        // Xóa học sinh
         await sequelize.query(
           "DELETE FROM HoSoHocSinh WHERE MaHocSinh = ?;",
           { replacements: [MaHocSinh] }
@@ -546,7 +534,6 @@ router.post(
     try {
       const { OldMaHocSinh, MaHocSinh, HoTen, GioiTinh, NgaySinh, DiaChi, Email, MaLop } = req.body;
       
-      // Lấy năm học hiện tại
       const [currentYearRow] = await sequelize.query(`
         SELECT MaNamHoc FROM NamHoc ORDER BY MaNamHoc DESC LIMIT 1
       `);
@@ -556,7 +543,6 @@ router.post(
         return res.redirect("/student?error=" + encodeURIComponent("Chưa có năm học nào được khai báo."));
       }
 
-      // Lấy lớp hiện tại của học sinh
       const [[oldStudent]] = await sequelize.query(
         "SELECT MaLop FROM HocSinh_LopNamHoc WHERE MaHocSinh = ? AND MaNamHoc = ? AND TrangThai = 'DangHoc';",
         { replacements: [OldMaHocSinh, currentYear] }
@@ -574,7 +560,6 @@ router.post(
         return res.redirect("/student?error=" + encodeURIComponent("Tuổi học sinh phải từ 15 đến 20."));
       }
       
-      // Kiểm tra sĩ số tối đa khi chuyển lớp
       if (MaLop !== oldMaLop) {
         const quyDinhService = require("../services/quydinh.service");
         const siSoToiDa = await quyDinhService.getGiaTriQuyDinh("SI_SO_TOI_DA", 40);
@@ -601,7 +586,6 @@ router.post(
       await sequelize.query('BEGIN TRANSACTION;');
 
       try {
-        // Cập nhật MaHocSinh trong các bảng liên quan nếu thay đổi
         if (OldMaHocSinh !== MaHocSinh) {
           await sequelize.query(
             "UPDATE DiemDanh SET MaHocSinh = ? WHERE MaHocSinh = ?;",
@@ -617,7 +601,6 @@ router.post(
           );
         }
 
-        // Cập nhật thông tin học sinh (không có MaLop)
         await sequelize.query(
           `
           UPDATE HoSoHocSinh
@@ -634,22 +617,18 @@ router.post(
           }
         );
 
-        // Cập nhật lớp trong HocSinh_LopNamHoc
         if (MaLop !== oldMaLop) {
-          // Cập nhật lớp hiện tại (năm học hiện tại)
           const [existing] = await sequelize.query(
             "SELECT COUNT(*) AS cnt FROM HocSinh_LopNamHoc WHERE MaHocSinh = ? AND MaNamHoc = ?",
             { replacements: [MaHocSinh, currentYear] }
           );
           
           if (existing[0].cnt > 0) {
-            // Cập nhật lớp
             await sequelize.query(
               "UPDATE HocSinh_LopNamHoc SET MaLop = ? WHERE MaHocSinh = ? AND MaNamHoc = ? AND TrangThai = 'DangHoc'",
               { replacements: [MaLop, MaHocSinh, currentYear] }
             );
           } else {
-            // Tạo mới nếu chưa có
             await sequelize.query(
               "INSERT INTO HocSinh_LopNamHoc (MaHocSinh, MaLop, MaNamHoc, TrangThai) VALUES (?, ?, ?, 'DangHoc')",
               { replacements: [MaHocSinh, MaLop, currentYear] }
@@ -682,29 +661,24 @@ router.get(
   allowRoles(staffRoles),
   async (req, res) => {
     try {
-      // Lấy năm học được chọn từ query parameter
       const selectedYearFromQuery = req.query.namHoc ? String(req.query.namHoc).trim() : null;
       console.log('[GET /class] Query parameter namHoc (raw):', req.query.namHoc);
       console.log('[GET /class] selectedYearFromQuery (processed):', selectedYearFromQuery);
       
-      // Lấy năm học mới nhất để làm mặc định
       const [currentYearRow] = await sequelize.query(`
         SELECT MaNamHoc FROM NamHoc ORDER BY MaNamHoc DESC LIMIT 1
       `);
       const defaultYear = currentYearRow[0]?.MaNamHoc || null;
       
-      // Sử dụng năm học từ query nếu có, nếu không thì dùng năm học mới nhất
       const currentYear = selectedYearFromQuery || defaultYear;
       console.log('[GET /class] defaultYear:', defaultYear);
       console.log('[GET /class] currentYear (sẽ dùng):', currentYear);
       
-      // Đảm bảo lớp CHUA_CO_LOP tồn tại
       const classService = require("../services/class.service");
       await classService.ensureChuaCoLopExists();
 
       let classes = [];
       if (currentYear) {
-        // Lấy danh sách lớp từ Lop_NamHoc của năm học được chọn
         const [classesWithYear] = await sequelize.query(`
           SELECT 
             ln.MaLop,
@@ -806,7 +780,6 @@ router.post(
         return res.redirect("/class/view?lop=" + encodeURIComponent(OldMaLop) + "&error=" + encodeURIComponent("Học sinh đã ở lớp này rồi."));
       }
 
-      // Lấy năm học hiện tại
       const [currentYearRow] = await sequelize.query(`
         SELECT MaNamHoc FROM NamHoc ORDER BY MaNamHoc DESC LIMIT 1
       `);
@@ -816,7 +789,6 @@ router.post(
         return res.redirect("/class/view?lop=" + encodeURIComponent(OldMaLop) + "&error=" + encodeURIComponent("Không tìm thấy năm học hiện tại."));
       }
 
-      // Kiểm tra học sinh có tồn tại không
       const [studentCheck] = await sequelize.query(
         "SELECT COUNT(*) AS cnt FROM HoSoHocSinh WHERE MaHocSinh = ?",
         { replacements: [MaHocSinh] }
@@ -825,7 +797,6 @@ router.post(
         return res.redirect("/class/view?lop=" + encodeURIComponent(OldMaLop) + "&error=" + encodeURIComponent("Không tìm thấy học sinh."));
       }
 
-      // Kiểm tra lớp mới có tồn tại không
       const [classCheck] = await sequelize.query(
         "SELECT COUNT(*) AS cnt FROM LopHoc WHERE MaLop = ?",
         { replacements: [NewMaLop] }
@@ -834,7 +805,6 @@ router.post(
         return res.redirect("/class/view?lop=" + encodeURIComponent(OldMaLop) + "&error=" + encodeURIComponent("Không tìm thấy lớp học."));
       }
 
-      // Kiểm tra học sinh có trong lớp cũ không
       const [oldClassCheck] = await sequelize.query(
         "SELECT COUNT(*) AS cnt FROM HocSinh_LopNamHoc WHERE MaHocSinh = ? AND MaLop = ? AND MaNamHoc = ? AND TrangThai = 'DangHoc'",
         { replacements: [MaHocSinh, OldMaLop, currentYear] }
@@ -843,7 +813,6 @@ router.post(
         return res.redirect("/class/view?lop=" + encodeURIComponent(OldMaLop) + "&error=" + encodeURIComponent("Học sinh không có trong lớp này."));
       }
 
-      // Kiểm tra học sinh đã có trong lớp mới chưa
       const [newClassCheck] = await sequelize.query(
         "SELECT COUNT(*) AS cnt FROM HocSinh_LopNamHoc WHERE MaHocSinh = ? AND MaLop = ? AND MaNamHoc = ? AND TrangThai = 'DangHoc'",
         { replacements: [MaHocSinh, NewMaLop, currentYear] }
@@ -852,17 +821,14 @@ router.post(
         return res.redirect("/class/view?lop=" + encodeURIComponent(OldMaLop) + "&error=" + encodeURIComponent("Học sinh đã có trong lớp mới rồi."));
       }
 
-      // Bắt đầu transaction
       await sequelize.query('BEGIN TRANSACTION;');
 
       try {
-        // Cập nhật lớp cũ: set TrangThai = 'ChuyenLop'
         await sequelize.query(
           "UPDATE HocSinh_LopNamHoc SET TrangThai = 'ChuyenLop' WHERE MaHocSinh = ? AND MaLop = ? AND MaNamHoc = ?",
           { replacements: [MaHocSinh, OldMaLop, currentYear] }
         );
 
-        // Tạo record mới cho lớp mới
         await sequelize.query(
           "INSERT INTO HocSinh_LopNamHoc (MaHocSinh, MaLop, MaNamHoc, TrangThai) VALUES (?, ?, ?, 'DangHoc')",
           { replacements: [MaHocSinh, NewMaLop, currentYear] }
@@ -925,12 +891,10 @@ router.get(
       const role = getRole(req);
       const isStudent = role === "HocSinh";
       
-      // Nếu là học sinh, lấy các lớp mà học sinh đã học từ HocSinh_LopNamHoc
-      let studentClasses = []; // Danh sách các lớp học sinh đã học (theo năm học)
-      let studentClass = null; // Lớp hiện tại (năm học mới nhất)
+      let studentClasses = [];
+      let studentClass = null;
       if (isStudent) {
         const username = req.session.user.username;
-        // Lấy tất cả các lớp mà học sinh đã học
         const [hsRows] = await sequelize.query(
           `SELECT hln.MaLop, hln.MaNamHoc, hln.TrangThai
            FROM HocSinh_LopNamHoc hln
@@ -939,7 +903,6 @@ router.get(
           { replacements: [username] }
         );
         studentClasses = hsRows;
-        // Lớp hiện tại là lớp của năm học mới nhất
         if (hsRows.length > 0) {
           studentClass = hsRows[0].MaLop;
         }
@@ -948,15 +911,11 @@ router.get(
       const selectedYear = req.query.year || null;
       const selectedSemester = req.query.semester || null;
       
-      // Học sinh chỉ xem được lớp của mình, không thể chọn lớp khác
-      // Nếu có chọn năm học, lấy lớp tương ứng với năm học đó (chỉ nếu có TKB)
       let selectedClass = null;
       if (isStudent) {
         if (selectedYear) {
-          // Tìm lớp của học sinh trong năm học được chọn
           const classInYear = studentClasses.find(c => c.MaNamHoc === selectedYear);
           if (classInYear) {
-            // Kiểm tra xem lớp này có thời khóa biểu trong năm học này không
             const [hasTKB] = await sequelize.query(`
               SELECT COUNT(*) AS cnt
               FROM ThoiKhoaBieu
@@ -968,7 +927,6 @@ router.get(
               selectedClass = classInYear.MaLop;
             }
           }
-          // Nếu không tìm thấy hoặc không có TKB, thử lớp hiện tại (nếu có TKB)
           if (!selectedClass && studentClass) {
             const [hasTKB] = await sequelize.query(`
               SELECT COUNT(*) AS cnt
@@ -982,9 +940,7 @@ router.get(
             }
           }
         } else {
-          // Mặc định: tìm năm học mới nhất có TKB cho lớp hiện tại
           if (studentClass) {
-            // Lấy năm học mới nhất có TKB cho lớp này
             const [yearWithTKB] = await sequelize.query(`
               SELECT NamHoc
               FROM ThoiKhoaBieu
@@ -1002,7 +958,6 @@ router.get(
         selectedClass = req.query.class || null;
       }
 
-      // Lọc thời khóa biểu theo năm học, học kỳ và lớp nếu có
       let tkbWhere = [];
       let tkbReplacements = [];
       
@@ -1018,7 +973,6 @@ router.get(
         tkbWhere.push('t.HocKy = ?');
         tkbReplacements.push(parseInt(selectedSemester, 10));
       } else {
-        // Nếu không chọn học kỳ, mặc định là học kỳ 1
         tkbWhere.push('t.HocKy = ?');
         tkbReplacements.push(1);
       }
@@ -1042,12 +996,9 @@ router.get(
         ORDER BY t.MaLop, t.Thu, t.TietHoc;
       `, { replacements: tkbReplacements });
 
-      // Lấy các lớp có thời khóa biểu
-      // Nếu là học sinh, chỉ lấy các lớp mà học sinh đã học
       let classes = [];
       if (isStudent && studentClasses.length > 0) {
-        // Học sinh chỉ thấy các lớp mà họ đã học (theo năm học)
-        const classIds = [...new Set(studentClasses.map(c => c.MaLop))]; // Lấy danh sách lớp duy nhất
+        const classIds = [...new Set(studentClasses.map(c => c.MaLop))];
         if (classIds.length > 0) {
           const placeholders = classIds.map(() => '?').join(',');
           const [studentClassesInfo] = await sequelize.query(`
@@ -1059,7 +1010,6 @@ router.get(
           classes = studentClassesInfo || [];
         }
       } else {
-        // Admin/GV có thể xem tất cả lớp
         let classWhere = [];
         let classReplacements = [];
         
@@ -1090,7 +1040,6 @@ router.get(
         }
       }
 
-      // Lấy tất cả năm học (không lọc)
       const [namHocs] = await sequelize.query(`
         SELECT MaNamHoc
         FROM NamHoc
@@ -1121,7 +1070,6 @@ router.get(
         const studentYearIds = [...new Set(studentClasses.map(c => c.MaNamHoc))];
         const studentClassIds = [...new Set(studentClasses.map(c => c.MaLop))];
         
-        // Lấy các năm học có thời khóa biểu cho các lớp mà học sinh đã học
         if (studentClassIds.length > 0) {
           const classPlaceholders = studentClassIds.map(() => '?').join(',');
           const yearPlaceholders = studentYearIds.map(() => '?').join(',');
@@ -1146,7 +1094,7 @@ router.get(
         user: req.session.user,
         timetables: tkbRows,
         classes,
-        namHocs: availableYears, // Chỉ hiển thị các năm học mà học sinh đã học
+        namHocs: availableYears,
         subjects,
         teachers,
         selectedYear,
@@ -1156,7 +1104,7 @@ router.get(
         success,
         permissions: {
           canEditTimetable,
-          isStudent, // Thêm flag để view biết là học sinh
+          isStudent,
         },
       });
     } catch (err) {
@@ -1194,7 +1142,6 @@ router.get(
   allowRoles(["Admin", "BGH", "GiaoVu"]),
   async (req, res) => {
     try {
-      // Lấy năm học hiện tại
       const [currentYearRow] = await sequelize.query(`
         SELECT MaNamHoc FROM NamHoc ORDER BY MaNamHoc DESC LIMIT 1
       `);
@@ -1293,7 +1240,6 @@ router.post(
         });
       }
 
-      // Lấy năm học hiện tại để lấy MaLop
       const [currentYearRow] = await sequelize.query(`
         SELECT MaNamHoc FROM NamHoc ORDER BY MaNamHoc DESC LIMIT 1
       `);
@@ -1317,10 +1263,8 @@ router.post(
             continue;
           }
 
-          // Lấy MaLop của học sinh từ năm học hiện tại
           let MaLop = null;
           if (currentYear) {
-            // Đảm bảo currentYear là string
             const yearStr = String(currentYear);
             const [[lopRow]] = await sequelize.query(`
               SELECT MaLop FROM HocSinh_LopNamHoc 
@@ -1330,7 +1274,6 @@ router.post(
             MaLop = lopRow?.MaLop || null;
             
             if (!MaLop) {
-              // Thử tìm không cần TrangThai để debug
               const [[lopRowDebug]] = await sequelize.query(`
                 SELECT MaLop, TrangThai FROM HocSinh_LopNamHoc 
                 WHERE MaHocSinh = ? AND MaNamHoc = ?
@@ -1342,13 +1285,11 @@ router.post(
             }
           }
 
-          // Nếu không tìm thấy lớp, bỏ qua bản ghi này
           if (!MaLop) {
             console.warn(`Không tìm thấy lớp cho học sinh ${MaHocSinh} trong năm học ${currentYear}`);
             continue;
           }
 
-          // Kiểm tra bản ghi đã tồn tại
           const [[existing]] = await sequelize.query(
             `SELECT MaDiemDanh FROM DiemDanh 
              WHERE MaHocSinh = ? AND NgayDiemDanh = ?`,
@@ -1356,14 +1297,12 @@ router.post(
           );
 
           if (existing && existing.MaDiemDanh) {
-            // Update bản ghi đã tồn tại
             await sequelize.query(
               `UPDATE DiemDanh SET TrangThai = ?, MaLop = ? WHERE MaDiemDanh = ?`,
               { replacements: [TrangThai, MaLop, existing.MaDiemDanh] }
             );
             updated++;
           } else {
-            // Insert bản ghi mới
             await sequelize.query(
               `INSERT INTO DiemDanh (MaHocSinh, MaLop, NgayDiemDanh, TrangThai) VALUES (?, ?, ?, ?)`,
               { replacements: [String(MaHocSinh), MaLop || null, String(NgayDiemDanh), String(TrangThai)] }
@@ -1373,7 +1312,6 @@ router.post(
         } catch (itemErr) {
           console.error(`Lỗi khi xử lý bản ghi điểm danh:`, itemErr);
           console.error(`Dữ liệu:`, JSON.stringify(item, null, 2));
-          // Tiếp tục xử lý các bản ghi khác
           continue;
         }
       }
@@ -1388,7 +1326,6 @@ router.post(
       console.error("Lỗi POST /attendance/save:", err);
       console.error("Chi tiết lỗi:", JSON.stringify(err, null, 2));
       
-      // Lấy thông báo lỗi chi tiết hơn
       let errorMessage = err.message || "Lỗi không xác định";
       if (err.original && err.original.message) {
         errorMessage = err.original.message;
@@ -1411,7 +1348,6 @@ router.get(
   allowRoles(staffRoles),
   async (req, res) => {
     try {
-      // Read filters from query params
       const selectedYear = req.query.year || null;
       const selectedSemester = req.query.semester || null;
       const selectedSubject = req.query.subject || null;
@@ -1625,7 +1561,6 @@ router.post(
   (req, res) => monHocController.deleteSubject(req, res)
 );
 
-// API endpoint để lấy danh sách giáo viên
 router.get("/api/teachers", requireLogin, async (req, res) => {
   try {
     const [teachers] = await sequelize.query(`
@@ -1640,7 +1575,6 @@ router.get("/api/teachers", requireLogin, async (req, res) => {
   }
 });
 
-// API endpoint để lấy danh sách môn học theo giáo viên
 router.get("/api/subjects-by-teacher", requireLogin, async (req, res) => {
   try {
     const { teacherId } = req.query;
@@ -1663,7 +1597,6 @@ router.get("/api/subjects-by-teacher", requireLogin, async (req, res) => {
   }
 });
 
-// API endpoint để lấy danh sách giáo viên theo môn học
 router.get("/api/teachers-by-subject", requireLogin, async (req, res) => {
   try {
     const { subjectId } = req.query;

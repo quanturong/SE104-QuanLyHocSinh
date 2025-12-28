@@ -94,8 +94,17 @@ class UserController {
         });
       }
 
-      const filePath = req.file.path;
-      const users = this.parseCSV(filePath);
+      let csvContent;
+      if (req.file.buffer) {
+        csvContent = req.file.buffer.toString('utf-8');
+      } else if (req.file.path) {
+        csvContent = fs.readFileSync(req.file.path, 'utf-8');
+        fs.unlinkSync(req.file.path);
+      } else {
+        throw new Error("Không thể đọc file CSV");
+      }
+
+      const users = this.parseCSVFromContent(csvContent);
 
       let successCount = 0;
       let errorCount = 0;
@@ -133,8 +142,6 @@ class UserController {
         }
       }
 
-      fs.unlinkSync(filePath);
-
       const successMessage = `Import thành công ${successCount} tài khoản. Bỏ qua: ${skipCount}. Lỗi: ${errorCount}`;
       const errorMessage = errors.length > 0 ? errors.slice(0, 10).join("<br>") : null;
 
@@ -147,11 +154,6 @@ class UserController {
       });
     } catch (error) {
       console.error("Lỗi khi import CSV:", error);
-      if (req.file && req.file.path) {
-        try {
-          fs.unlinkSync(req.file.path);
-        } catch (e) {}
-      }
       res.render("pages/create-user", {
         title: "Tạo tài khoản",
         user: req.session.user,
@@ -162,9 +164,8 @@ class UserController {
     }
   }
 
-  parseCSV(filePath) {
+  parseCSVFromContent(content) {
     try {
-      const content = fs.readFileSync(filePath, "utf-8");
       const lines = content.split("\n").filter((line) => line.trim() !== "");
       
       if (lines.length === 0) {
@@ -173,17 +174,36 @@ class UserController {
 
       const headers = lines[0].split(",").map((h) => h.trim());
       
+      const expectedHeaders = ["TenDangNhap", "MatKhau", "VaiTro"];
+      const hasAllHeaders = expectedHeaders.every(h => headers.includes(h));
+      
+      if (!hasAllHeaders) {
+        throw new Error(`File CSV phải có header: ${expectedHeaders.join(", ")}. Tìm thấy: ${headers.join(", ")}`);
+      }
+      
       const data = [];
       for (let i = 1; i < lines.length; i++) {
         const values = lines[i].split(",").map((v) => v.trim());
         const row = {};
         headers.forEach((header, index) => {
-          row[header] = values[index] || "";
+          if (expectedHeaders.includes(header)) {
+            row[header] = values[index] || "";
+          }
         });
         data.push(row);
       }
 
       return data;
+    } catch (error) {
+      console.error("Lỗi khi đọc file CSV:", error.message);
+      throw error;
+    }
+  }
+
+  parseCSV(filePath) {
+    try {
+      const content = fs.readFileSync(filePath, "utf-8");
+      return this.parseCSVFromContent(content);
     } catch (error) {
       console.error("Lỗi khi đọc file CSV:", error.message);
       throw error;
@@ -212,26 +232,19 @@ class UserController {
         return res.status(403).json({ error: "Bạn không có quyền thực hiện thao tác này" });
       }
 
-      // Xử lý cả JSON và form-data
       const TenDangNhap = req.body?.TenDangNhap || req.body?.username;
 
       if (!TenDangNhap) {
         return res.status(400).json({ error: "Thiếu tên đăng nhập" });
       }
 
-      // Không cho phép xóa chính mình
-      // Lấy TenDangNhap từ database để so sánh chính xác
-      // Vì user.username có thể là MaHocSinh (cho học sinh) hoặc TenDangNhap
       const currentUser = await userService.getUserByUsername(user.username);
       if (currentUser && currentUser.TenDangNhap === TenDangNhap) {
         return res.status(400).json({ error: "Bạn không thể xóa chính tài khoản của mình" });
       }
       
-      // Nếu không tìm thấy bằng username, thử tìm trực tiếp bằng TenDangNhap
-      // (trường hợp user.username là MaHocSinh nhưng TenDangNhap trong DB khác)
       if (!currentUser) {
         const directUser = await userService.getUserByUsername(TenDangNhap);
-        // Kiểm tra nếu đây là tài khoản của chính user hiện tại
         // Bằng cách kiểm tra xem có user nào có TenDangNhap trùng với user.username không
         const allUsers = await userService.getAllUsers();
         const myAccount = allUsers.find(u => u.TenDangNhap === user.username);

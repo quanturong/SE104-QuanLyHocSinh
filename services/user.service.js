@@ -80,8 +80,6 @@ class UserService {
       throw new Error("Không tìm thấy người dùng");
     }
 
-    // Không cho phép xóa chính mình
-    // Note: Cần kiểm tra trong controller với session user
 
     return await nguoiDungRepository.delete(user.MaNguoiDung);
   }

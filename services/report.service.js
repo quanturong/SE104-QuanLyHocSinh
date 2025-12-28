@@ -2,12 +2,6 @@ const sequelize = require('../config/db');
 const { BaoCaoTongKetMon, BaoCaoTongKetHK } = require('../models');
 const quyDinhService = require('./quydinh.service');
 
-/**
- * Get subject report rows and aggregated totals
- * @param {string|null} year
- * @param {string|null} semester - '1'|'2'|'full' or null
- * @param {string|null} subject - MaMonHoc or null
- */
 async function getSubjectReport(year, semester, subject) {
   const where = [];
   const replacements = {};
@@ -33,25 +27,18 @@ async function getSubjectReport(year, semester, subject) {
     ORDER BY NamHoc DESC, HocKy, MaMonHoc, MaLop;
   `, { replacements });
 
-  // Tính tổng số lớp duy nhất (không bị trùng)
   const uniqueClasses = new Set();
   let students = 0;
   let passed = 0;
 
   if (rows && rows.length) {
     for (const r of rows) {
-      // Đếm lớp duy nhất (theo năm học, học kỳ, lớp)
       const classKey = `${r.NamHoc || ''}_${r.HocKy || ''}_${r.MaLop || ''}`;
       uniqueClasses.add(classKey);
       
-      // Chỉ cộng học sinh và số đạt từ một bản ghi đại diện cho mỗi lớp-môn
-      // Để tránh nhân đôi, ta chỉ lấy giá trị từ bản ghi đầu tiên của mỗi lớp-môn
-      // Hoặc tính trung bình, hoặc lấy max
-      // Nhưng thực tế, mỗi lớp-môn chỉ nên có 1 bản ghi, nên ta cần kiểm tra
     }
   }
 
-  // Tính tổng học sinh và số đạt một cách chính xác hơn
   // Vì mỗi lớp có thể xuất hiện nhiều lần (mỗi môn một lần), ta cần tính theo lớp duy nhất
   const classStats = new Map();
   
@@ -67,7 +54,6 @@ async function getSubjectReport(year, semester, subject) {
     }
   }
 
-  // Tính tổng từ các lớp duy nhất
   for (const stats of classStats.values()) {
     students += stats.siSo;
     passed += stats.soDat;
@@ -79,14 +65,8 @@ async function getSubjectReport(year, semester, subject) {
   return { rows, totals: { classes, students, passed, passRate } };
 }
 
-/**
- * Tính toán và cập nhật báo cáo tổng kết môn học từ BangDiemMonHoc
- * @param {string|null} year - Năm học cụ thể, null = tất cả
- * @param {number|null} semester - Học kì cụ thể (1 hoặc 2), null = tất cả
- */
 async function calculateSubjectReports(year = null, semester = null) {
   try {
-    // Lấy quy định điểm đạt môn từ database
     const diemDatMon = await quyDinhService.getGiaTriQuyDinh("DIEM_DAT_MON", 5.0);
 
     const where = [];
@@ -178,14 +158,8 @@ async function calculateSubjectReports(year = null, semester = null) {
   }
 }
 
-/**
- * Tính toán và cập nhật báo cáo tổng kết học kì từ BangDiemMonHoc
- * @param {string|null} year - Năm học cụ thể, null = tất cả
- * @param {number|null} semester - Học kì cụ thể (1 hoặc 2), null = tất cả
- */
 async function calculateSemesterReports(year = null, semester = null) {
   try {
-    // Lấy quy định điểm đạt môn từ database
     const diemDatMon = await quyDinhService.getGiaTriQuyDinh("DIEM_DAT_MON", 5.0);
 
     const where = [];
@@ -275,11 +249,6 @@ async function calculateSemesterReports(year = null, semester = null) {
   }
 }
 
-/**
- * Tính toán lại tất cả báo cáo
- * @param {string|null} year - Năm học cụ thể, null = tất cả
- * @param {number|null} semester - Học kì cụ thể, null = tất cả
- */
 async function recalculateAllReports(year = null, semester = null) {
   try {
     const subjectResult = await calculateSubjectReports(year, semester);
@@ -296,12 +265,6 @@ async function recalculateAllReports(year = null, semester = null) {
   }
 }
 
-/**
- * Tự động tính toán lại báo cáo cho một năm học và học kì cụ thể
- * Chạy background, không block response
- * @param {string} year - Năm học
- * @param {number} semester - Học kì (1 hoặc 2)
- */
 async function autoRecalculateReports(year, semester) {
   setImmediate(async () => {
     try {

@@ -18,7 +18,6 @@ class NamHocService {
 
     const trimmed = maNamHoc.trim();
     
-    // Kiểm tra cấu trúc: NH + 4 chữ số + "-" + 4 chữ số
     const pattern = /^NH\d{4}-\d{4}$/;
     if (!pattern.test(trimmed)) {
       return { 
@@ -27,7 +26,6 @@ class NamHocService {
       };
     }
 
-    // Lấy năm bắt đầu và năm kết thúc
     const match = trimmed.match(/^NH(\d{4})-(\d{4})$/);
     if (!match) {
       return { valid: false, message: "Mã năm học không hợp lệ" };
@@ -36,7 +34,6 @@ class NamHocService {
     const namBatDau = parseInt(match[1], 10);
     const namKetThuc = parseInt(match[2], 10);
 
-    // Kiểm tra năm kết thúc = năm bắt đầu + 1
     if (namKetThuc !== namBatDau + 1) {
       return { 
         valid: false, 
@@ -44,7 +41,6 @@ class NamHocService {
       };
     }
 
-    // Kiểm tra năm hợp lý (ví dụ: từ 2000 đến 2100)
     if (namBatDau < 2000 || namBatDau > 2100) {
       return { 
         valid: false, 
@@ -62,13 +58,11 @@ class NamHocService {
       throw new Error("Vui lòng nhập đầy đủ thông tin");
     }
 
-    // Validate cấu trúc mã năm học
     const validation = this.validateMaNamHoc(MaNamHoc);
     if (!validation.valid) {
       throw new Error(validation.message);
     }
 
-    // Kiểm tra mã năm học có khớp với ngày bắt đầu/kết thúc không
     const ngayBatDau = new Date(NgayBatDau);
     const ngayKetThuc = new Date(NgayKetThuc);
     const namBatDauFromDate = ngayBatDau.getFullYear();
@@ -91,34 +85,26 @@ class NamHocService {
       throw new Error(`Năm học "${MaNamHoc}" đã tồn tại`);
     }
 
-    // Tạo năm học
     const namHoc = await namHocRepository.create({
       MaNamHoc,
       NgayBatDau,
       NgayKetThuc,
     });
 
-    // Tự động tạo 2 học kỳ cho năm học mới
     const { sequelize } = require("../models");
     const NamHoc_HocKy = require("../models/NamHoc_HocKy");
 
-    // Tính toán ngày cho học kỳ 1 và học kỳ 2
-    // Học kỳ 1: từ ngày bắt đầu năm học đến 31/12
-    // Học kỳ 2: từ 1/1 năm sau đến ngày kết thúc năm học
     const ngayBatDauDate = new Date(NgayBatDau);
     const ngayKetThucDate = new Date(NgayKetThuc);
     const namBatDau = ngayBatDauDate.getFullYear();
     const namKetThuc = ngayKetThucDate.getFullYear();
 
-    // Học kỳ 1: từ ngày bắt đầu đến 31/12
     const hocKy1NgayBatDau = NgayBatDau;
     const hocKy1NgayKetThuc = `${namBatDau}-12-31`;
 
-    // Học kỳ 2: từ 1/1 năm sau đến ngày kết thúc
     const hocKy2NgayBatDau = `${namKetThuc}-01-01`;
     const hocKy2NgayKetThuc = NgayKetThuc;
 
-    // Tạo học kỳ 1
     await NamHoc_HocKy.create({
       MaNamHoc,
       HocKy: 1,
@@ -126,7 +112,6 @@ class NamHocService {
       NgayKetThuc: hocKy1NgayKetThuc,
     });
 
-    // Tạo học kỳ 2
     await NamHoc_HocKy.create({
       MaNamHoc,
       HocKy: 2,
@@ -144,13 +129,11 @@ class NamHocService {
       throw new Error("Vui lòng nhập đầy đủ thông tin");
     }
 
-    // Validate cấu trúc mã năm học
     const validation = this.validateMaNamHoc(MaNamHoc);
     if (!validation.valid) {
       throw new Error(validation.message);
     }
 
-    // Kiểm tra mã năm học có khớp với ngày bắt đầu/kết thúc không
     const ngayBatDau = new Date(NgayBatDau);
     const ngayKetThuc = new Date(NgayKetThuc);
     const namBatDauFromDate = ngayBatDau.getFullYear();
@@ -190,7 +173,6 @@ class NamHocService {
     const transaction = await sequelize.transaction();
 
     try {
-      // Kiểm tra năm học có tồn tại không
       const namHoc = await namHocRepository.findById(maNamHoc);
       if (!namHoc) {
         await transaction.rollback();
@@ -199,55 +181,46 @@ class NamHocService {
 
       // Xóa tất cả dữ liệu liên quan đến năm học này (theo thứ tự để tránh foreign key constraint)
       
-      // 1. Xóa học kỳ
       await sequelize.query(
         `DELETE FROM NamHoc_HocKy WHERE MaNamHoc = ?`,
         { replacements: [maNamHoc], transaction }
       );
 
-      // 2. Xóa báo cáo tổng kết học kỳ
       await sequelize.query(
         `DELETE FROM BaoCaoTongKetHK WHERE NamHoc = ?`,
         { replacements: [maNamHoc], transaction }
       );
 
-      // 3. Xóa báo cáo tổng kết môn
       await sequelize.query(
         `DELETE FROM BaoCaoTongKetMon WHERE NamHoc = ?`,
         { replacements: [maNamHoc], transaction }
       );
 
-      // 4. Xóa phân công giảng dạy (nếu có)
       await sequelize.query(
         `DELETE FROM PhanCongGiangDay WHERE NamHoc = ?`,
         { replacements: [maNamHoc], transaction }
-      ).catch(() => {}); // Bỏ qua nếu bảng không tồn tại
+      ).catch(() => {});
 
-      // 5. Xóa thời khóa biểu
       await sequelize.query(
         `DELETE FROM ThoiKhoaBieu WHERE NamHoc = ?`,
         { replacements: [maNamHoc], transaction }
       );
 
-      // 6. Xóa điểm số
       await sequelize.query(
         `DELETE FROM BangDiemMonHoc WHERE NamHoc = ?`,
         { replacements: [maNamHoc], transaction }
       );
 
-      // 7. Xóa học sinh - lớp - năm học
       await sequelize.query(
         `DELETE FROM HocSinh_LopNamHoc WHERE MaNamHoc = ?`,
         { replacements: [maNamHoc], transaction }
       );
 
-      // 8. Xóa lớp - năm học
       await sequelize.query(
         `DELETE FROM Lop_NamHoc WHERE MaNamHoc = ?`,
         { replacements: [maNamHoc], transaction }
       );
 
-      // 9. Cuối cùng, xóa năm học (sử dụng raw query với transaction)
       const [deleteResult] = await sequelize.query(
         `DELETE FROM NamHoc WHERE MaNamHoc = ?`,
         { replacements: [maNamHoc], transaction }

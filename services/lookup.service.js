@@ -1,10 +1,6 @@
 const { NamHoc, LopHoc, MonHoc, sequelize } = require('../models'); 
 
 const lookupService = {
-    /**
-     * Lấy danh sách tất cả các Năm học từ DB
-     * Trả về mảng các chuỗi ['2024-2025', '2023-2024', ...]
-     */
     async getAllSchoolYears() {
         try {
             const years = await NamHoc.findAll({
@@ -20,11 +16,6 @@ const lookupService = {
         }
     },
 
-    /**
-     * Lấy học kỳ hiện tại dựa vào ngày bắt đầu/kết thúc trong NamHoc_HocKy
-     * @param {boolean} useVietnamTime - Sử dụng giờ Việt Nam (+7 hours) thay vì UTC
-     * @returns {Promise<{MaNamHoc: string, HocKy: number} | null>}
-     */
     async getCurrentSemester(useVietnamTime = true) {
         try {
             const timeOffset = useVietnamTime ? "+7 hours" : "";
@@ -49,11 +40,6 @@ const lookupService = {
         }
     },
 
-    /**
-     * Lấy năm học hiện tại dựa vào ngày bắt đầu/kết thúc trong NamHoc
-     * @param {boolean} useVietnamTime - Sử dụng giờ Việt Nam (+7 hours) thay vì UTC
-     * @returns {Promise<string | null>}
-     */
     async getCurrentSchoolYear(useVietnamTime = true) {
         try {
             const timeOffset = useVietnamTime ? "+7 hours" : "";
@@ -68,7 +54,6 @@ const lookupService = {
                 return rows[0].MaNamHoc;
             }
             
-            // Fallback: lấy năm học mới nhất nếu không có năm học nào đang diễn ra
             const [fallbackRows] = await sequelize.query(`
                 SELECT MaNamHoc FROM NamHoc ORDER BY MaNamHoc DESC LIMIT 1
             `);
@@ -80,10 +65,6 @@ const lookupService = {
         }
     },
 
-    /**
-     * Lấy danh sách tất cả các Lớp học từ DB
-     * Trả về mảng các đối tượng { MaLop, TenLop }
-     */
     async getAllClasses() {
         try {
             const classes = await LopHoc.findAll({
@@ -99,9 +80,6 @@ const lookupService = {
         }
     },
 
-    /**
-     * Lấy danh sách tất cả các Môn học từ DB
-     */
     async getAllSubjects() {
         try {
             const subjects = await MonHoc.findAll({

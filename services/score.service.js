@@ -30,15 +30,10 @@ const getBadgeStyle = (ranking) => {
     return 'fail';
 };
 
-/**
- * Lấy danh sách tổng quan học sinh (TB HKI, HKII, CN, Xếp loại) theo Năm học
- * @param {string} year - Năm học cần lọc
- */
 exports.getStudentsOverview = async (year) => {
     if (!year) return []; 
 
     try {
-        // Lấy danh sách học sinh với lớp từ HocSinh_LopNamHoc
         const [students] = await sequelize.query(`
             SELECT DISTINCT hs.MaHocSinh, hs.HoTen, hln.MaLop
             FROM HoSoHocSinh hs
@@ -90,7 +85,7 @@ exports.getStudentsOverview = async (year) => {
             const xepLoai = getXepLoai(TB_CN);
 
             return {
-                MaHocSinh: String(student.MaHocSinh), // Đảm bảo là string để map đúng
+                MaHocSinh: String(student.MaHocSinh),
                 HoTen: student.HoTen,
                 MaLop: student.MaLop || 'N/A',
                 
@@ -117,9 +112,6 @@ exports.getStudentsOverview = async (year) => {
     }
 };
 
-/**
- * Lấy danh sách điểm chi tiết theo môn học, năm học và kỳ học từ bảng BangDiemMonHoc
- */
 exports.getSubjectScores = async (year, semester, subjectId, classId = '') => {
     if (!year || !semester || !subjectId) return [];
 
@@ -128,7 +120,6 @@ exports.getSubjectScores = async (year, semester, subjectId, classId = '') => {
         let studentIdsFilter = null;
 
         if (classId) {
-            // Lấy học sinh trong lớp từ HocSinh_LopNamHoc
             const [studentsRows] = await sequelize.query(`
                 SELECT hs.MaHocSinh, hs.HoTen, hln.MaLop
                 FROM HoSoHocSinh hs
@@ -152,7 +143,6 @@ exports.getSubjectScores = async (year, semester, subjectId, classId = '') => {
 
             if (studentIds.length === 0) return [];
 
-            // Lấy học sinh với lớp từ HocSinh_LopNamHoc
             const [studentsRows] = await sequelize.query(`
                 SELECT hs.MaHocSinh, hs.HoTen, hln.MaLop
                 FROM HoSoHocSinh hs
@@ -210,16 +200,10 @@ exports.getSubjectScores = async (year, semester, subjectId, classId = '') => {
     }
 };
 
-/**
- * Lấy tổng quan điểm cá nhân của một học sinh
- * @param {string|number} studentId - MaHocSinh
- * @param {string} year - Năm học
- */
 exports.getStudentPersonalOverview = async (studentId, year) => {
     if (!year || !studentId) return [];
     
     try {
-        // Lấy thông tin học sinh với lớp từ HocSinh_LopNamHoc
         const [studentRows] = await sequelize.query(`
             SELECT hs.MaHocSinh, hs.HoTen, hln.MaLop
             FROM HoSoHocSinh hs
@@ -300,19 +284,10 @@ exports.getStudentPersonalOverview = async (studentId, year) => {
     }
 };
 
-/**
- * Lấy điểm chi tiết môn học của một học sinh cụ thể
- * @param {string|number} studentId - MaHocSinh
- * @param {string} year - Năm học
- * @param {number} semester - Học kì
- * @param {string} subjectId - MaMonHoc
- */
 exports.getStudentPersonalScores = async (studentId, year, semester, subjectId) => {
     if (!year || !semester || !subjectId || !studentId) return [];
     
     try {
-        // Lấy thông tin học sinh với lớp từ HocSinh_LopNamHoc (cần năm học để lấy lớp)
-        // Vì không có year parameter, lấy năm học mới nhất
         const [yearRow] = await sequelize.query(`
             SELECT MaNamHoc FROM NamHoc ORDER BY MaNamHoc DESC LIMIT 1
         `);

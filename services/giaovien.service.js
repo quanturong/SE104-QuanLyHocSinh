@@ -1,5 +1,18 @@
 const giaoVienRepository = require("../repository/giaovien.repository");
 const phanCongRepository = require("../repository/phancong.repository");
+const quyDinhService = require("./quydinh.service");
+
+function tinhTuoi(ngaySinhStr) {
+  if (!ngaySinhStr) return null;
+  const ngaySinh = new Date(ngaySinhStr);
+  const now = new Date();
+  let age = now.getFullYear() - ngaySinh.getFullYear();
+  const m = now.getMonth() - ngaySinh.getMonth();
+  if (m < 0 || (m === 0 && now.getDate() < ngaySinh.getDate())) {
+    age--;
+  }
+  return age;
+}
 
 class GiaoVienService {
   async getAllGiaoVien() {
@@ -30,8 +43,6 @@ class GiaoVienService {
       throw new Error("Vui lòng nhập đầy đủ thông tin bắt buộc");
     }
 
-    // Nếu có danh sách môn học mới (MonHocs), ưu tiên dùng nó
-    // Nếu không, dùng MaMonGiangDay (tương thích ngược)
     const monHocsToAssign = MonHocs && Array.isArray(MonHocs) && MonHocs.length > 0 
       ? MonHocs 
       : (MaMonGiangDay ? [MaMonGiangDay] : []);
@@ -40,26 +51,46 @@ class GiaoVienService {
       throw new Error("Vui lòng chọn ít nhất một môn học");
     }
 
-    const existing = await giaoVienRepository.findById(MaGiaoVien);
-    if (existing) {
-      throw new Error(`Mã giáo viên "${MaGiaoVien}" đã tồn tại`);
+    if (MaGiaoVien) {
+      const existing = await giaoVienRepository.findById(MaGiaoVien);
+      if (existing) {
+        throw new Error(`Mã giáo viên "${MaGiaoVien}" đã tồn tại`);
+      }
     }
 
-    // Tạo giáo viên (giữ MaMonGiangDay để tương thích ngược)
-    const giaoVien = await giaoVienRepository.create({
-      MaGiaoVien,
+    const existingByEmail = await giaoVienRepository.findByEmail(Email);
+    if (existingByEmail) {
+      throw new Error(`Email "${Email}" đã được sử dụng bởi giáo viên khác`);
+    }
+
+    if (NgaySinh) {
+      const tuoiToiThieu = await quyDinhService.getGiaTriQuyDinh("TUOI_TOI_THIEU_GIAO_VIEN", 20);
+      const age = tinhTuoi(NgaySinh);
+      if (age !== null && age <= tuoiToiThieu) {
+        throw new Error(`Tuổi giáo viên phải trên ${tuoiToiThieu} tuổi. Hiện tại: ${age} tuổi`);
+      }
+    }
+
+    const giaoVienData = {
       HoTen,
       GioiTinh: GioiTinh || null,
       NgaySinh: NgaySinh || null,
       DiaChi: DiaChi || null,
       Email,
-      MaMonGiangDay: monHocsToAssign[0], // Giữ môn đầu tiên để tương thích
-    });
+      MaMonGiangDay: monHocsToAssign[0],
+    };
 
-    // Tạo phân công cho các môn học
+    if (MaGiaoVien) {
+      giaoVienData.MaGiaoVien = MaGiaoVien;
+    }
+
+    const giaoVien = await giaoVienRepository.create(giaoVienData);
+
+    const createdMaGiaoVien = giaoVien.MaGiaoVien || giaoVien.dataValues?.MaGiaoVien;
+
     for (const maMonHoc of monHocsToAssign) {
       await phanCongRepository.create({
-        MaGiaoVien: MaGiaoVien,
+        MaGiaoVien: createdMaGiaoVien,
         MaMonHoc: maMonHoc,
       });
     }
@@ -74,8 +105,6 @@ class GiaoVienService {
       throw new Error("Vui lòng nhập đầy đủ thông tin bắt buộc");
     }
 
-    // Nếu có danh sách môn học mới (MonHocs), ưu tiên dùng nó
-    // Nếu không, dùng MaMonGiangDay (tương thích ngược)
     const monHocsToAssign = MonHocs && Array.isArray(MonHocs) && MonHocs.length > 0 
       ? MonHocs 
       : (MaMonGiangDay ? [MaMonGiangDay] : []);
@@ -84,22 +113,27 @@ class GiaoVienService {
       throw new Error("Vui lòng chọn ít nhất một môn học");
     }
 
+    if (NgaySinh) {
+      const tuoiToiThieu = await quyDinhService.getGiaTriQuyDinh("TUOI_TOI_THIEU_GIAO_VIEN", 20);
+      const age = tinhTuoi(NgaySinh);
+      if (age !== null && age <= tuoiToiThieu) {
+        throw new Error(`Tuổi giáo viên phải trên ${tuoiToiThieu} tuổi. Hiện tại: ${age} tuổi`);
+      }
+    }
+
     const giaoVien = await giaoVienRepository.update(maGiaoVien, {
       HoTen,
       GioiTinh: GioiTinh || null,
       NgaySinh: NgaySinh || null,
       DiaChi: DiaChi || null,
       Email,
-      MaMonGiangDay: monHocsToAssign[0], // Giữ môn đầu tiên để tương thích
+      MaMonGiangDay: monHocsToAssign[0],
     });
 
     if (!giaoVien) throw new Error("Không tìm thấy giáo viên");
 
-    // Cập nhật phân công môn học
-    // Xóa tất cả phân công cũ
     await phanCongRepository.deleteByGiaoVien(maGiaoVien);
     
-    // Tạo phân công mới
     for (const maMonHoc of monHocsToAssign) {
       await phanCongRepository.create({
         MaGiaoVien: maGiaoVien,

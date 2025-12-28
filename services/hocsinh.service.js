@@ -32,7 +32,6 @@ class HocSinhService {
       }
     }
 
-    // Lấy quy định tuổi từ database
     const tuoiToiThieu = await quyDinhService.getGiaTriQuyDinh("TUOI_TOI_THIEU", 15);
     const tuoiToiDa = await quyDinhService.getGiaTriQuyDinh("TUOI_TOI_DA", 20);
 
@@ -46,7 +45,6 @@ class HocSinhService {
 
   async updateStudent(id, data) {
     if (data.NgaySinh) {
-      // Lấy quy định tuổi từ database
       const tuoiToiThieu = await quyDinhService.getGiaTriQuyDinh("TUOI_TOI_THIEU", 15);
       const tuoiToiDa = await quyDinhService.getGiaTriQuyDinh("TUOI_TOI_DA", 20);
 

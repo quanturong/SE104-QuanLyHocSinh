@@ -36,7 +36,6 @@ class GiaoVienController {
 
   async createTeacher(req, res) {
     try {
-      // Hỗ trợ cả JSON và form-data
       let body = req.body;
       if (Object.keys(body).length === 0 && req.headers['content-type']?.includes('application/json')) {
         body = JSON.parse(JSON.stringify(req.body));
@@ -44,7 +43,6 @@ class GiaoVienController {
       
       const { MaGiaoVien, HoTen, GioiTinh, NgaySinh, DiaChi, Email, MaMonGiangDay, MonHocs } = body;
       
-      // Xử lý MonHocs: có thể là array hoặc string (từ form)
       let monHocsArray = [];
       if (MonHocs) {
         monHocsArray = Array.isArray(MonHocs) ? MonHocs : [MonHocs].filter(Boolean);
@@ -59,22 +57,44 @@ class GiaoVienController {
         NgaySinh,
         DiaChi,
         Email,
-        MaMonGiangDay: monHocsArray[0] || MaMonGiangDay, // Tương thích ngược
+        MaMonGiangDay: monHocsArray[0] || MaMonGiangDay,
         MonHocs: monHocsArray,
       });
-      return res.redirect("/teacher");
+      
+      const isJsonRequest = req.headers['content-type']?.includes('application/json');
+      if (isJsonRequest) {
+        return res.status(200).json({ success: true, message: "Đã thêm giáo viên thành công" });
+      }
+      
+      return res.redirect("/teacher?success=" + encodeURIComponent("Đã thêm giáo viên thành công"));
     } catch (err) {
       console.error("Lỗi createTeacher:", err);
-      return res.status(400).send(err.message || "Không thêm được giáo viên");
+      
+      let errorMessage = err.message || "Không thêm được giáo viên";
+      if (err.name === 'SequelizeUniqueConstraintError' || err.original?.code === 'SQLITE_CONSTRAINT') {
+        if (err.fields && err.fields.includes('Email')) {
+          errorMessage = `Email "${req.body.Email || ''}" đã được sử dụng. Vui lòng sử dụng email khác.`;
+        } else if (err.errors && err.errors.length > 0) {
+          const emailError = err.errors.find(e => e.path === 'Email');
+          if (emailError) {
+            errorMessage = `Email "${emailError.value}" đã được sử dụng. Vui lòng sử dụng email khác.`;
+          }
+        }
+      }
+      
+      const isJsonRequest = req.headers['content-type']?.includes('application/json');
+      if (isJsonRequest) {
+        return res.status(400).json({ error: errorMessage, success: false });
+      }
+      
+      return res.redirect("/teacher?error=" + encodeURIComponent(errorMessage));
     }
   }
 
   async updateTeacher(req, res) {
     try {
-      // Hỗ trợ cả JSON và form-data
       let body = req.body;
       if (Object.keys(body).length === 0 && req.headers['content-type']?.includes('application/json')) {
-        // Nếu body rỗng nhưng có JSON header, có thể cần parse lại
         body = JSON.parse(JSON.stringify(req.body));
       }
       
@@ -84,7 +104,6 @@ class GiaoVienController {
         return res.status(400).send("Thiếu mã giáo viên");
       }
       
-      // Xử lý MonHocs: có thể là array hoặc string (từ form)
       let monHocsArray = [];
       if (MonHocs) {
         monHocsArray = Array.isArray(MonHocs) ? MonHocs : [MonHocs].filter(Boolean);
@@ -98,7 +117,7 @@ class GiaoVienController {
         NgaySinh,
         DiaChi,
         Email,
-        MaMonGiangDay: monHocsArray[0] || MaMonGiangDay, // Tương thích ngược
+        MaMonGiangDay: monHocsArray[0] || MaMonGiangDay,
         MonHocs: monHocsArray,
       });
       return res.redirect("/teacher");

@@ -298,18 +298,7 @@
           <h2 class="sp-title">Thêm giáo viên mới</h2>
           
           <form class="sp-form" id="form-add-teacher" method="POST" action="/teacher">
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
-              <div class="sp-field">
-                <label>Mã giáo viên</label>
-                <input
-                  type="text"
-                  name="MaGiaoVien"
-                  id="add-gv-magv"
-                  placeholder="Ví dụ: 1"
-                  required
-                />
-              </div>
-
+            <div style="display:grid; grid-template-columns:1fr; gap:14px;">
               <div class="sp-field">
                 <label>Bộ môn giảng dạy <span style="color:#64748b; font-size:12px;">(có thể chọn nhiều)</span></label>
                 <div style="max-height:200px; overflow-y:auto; border:1px solid #cbd5e1; border-radius:6px; padding:8px; background:#fff;">
@@ -517,10 +506,9 @@
         return;
       }
       
-      // Tạo object dữ liệu
+      // Tạo object dữ liệu (không gửi MaGiaoVien, để hệ thống tự động tạo)
       const formData = new FormData(form);
       const data = {
-        MaGiaoVien: formData.get('MaGiaoVien') || '',
         HoTen: formData.get('HoTen') || '',
         GioiTinh: formData.get('GioiTinh') || '',
         NgaySinh: formData.get('NgaySinh') || '',
@@ -538,17 +526,47 @@
         },
         body: JSON.stringify(data)
       })
-      .then(res => {
+      .then(async res => {
+        // Clone response để có thể đọc nhiều lần nếu cần
+        const contentType = res.headers.get('content-type');
+        const isJson = contentType && contentType.includes('application/json');
+        
         if (res.ok) {
-          window.location.href = '/teacher?success=' + encodeURIComponent('Thêm giáo viên thành công');
+          if (isJson) {
+            const result = await res.json();
+            window.location.href = '/teacher?success=' + encodeURIComponent(result.message || 'Thêm giáo viên thành công');
+          } else {
+            window.location.href = '/teacher?success=' + encodeURIComponent('Thêm giáo viên thành công');
+          }
         } else {
-          return res.text().then(text => {
-            throw new Error(text || 'Có lỗi xảy ra');
-          });
+          // Xử lý lỗi
+          let errorMessage = 'Có lỗi xảy ra';
+          
+          if (isJson) {
+            try {
+              const errorData = await res.json();
+              errorMessage = errorData.error || errorData.message || 'Có lỗi xảy ra';
+            } catch (parseErr) {
+              console.error('Lỗi parse JSON:', parseErr);
+              errorMessage = 'Có lỗi xảy ra khi xử lý phản hồi từ server';
+            }
+          } else {
+            try {
+              const text = await res.text();
+              errorMessage = text || 'Có lỗi xảy ra';
+            } catch (textErr) {
+              console.error('Lỗi đọc text:', textErr);
+              errorMessage = `Lỗi ${res.status}: ${res.statusText}`;
+            }
+          }
+          
+          throw new Error(errorMessage);
         }
       })
       .catch(err => {
-        alert('Lỗi: ' + (err.message || 'Không thêm được giáo viên'));
+        const errorMessage = err.message || 'Không thêm được giáo viên';
+        alert('Lỗi: ' + errorMessage);
+        console.error('Lỗi khi thêm giáo viên:', err);
       });
     });
 

@@ -24,7 +24,7 @@ class ScoreController {
             subjects: [],
             studentsOverview: [],
             subjectScores: [],
-            selectedYear: year || null, // Sử dụng giá trị từ query
+            selectedYear: year || null,
             selectedSemester: semester || null,
             selectedSubject: subject || null,
             selectedClass: selectedClass || '',
@@ -35,7 +35,6 @@ class ScoreController {
         let dataToRender = { ...defaultRenderData };
 
         try {
-            // Nếu là học sinh, chỉ lấy những năm học mà học sinh đã học
             if (isStudent && studentId) {
                 const [studentYears] = await sequelize.query(`
                     SELECT DISTINCT hln.MaNamHoc
@@ -141,7 +140,6 @@ class ScoreController {
             const errors = [];
             let imported = 0;
 
-            // Kiểm tra quy định một lần trước khi import
             const quyDinhService = require('../services/quydinh.service');
 
             for (let i = 0; i < rows.length; i++) {
@@ -163,7 +161,6 @@ class ScoreController {
                 if (!NamHoc) { errors.push(`Dòng ${i+2}: Namhoc trống`); continue; }
                 if (!TenMonHoc) { errors.push(`Dòng ${i+2}: MonHoc trống`); continue; }
 
-                // Kiểm tra quy định chỉ cho phép sửa học kỳ hiện tại
                 const canEdit = await quyDinhService.checkCanEditSemester(NamHoc, HocKy);
                 if (!canEdit.allowed) {
                     errors.push(`Dòng ${i+2}: ${canEdit.message || 'Không được phép chỉnh sửa dữ liệu của học kỳ này'}`);
@@ -240,7 +237,6 @@ class ScoreController {
                 return res.redirect(req.get('Referer') || '/scoretable');
             }
 
-            // Kiểm tra quy định chỉ cho phép sửa học kỳ hiện tại
             const quyDinhService = require('../services/quydinh.service');
             const canEdit = await quyDinhService.checkCanEditSemester(NamHoc, HocKy);
             if (!canEdit.allowed) {
