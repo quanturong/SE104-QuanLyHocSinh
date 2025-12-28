@@ -267,6 +267,8 @@ class UserController {
               TenDangNhap: userData.TenDangNhap.trim(),
               MatKhau: userData.MatKhau,
               VaiTro: userData.VaiTro,
+              MaHocSinh: userData.MaHocSinh || null,
+              MaGiaoVien: userData.MaGiaoVien || null,
             });
             successCount++;
           } catch (error) {
@@ -346,11 +348,12 @@ class UserController {
 
       const headers = lines[0].split(",").map((h) => h.trim());
       
-      const expectedHeaders = ["TenDangNhap", "MatKhau", "VaiTro"];
-      const hasAllHeaders = expectedHeaders.every(h => headers.includes(h));
+      const requiredHeaders = ["TenDangNhap", "MatKhau", "VaiTro"];
+      const optionalHeaders = ["MaHocSinh", "MaGiaoVien"];
+      const hasAllRequiredHeaders = requiredHeaders.every(h => headers.includes(h));
       
-      if (!hasAllHeaders) {
-        throw new Error(`File CSV phải có header: ${expectedHeaders.join(", ")}. Tìm thấy: ${headers.join(", ")}`);
+      if (!hasAllRequiredHeaders) {
+        throw new Error(`File CSV phải có header bắt buộc: ${requiredHeaders.join(", ")}. Tìm thấy: ${headers.join(", ")}`);
       }
       
       const data = [];
@@ -358,8 +361,9 @@ class UserController {
         const values = lines[i].split(",").map((v) => v.trim());
         const row = {};
         headers.forEach((header, index) => {
-          if (expectedHeaders.includes(header)) {
-            row[header] = values[index] || "";
+          if (requiredHeaders.includes(header) || optionalHeaders.includes(header)) {
+            const value = values[index] || "";
+            row[header] = value === "" ? null : value;
           }
         });
         data.push(row);

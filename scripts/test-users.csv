@@ -1,9 +1,9 @@
-TenDangNhap,MatKhau,VaiTro
-test_admin,password123,Admin
-test_giaovien1,password123,GiaoVien
-test_giaovien2,password123,GiaoVien
-test_bgh,password123,BGH
-test_giaovu,password123,GiaoVu
-test_hocsinh1,password123,HocSinh
-test_hocsinh2,password123,HocSinh
+TenDangNhap,MatKhau,VaiTro,MaHocSinh,MaGiaoVien
+test_admin,password123,Admin,,
+test_giaovien1,password123,GiaoVien,,707
+test_giaovien2,password123,GiaoVien,,708
+test_bgh,password123,BGH,,
+test_giaovu,password123,GiaoVu,,
+test_hocsinh1,password123,HocSinh,HS99901,
+test_hocsinh2,password123,HocSinh,HS99902,
 
