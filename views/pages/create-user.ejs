@@ -250,7 +250,7 @@
               </td>
               <td style="display: flex; gap: 8px;">
                 <button class="btn btn-sm btn-update-role" data-username="${user.TenDangNhap}">Cập nhật</button>
-                ${isCurrentUser ? '' : `<button class="btn btn-sm" style="background: #dc3545; color: white;" onclick="deleteUser('${user.TenDangNhap}')">Xóa</button>`}
+                ${isCurrentUser ? '' : `<button class="btn btn-sm btn-delete" onclick="deleteUser('${user.TenDangNhap}')">Xóa</button>`}
               </td>
             </tr>
           `;

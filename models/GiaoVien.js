@@ -8,7 +8,14 @@ const GiaoVien = sequelize.define("GiaoVien", {
   NgaySinh: { type: DataTypes.STRING },
   DiaChi: { type: DataTypes.STRING },
   Email: { type: DataTypes.STRING },
-  MaMonGiangDay: { type: DataTypes.STRING, allowNull: false }
+  MaMonGiangDay: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    references: {
+      model: 'MonHoc',
+      key: 'MaMonHoc'
+    }
+  }
 }, {
   tableName: 'GiaoVien', 
   freezeTableName: true, 

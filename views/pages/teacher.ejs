@@ -104,7 +104,8 @@
                         </button>
                         <% if (canManageTeachers) { %>
                           <button
-                            class="btn-action btn-edit-green"
+                            class="btn btn-sm btn-edit"
+                            type="button"
                             data-edit="<%= t.MaGiaoVien %>"
                             data-magv="<%= t.MaGiaoVien %>"
                             data-hoten="<%= t.HoTen || '' %>"
@@ -114,15 +115,14 @@
                             data-email="<%= t.Email || '' %>"
                             data-mamon="<%= t.MaMonGiangDay || '' %>"
                             data-monhocs="<%= t.MonHocs ? JSON.stringify(t.MonHocs.map(m => m.MaMonHoc)) : '[]' %>"
-                            style="padding:6px 12px; font-size:13px;"
                           >
                             Sửa
                           </button>
                           <button
-                            class="btn-action btn-delete"
+                            class="btn btn-sm btn-delete"
+                            type="button"
                             data-delete="<%= t.MaGiaoVien %>"
                             data-hoten="<%= t.HoTen || '' %>"
-                            style="padding:6px 12px; font-size:13px;"
                           >
                             Xóa
                           </button>

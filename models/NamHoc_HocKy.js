@@ -2,10 +2,14 @@ const { DataTypes } = require("sequelize");
 const sequelize = require("../config/db");
 
 const NamHoc_HocKy = sequelize.define("NamHoc_HocKy", {
-  MaNamHoc: { 
-    type: DataTypes.STRING, 
-    primaryKey: true, 
-    allowNull: false 
+  MaNamHoc: {
+    type: DataTypes.STRING,
+    primaryKey: true,
+    allowNull: false,
+    references: {
+      model: 'NamHoc',
+      key: 'MaNamHoc'
+    }
   },
   HocKy: { 
     type: DataTypes.INTEGER, 

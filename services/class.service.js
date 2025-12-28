@@ -283,11 +283,57 @@ class ClassService {
       const remainingCount = remainingRecords[0]?.count || 0;
 
       if (remainingCount === 0) {
+        // Xóa tất cả dữ liệu liên quan đến lớp này ở TẤT CẢ các năm học trước khi xóa LopHoc
+        // (để tránh foreign key constraint error)
+        
+        // 1. Xóa tất cả HocSinh_LopNamHoc
+        await sequelize.query(
+          "DELETE FROM HocSinh_LopNamHoc WHERE MaLop = ?",
+          { replacements: [maLop], transaction }
+        );
+        console.log(`[deleteClass] Đã xóa tất cả HocSinh_LopNamHoc của lớp ${maLop}`);
+
+        // 2. Xóa tất cả ThoiKhoaBieu (tất cả năm học)
+        await sequelize.query(
+          "DELETE FROM ThoiKhoaBieu WHERE MaLop = ?",
+          { replacements: [maLop], transaction }
+        );
+        console.log(`[deleteClass] Đã xóa tất cả ThoiKhoaBieu của lớp ${maLop}`);
+
+        // 3. Xóa tất cả PhanCongGiangDay
+        await sequelize.query(
+          "DELETE FROM PhanCongGiangDay WHERE MaLop = ?",
+          { replacements: [maLop], transaction }
+        );
+        console.log(`[deleteClass] Đã xóa tất cả PhanCongGiangDay của lớp ${maLop}`);
+
+        // 4. Xóa tất cả BaoCaoTongKetMon
+        await sequelize.query(
+          "DELETE FROM BaoCaoTongKetMon WHERE MaLop = ?",
+          { replacements: [maLop], transaction }
+        );
+        console.log(`[deleteClass] Đã xóa tất cả BaoCaoTongKetMon của lớp ${maLop}`);
+
+        // 5. Xóa tất cả BaoCaoTongKetHK
+        await sequelize.query(
+          "DELETE FROM BaoCaoTongKetHK WHERE MaLop = ?",
+          { replacements: [maLop], transaction }
+        );
+        console.log(`[deleteClass] Đã xóa tất cả BaoCaoTongKetHK của lớp ${maLop}`);
+
+        // 6. Xóa tất cả Lop_NamHoc (đã xóa ở trên nhưng để chắc chắn)
+        await sequelize.query(
+          "DELETE FROM Lop_NamHoc WHERE MaLop = ?",
+          { replacements: [maLop], transaction }
+        );
+        console.log(`[deleteClass] Đã xóa tất cả Lop_NamHoc của lớp ${maLop}`);
+
+        // 7. Cuối cùng mới xóa LopHoc
         await sequelize.query(
           "DELETE FROM LopHoc WHERE MaLop = ?",
           { replacements: [maLop], transaction }
         );
-        console.log(`[deleteClass] Đã xóa lớp ${maLop} khỏi bảng LopHoc vì không còn trong năm học nào`);
+        console.log(`[deleteClass] Đã xóa lớp ${maLop} khỏi bảng LopHoc`);
       } else {
         console.log(`[deleteClass] Lớp ${maLop} vẫn còn ${remainingCount} bản ghi trong Lop_NamHoc, không xóa khỏi LopHoc`);
       }

@@ -205,8 +205,8 @@
                                         <td class="score-cell"><span class="score score-<%= score.DiemTB_Style %>"><%= (typeof score.DiemTB === 'number') ? score.DiemTB.toFixed(1) : '0.0' %></span></td>
                                         <% if (!isStudentFlag) { %>
                                         <td class="action-cell">
-                                            <button class="btn btn-sm btn-ghost btn-edit-score" data-student-id="<%= String(score.MaHocSinh || '') %>">Sửa</button>
-                                            <button class="btn btn-sm btn-danger btn-delete-score" data-student-id="<%= String(score.MaHocSinh || '') %>">Xóa</button>
+                                            <button class="btn btn-sm btn-edit btn-edit-score" data-student-id="<%= String(score.MaHocSinh || '') %>">Sửa</button>
+                                            <button class="btn btn-sm btn-delete btn-delete-score" data-student-id="<%= String(score.MaHocSinh || '') %>">Xóa</button>
                                         </td>
                                         <% } %>
                                     </tr>
