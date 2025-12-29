@@ -39,6 +39,8 @@ class ClassService {
     }
 
     const { sequelize } = require("../models");
+    const quyDinhService = require("./quydinh.service");
+    const lookupService = require("./lookup.service");
     
     let currentYear = MaNamHoc;
     if (!currentYear) {
@@ -46,6 +48,21 @@ class ClassService {
         "SELECT MaNamHoc FROM NamHoc ORDER BY MaNamHoc DESC LIMIT 1"
       );
       currentYear = currentYearRow[0]?.MaNamHoc || null;
+    }
+
+    // Kiểm tra quy định CHI_SUA_HOC_KY_HIEN_TAI
+    if (currentYear) {
+      const restrictFlag = await quyDinhService.getGiaTriQuyDinh("CHI_SUA_HOC_KY_HIEN_TAI", 0);
+      if (restrictFlag === 1) {
+        // Nếu quy định bật, chỉ cho phép thêm lớp vào năm học hiện tại
+        const currentSchoolYear = await lookupService.getCurrentSchoolYear(true);
+        if (!currentSchoolYear) {
+          throw new Error("Hiện tại không có năm học nào đang diễn ra. Không thể thêm lớp học.");
+        }
+        if (currentYear !== currentSchoolYear) {
+          throw new Error(`Quy định đang bật: Chỉ cho phép thêm lớp vào năm học hiện tại (${currentSchoolYear}).`);
+        }
+      }
     }
 
     const existing = await lopHocRepository.findById(MaLop);
