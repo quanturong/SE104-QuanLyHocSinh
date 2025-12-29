@@ -406,8 +406,13 @@ router.post(
       if (m < 0 || (m === 0 && now.getDate() < birth.getDate())) {
         age--;
       }
-      if (age < 15 || age > 20) {
-        return res.redirect("/student?error=" + encodeURIComponent("Tuổi học sinh phải từ 15 đến 20."));
+      
+      const quyDinhService = require("../services/quydinh.service");
+      const tuoiToiThieu = await quyDinhService.getGiaTriQuyDinh("TUOI_TOI_THIEU", 15);
+      const tuoiToiDa = await quyDinhService.getGiaTriQuyDinh("TUOI_TOI_DA", 20);
+      
+      if (age < tuoiToiThieu || age > tuoiToiDa) {
+        return res.redirect("/student?error=" + encodeURIComponent(`Tuổi học sinh phải từ ${tuoiToiThieu} đến ${tuoiToiDa}.`));
       }
 
       const [currentYearRow] = await sequelize.query(`
@@ -418,8 +423,6 @@ router.post(
       if (!currentYear) {
         return res.redirect("/student?error=" + encodeURIComponent("Chưa có năm học nào được khai báo. Vui lòng tạo năm học trước."));
       }
-
-      const quyDinhService = require("../services/quydinh.service");
       const siSoToiDa = await quyDinhService.getGiaTriQuyDinh("SI_SO_TOI_DA", 40);
       
       const [[{ SoHS }]] = await sequelize.query(
@@ -556,12 +559,16 @@ router.post(
       if (m < 0 || (m === 0 && now.getDate() < birth.getDate())) {
         age--;
       }
-      if (age < 15 || age > 20) {
-        return res.redirect("/student?error=" + encodeURIComponent("Tuổi học sinh phải từ 15 đến 20."));
+      
+      const quyDinhService = require("../services/quydinh.service");
+      const tuoiToiThieu = await quyDinhService.getGiaTriQuyDinh("TUOI_TOI_THIEU", 15);
+      const tuoiToiDa = await quyDinhService.getGiaTriQuyDinh("TUOI_TOI_DA", 20);
+      
+      if (age < tuoiToiThieu || age > tuoiToiDa) {
+        return res.redirect("/student?error=" + encodeURIComponent(`Tuổi học sinh phải từ ${tuoiToiThieu} đến ${tuoiToiDa}.`));
       }
       
       if (MaLop !== oldMaLop) {
-        const quyDinhService = require("../services/quydinh.service");
         const siSoToiDa = await quyDinhService.getGiaTriQuyDinh("SI_SO_TOI_DA", 40);
         const [[{ SoHS }]] = await sequelize.query(
           "SELECT COUNT(*) AS SoHS FROM HocSinh_LopNamHoc WHERE MaLop = ? AND MaNamHoc = ? AND TrangThai = 'DangHoc'",
